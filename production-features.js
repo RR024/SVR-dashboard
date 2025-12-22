@@ -89,13 +89,22 @@ function updateBackupIndicator() {
 // ===================================
 
 function checkWeeklyBackupReminder() {
+    // IMPORTANT: Only show backup reminders when user is logged in (dashboard visible)
+    const appContainer = document.getElementById('appContainer');
+    const isLoggedIn = appContainer && appContainer.style.display !== 'none';
+
+    if (!isLoggedIn) {
+        // User is on login/signup page, don't show backup reminder
+        return;
+    }
+
     const lastExport = localStorage.getItem('svr_last_export');
     const lastPopupShown = localStorage.getItem('svr_backup_popup_shown');
 
-    // Don't show popup if already shown in last 24 hours
+    // Don't show popup if already shown in last 48 hours (2 days)
     if (lastPopupShown) {
         const hoursSincePopup = (new Date() - new Date(lastPopupShown)) / (1000 * 60 * 60);
-        if (hoursSincePopup < 24) {
+        if (hoursSincePopup < 48) {
             return;
         }
     }
@@ -106,8 +115,8 @@ function checkWeeklyBackupReminder() {
         daysSinceExport = Math.floor((new Date() - new Date(lastExport)) / (1000 * 60 * 60 * 24));
     }
 
-    // Show popup if no export or more than 7 days
-    if (daysSinceExport >= 7) {
+    // Show popup if no export or more than 2 days
+    if (daysSinceExport >= 2) {
         showBackupReminderPopup(daysSinceExport, !lastExport);
     }
 }
