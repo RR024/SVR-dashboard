@@ -1,0 +1,37 @@
+<!-- Customers Module -->
+<section id="customers" class="module">
+    <div class="page-header">
+        <h2>Customer Management</h2>
+        <p>Manage customer database for invoices</p>
+    </div>
+
+    <div class="flex-between mb-3">
+        <button class="btn btn-primary" onclick="openCustomerModal()">
+            <span>➕</span> Add Customer
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Company Name</th>
+                        <th>GST Number</th>
+                        <th>Contact Person</th>
+                        <th>Phone</th>
+                        <th>City</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="customersTableBody">
+                    <tr>
+                        <td colspan="6" class="text-center" style="color: var(--text-secondary);">
+                            No customers yet. Click "Add Customer" to create one.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

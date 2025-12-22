@@ -1,0 +1,35 @@
+<!-- Backup Reminder Modal -->
+<div id="backupReminderModal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3 class="modal-title">💾 Backup Reminder</h3>
+            <button class="modal-close" onclick="closeBackupReminder()">×</button>
+        </div>
+        <div class="modal-body">
+            <div style="text-align: center; padding: 1rem 0;">
+                <div style="font-size: 4rem; margin-bottom: 1rem;">⚠️</div>
+                <p id="backupReminderMessage"
+                    style="font-size: 1.1rem; margin-bottom: 1.5rem; color: var(--text-primary);">
+                    Last backup was 7 days ago. Time to backup your data!
+                </p>
+                <div
+                    style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; text-align: left;">
+                    <h4 style="margin-bottom: 0.5rem;">Why backup?</h4>
+                    <ul style="margin: 0; padding-left: 1.5rem; color: var(--text-secondary);">
+                        <li>Browser cache can be cleared accidentally</li>
+                        <li>Computer crashes or system updates</li>
+                        <li>Protect your business data</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer" style="display: flex; gap: 1rem; justify-content: space-between;">
+            <button class="btn btn-secondary" onclick="dismissBackupReminder()">
+                Remind Later (24hrs)
+            </button>
+            <button class="btn btn-success" onclick="quickBackup()" style="flex: 1;">
+                💾 Backup Now
+            </button>
+        </div>
+    </div>
+</div>

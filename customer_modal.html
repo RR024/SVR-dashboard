@@ -1,0 +1,68 @@
+<!-- Customer Modal -->
+<div id="customerModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title" id="customerModalTitle">Add Customer</h3>
+            <button class="modal-close" onclick="closeCustomerModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <form id="customerForm">
+                <input type="hidden" id="customerId">
+
+                <div class="form-group">
+                    <label class="form-label required">Company Name</label>
+                    <input type="text" id="customerCompanyName" class="form-control"
+                        placeholder="e.g., M/s. ABC Industries Pvt Ltd" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label required">GST Number</label>
+                    <input type="text" id="customerGSTIN" class="form-control" placeholder="e.g., 33AASCM7320A1ZQ"
+                        maxlength="15" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label required">Address</label>
+                    <textarea id="customerAddress" class="form-control" required
+                        placeholder="Full address with city, state, and pincode"></textarea>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label class="form-label">Contact Person</label>
+                        <input type="text" id="customerContactPerson" class="form-control" placeholder="e.g., John Doe">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Phone Number</label>
+                        <input type="tel" id="customerPhone" class="form-control" placeholder="e.g., +91 9876543210"
+                            required>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" id="customerEmail" class="form-control"
+                            placeholder="e.g., info@company.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">City</label>
+                        <input type="text" id="customerCity" class="form-control" placeholder="e.g., Chennai">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Notes</label>
+                    <textarea id="customerNotes" class="form-control"
+                        placeholder="Additional notes about this customer"></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeCustomerModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveCustomer()">Save Customer</button>
+        </div>
+    </div>
+</div>

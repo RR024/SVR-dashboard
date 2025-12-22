@@ -1,0 +1,1501 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="SVR Manufacturing Company - Invoice Management, Dashboard, Employee Management, and Attendance Tracking System">
+    <meta name="keywords" content="manufacturing, invoice, GST, employee management, attendance">
+    <title>SVR Manufacturing Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- PWA Support -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SVR Dashboard">
+    <link rel="apple-touch-icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23667eea' width='100' height='100' rx='20'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>S</text></svg>">
+
+    <!-- CDN Libraries for Advanced Features -->
+    <!-- jsPDF for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+    <!-- SheetJS for Excel import/export -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+    <!-- Chart.js for analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+</head>
+
+<body>
+    <!-- Login Page (shown before main app) -->
+    <!-- Login/Signup Page -->
+    <div id="loginPage" class="login-page">
+        <div class="login-container">
+            <div class="login-header">
+                <div class="logo-icon">S</div>
+                <h1>SVR Manufacturing</h1>
+                <p>Sheet Metal Component</p>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div class="auth-tabs">
+                <button id="loginTab" class="auth-tab active" onclick="switchAuthTab('login')">
+                    Login
+                </button>
+                <button id="signupTab" class="auth-tab" onclick="switchAuthTab('signup')">
+                    Sign Up
+                </button>
+            </div>
+
+            <!-- Login Form -->
+            <div id="loginFormContainer">
+                <form id="loginForm" class="login-form">
+                    <div id="loginError" class="error-message"
+                        style="display: none; padding: 0.75rem; background: rgba(231, 76, 60, 0.1); border: 1px solid #e74c3c; border-radius: var(--radius-md); color: #e74c3c; margin-bottom: 1rem; font-size: 0.875rem;">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Username</label>
+                        <input type="text" id="loginUsername" class="form-control" placeholder="Enter username" required
+                            autofocus>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" id="loginPassword" class="form-control" placeholder="Enter password"
+                            required>
+                    </div>
+                    <div class="form-group"
+                        style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                        <input type="checkbox" id="rememberMe" style="width: auto; margin: 0;">
+                        <label for="rememberMe"
+                            style="margin: 0; cursor: pointer; font-size: 0.875rem; color: var(--text-secondary);">
+                            Remember me on this device
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        <span>🔐</span> Login
+                    </button>
+                </form>
+            </div>
+
+            <!-- Signup Form -->
+            <div id="signupFormContainer" style="display: none;">
+                <form id="signupForm" class="login-form">
+                    <div id="signupError" class="error-message"
+                        style="display: none; padding: 0.75rem; background: rgba(231, 76, 60, 0.1); border: 1px solid #e74c3c; border-radius: var(--radius-md); color: #e74c3c; margin-bottom: 1rem; font-size: 0.875rem;">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Full Name</label>
+                        <input type="text" id="signupFullName" class="form-control" placeholder="Enter your full name"
+                            required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">Username</label>
+                        <input type="text" id="signupUsername" class="form-control"
+                            placeholder="Choose a username (3-20 chars)" required>
+                        <small style="color: var(--text-secondary); font-size: 0.75rem;">Letters, numbers, and
+                            underscores only</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">Password</label>
+                        <input type="password" id="signupPassword" class="form-control"
+                            placeholder="Create a password (min 6 chars)" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">Confirm Password</label>
+                        <input type="password" id="signupConfirmPassword" class="form-control"
+                            placeholder="Re-enter password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        <span>✨</span> Create Account
+                    </button>
+                </form>
+                <div class="login-footer" style="margin-top: 1.5rem;">
+                    <small style="color: var(--text-secondary);">Already have an account? <a href="#"
+                            onclick="switchAuthTab('login'); return false;"
+                            style="color: var(--primary); text-decoration: none;">Login here</a></small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-container" id="appContainer" style="display: none;">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">S</div>
+                    <div class="logo-text">
+                        <h1>SVR Manufacturing</h1>
+                        <p>Sheet Metal Component</p>
+                    </div>
+                </div>
+            </div>
+
+            <nav>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="#dashboard" class="nav-link active" data-module="dashboard">
+                            <span class="nav-icon">📊</span>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#outward-invoice" class="nav-link" data-module="outward-invoice">
+                            <span class="nav-icon">📤</span>
+                            <span>Outward Invoices</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#inward-invoice" class="nav-link" data-module="inward-invoice">
+                            <span class="nav-icon">📥</span>
+                            <span>Inward Invoices</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#customers" class="nav-link" data-module="customers">
+                            <span class="nav-icon">🏢</span>
+                            <span>Customers</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#employees" class="nav-link" data-module="employees">
+                            <span class="nav-icon">👥</span>
+                            <span>Employees</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#attendance" class="nav-link" data-module="attendance">
+                            <span class="nav-icon">✅</span>
+                            <span>Attendance</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#expenses" class="nav-link" data-module="expenses">
+                            <span class="nav-icon">💰</span>
+                            <span>Expenses</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="#reports" class="nav-link" data-module="reports">
+                            <span class="nav-icon">📊</span>
+                            <span>Reports & Analytics</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#settings" class="nav-link" data-module="settings">
+                            <span class="nav-icon">⚙️</span>
+                            <span>Settings</span>
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- Backup Status Indicator -->
+                <div style="padding: 1rem; margin-top: auto; border-top: 1px solid var(--bg-tertiary);">
+                    <div id="backupStatusIndicator" style="margin-bottom: 0.75rem;">
+                        <div class="backup-indicator" title="Checking backup status...">
+                            <span class="indicator-icon">⏳</span>
+                            <span class="indicator-text">Checking...</span>
+                        </div>
+                    </div>
+                    <button id="pwaInstallBtn" onclick="installPWA()" class="btn btn-sm"
+                        style="width: 100%; display: none; background: var(--bg-tertiary); border: 1px dashed var(--primary); color: var(--primary); font-size: 0.75rem;">
+                        📱 Install App
+                    </button>
+                    <a href="#" class="nav-link" onclick="logout(); return false;" style="margin-top: 0.5rem;">
+                        <span class="nav-icon">🚪</span>
+                        <span>Logout</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+
+            <!-- Dashboard Module -->
+            <section id="dashboard" class="module active">
+                <div class="page-header">
+                    <h2>Dashboard</h2>
+                    <p>Overview of your manufacturing business</p>
+                </div>
+
+                <!-- Statistics Cards -->
+                <div class="stats-grid-compact">
+                    <div class="stat-card success">
+                        <div class="stat-label">Total Outward Invoices</div>
+                        <div class="stat-value" id="totalOutward">0</div>
+                        <div class="stat-change">Products delivered</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Inward Invoices</div>
+                        <div class="stat-value" id="totalInward">0</div>
+                        <div class="stat-change">Materials received</div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-label">Total Outstanding</div>
+                        <div class="stat-value" id="totalOutstanding">₹0</div>
+                        <div class="stat-change">Pending payments</div>
+                    </div>
+                    <div class="stat-card danger">
+                        <div class="stat-label">Total Employees</div>
+                        <div class="stat-value" id="totalEmployees">0</div>
+                        <div class="stat-change">Active workforce</div>
+                    </div>
+                </div>
+
+                <!-- Pending Payments Section - Side by Side -->
+                <div class="pending-payments-row">
+                    <div class="card pending-payment-card">
+                        <div class="card-header">
+                            <h3 class="card-title">Pending Payments - Outward Invoices</h3>
+                        </div>
+                        <div id="pendingOutward" class="pending-grid">
+                            <p style="color: var(--text-secondary);">No pending outward invoices</p>
+                        </div>
+                    </div>
+
+                    <div class="card pending-payment-card">
+                        <div class="card-header">
+                            <h3 class="card-title">Pending Payments - Inward Invoices</h3>
+                        </div>
+                        <div id="pendingInward" class="pending-grid">
+                            <p style="color: var(--text-secondary);">No pending inward invoices</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card expense-summary-compact">
+                    <div class="card-header">
+                        <h3 class="card-title">💰 Today's Expenses</h3>
+                    </div>
+                    <div id="expenseDashboardSummary" style="padding: var(--space-lg);">
+                        <p style="color: var(--text-secondary);">Loading expenses...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Inward Invoice Module -->
+            <section id="inward-invoice" class="module">
+                <div class="page-header">
+                    <h2>Inward Invoices</h2>
+                    <p>Track materials received from customers</p>
+                </div>
+
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem;">
+                    <div style="flex: 1; max-width: 400px;">
+                        <input type="text" id="inwardSearch" class="form-control"
+                            placeholder="🔍 Search by invoice no, customer, material..."
+                            oninput="searchInward(this.value)" style="margin: 0;">
+                    </div>
+                    <button class="btn btn-primary" onclick="openInwardModal()">
+                        <span>➕</span> New Inward Invoice
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Invoice No.</th>
+                                    <th>Date</th>
+                                    <th>Customer</th>
+                                    <th>Material</th>
+                                    <th>Amount</th>
+                                    <th>Payment Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inwardTableBody">
+                                <tr>
+                                    <td colspan="7" class="text-center" style="color: var(--text-secondary);">
+                                        No inward invoices yet. Click "New Inward Invoice" to create one.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Outward Invoice Module -->
+            <section id="outward-invoice" class="module">
+                <div class="page-header">
+                    <h2>Outward Invoices (Tax Invoice)</h2>
+                    <p>Generate GST-compliant tax invoices for delivered products</p>
+                </div>
+
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem;">
+                    <div style="flex: 1; max-width: 400px;">
+                        <input type="text" id="outwardSearch" class="form-control"
+                            placeholder="🔍 Search by invoice no, buyer, GST..." oninput="searchOutward(this.value)"
+                            style="margin: 0;">
+                    </div>
+                    <button class="btn btn-primary" onclick="openOutwardModal()">
+                        <span>➕</span> New Tax Invoice
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Invoice No.</th>
+                                    <th>Date</th>
+                                    <th>Customer</th>
+                                    <th>GSTIN</th>
+                                    <th>Taxable Value</th>
+                                    <th>Total (with GST)</th>
+                                    <th>Payment Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="outwardTableBody">
+                                <tr>
+                                    <td colspan="8" class="text-center" style="color: var(--text-secondary);">
+                                        No outward invoices yet. Click "New Tax Invoice" to create one.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Customers Module -->
+            <section id="customers" class="module">
+                <div class="page-header">
+                    <h2>Customer Management</h2>
+                    <p>Manage customer database for invoices</p>
+                </div>
+
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem;">
+                    <div style="flex: 1; max-width: 400px;">
+                        <input type="text" id="customerSearch" class="form-control"
+                            placeholder="🔍 Search by company, GST, contact..." oninput="searchCustomers(this.value)"
+                            style="margin: 0;">
+                    </div>
+                    <button class="btn btn-primary" onclick="openCustomerModal()">
+                        <span>➕</span> Add Customer
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Company Name</th>
+                                    <th>GST Number</th>
+                                    <th>Contact Person</th>
+                                    <th>Phone</th>
+                                    <th>City</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customersTableBody">
+                                <tr>
+                                    <td colspan="6" class="text-center" style="color: var(--text-secondary);">
+                                        No customers yet. Click "Add Customer" to create one.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Employee Module -->
+            <section id="employees" class="module">
+                <div class="page-header">
+                    <h2>Employee Management</h2>
+                    <p>Manage your workforce database</p>
+                </div>
+
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem;">
+                    <div style="flex: 1; max-width: 400px;">
+                        <input type="text" id="employeeSearch" class="form-control"
+                            placeholder="🔍 Search by name, ID, department..." oninput="searchEmployees(this.value)"
+                            style="margin: 0;">
+                    </div>
+                    <button class="btn btn-primary" onclick="openEmployeeModal()">
+                        <span>➕</span> Add Employee
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Employee ID</th>
+                                    <th>Name</th>
+                                    <th>Designation</th>
+                                    <th>Department</th>
+                                    <th>Contact</th>
+                                    <th>Date of Joining</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="employeeTableBody">
+                                <tr>
+                                    <td colspan="7" class="text-center" style="color: var(--text-secondary);">
+                                        No employees yet. Click "Add Employee" to register.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Expense Tracking Module -->
+            <section id="expenses" class="module">
+                <div class="page-header">
+                    <h2>Expense Tracking</h2>
+                    <p>Monitor daily operational costs and expenses</p>
+                </div>
+
+                <!-- Export & Report Buttons -->
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-success btn-sm" onclick="exportExpensesToExcel()"
+                            title="Export to Excel">
+                            📊 Excel
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="exportExpensesToPDF()" title="Export to PDF">
+                            📄 PDF
+                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="openReportGenerator()"
+                            title="Generate Detailed Report">
+                            📈 Report
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Expense Summary Cards -->
+                <div class="expense-summary-cards"
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                    <div class="summary-card"
+                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 10px; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
+                        <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">Today's Expenses</div>
+                        <div id="todayExpense" style="font-size: 2rem; font-weight: bold;">₹0</div>
+                    </div>
+                    <div class="summary-card"
+                        style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 1.5rem; border-radius: 10px; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
+                        <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">This Week</div>
+                        <div id="weekExpense" style="font-size: 2rem; font-weight: bold;">₹0</div>
+                    </div>
+                    <div class="summary-card"
+                        style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 1.5rem; border-radius: 10px; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
+                        <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">This Month</div>
+                        <div id="monthExpense" style="font-size: 2rem; font-weight: bold;">₹0</div>
+                    </div>
+                    <div class="summary-card"
+                        style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); padding: 1.5rem; border-radius: 10px; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
+                        <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">Total Expenses</div>
+                        <div id="totalExpense" style="font-size: 2rem; font-weight: bold;">₹0</div>
+                    </div>
+                </div>
+
+                <!-- Analytics Charts Section -->
+                <div class="card" style="margin-bottom: 2rem;">
+                    <div class="card-header">
+                        <h3 class="card-title">📊 Expense Analytics</h3>
+                    </div>
+                    <div style="padding: var(--space-xl);">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+                            <div>
+                                <h4 style="margin-bottom: 1rem; color: var(--text-primary);">Monthly Trend (Last 12
+                                    Months)</h4>
+                                <div style="height: 250px;">
+                                    <canvas id="expenseTrendChart"></canvas>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 style="margin-bottom: 1rem; color: var(--text-primary);">Category Distribution</h4>
+                                <div style="height: 250px;">
+                                    <canvas id="expenseCategoryChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 style="margin-bottom: 1rem; color: var(--text-primary);">Payment Method Distribution
+                            </h4>
+                            <div style="height: 200px; max-width: 600px;">
+                                <canvas id="paymentMethodChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Navigation -->
+                <div
+                    style="display: flex; gap: 1rem; border-bottom: 2px solid var(--bg-tertiary); margin-bottom: 1.5rem;">
+                    <button id="allExpensesTab" class="expense-tab active" onclick="switchExpenseTab('all')"
+                        style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--text-secondary); border-bottom: 3px solid transparent; transition: all 0.3s;">
+                        All Expenses
+                    </button>
+                    <button id="recurringExpensesTab" class="expense-tab" onclick="switchExpenseTab('recurring')"
+                        style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--text-secondary); border-bottom: 3px solid transparent; transition: all 0.3s;">
+                        Recurring Expenses
+                    </button>
+                </div>
+
+                <!-- All Expenses Content -->
+                <div id="allExpensesContent">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem;">
+                        <div style="flex: 1; max-width: 400px;">
+                            <input type="text" id="expenseSearch" class="form-control"
+                                placeholder="🔍 Search expenses..." oninput="searchExpenses(this.value)"
+                                style="margin: 0;">
+                        </div>
+                        <select id="categoryFilter" class="form-control" onchange="filterByCategory(this.value)"
+                            style="max-width: 200px; margin: 0;">
+                            <option value="">All Categories</option>
+                            <option value="Raw Materials">Raw Materials</option>
+                            <option value="Utilities">Utilities</option>
+                            <option value="Transportation">Transportation/Fuel</option>
+                            <option value="Maintenance">Maintenance & Repairs</option>
+                            <option value="Salaries">Salaries & Wages</option>
+                            <option value="Office Supplies">Office Supplies</option>
+                            <option value="Rent">Rent</option>
+                            <option value="Miscellaneous">Miscellaneous</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="openExpenseModal()">
+                            <span>➕</span> Add Expense
+                        </button>
+                    </div>
+
+                    <!-- Expense Table -->
+                    <div class="card">
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Category</th>
+                                        <th>Description</th>
+                                        <th>Amount</th>
+                                        <th>Payment Method</th>
+                                        <th>Paid To</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="expenseTableBody">
+                                    <tr>
+                                        <td colspan="7" class="text-center" style="color: var(--text-secondary);">
+                                            No expenses recorded yet. Click "Add Expense" to get started.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recurring Expenses Content -->
+                <div id="recurringExpensesContent" style="display: none;">
+                    <div style="margin-bottom: 1.5rem; text-align: right;">
+                        <button class="btn btn-primary" onclick="openRecurringExpenseModal()">
+                            <span>➕</span> Add Recurring Expense
+                        </button>
+                    </div>
+                    <div id="recurringExpensesList"></div>
+                </div>
+            </section>
+
+            <!-- Reports & Analytics Module -->
+            <section id="reports" class="module">
+                <div class="page-header">
+                    <h2>Reports & Analytics</h2>
+                    <p>Comprehensive business insights and reports</p>
+                </div>
+
+                <!-- Analytics Charts -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h3 class="card-title">Business Analytics</h3>
+                    </div>
+                    <div style="padding: var(--space-xl);">
+                        <div
+                            style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-xl); margin-bottom: var(--space-xl);">
+                            <div>
+                                <h4 style="margin-bottom: 1rem;">Monthly Revenue</h4>
+                                <canvas id="revenueChart"></canvas>
+                            </div>
+                            <div>
+                                <h4 style="margin-bottom: 1rem;">Invoice Status Distribution</h4>
+                                <canvas id="statusChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Report Generation -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Generate Reports</h3>
+                    </div>
+                    <div style="padding: var(--space-xl);">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-lg);">
+                            <button class="btn btn-primary" onclick="generateMonthlyReport()">
+                                📊 Monthly Revenue Report
+                            </button>
+                            <button class="btn btn-primary" onclick="generateOutstandingReport()">
+                                💰 Outstanding Payments Report
+                            </button>
+                            <button class="btn btn-primary" onclick="generateAttendanceReport()">
+                                ✅ Attendance Summary Report
+                            </button>
+                            <button class="btn btn-success" onclick="generateGSTReport()">
+                                📄 GST Tax Summary
+                            </button>
+                            <button class="btn btn-secondary" onclick="exportAllReports()">
+                                📥 Export All Reports
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Attendance Module -->
+            <section id="attendance" class="module">
+                <div class="page-header">
+                    <h2>Attendance Tracking</h2>
+                    <p>Mark daily attendance for employees</p>
+                </div>
+
+                <div class="flex-between mb-3">
+                    <div class="form-group" style="margin: 0; max-width: 300px;">
+                        <label class="form-label">Select Date</label>
+                        <input type="date" id="attendanceDate" class="form-control">
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="btn btn-success btn-sm" onclick="markAllPresent()">Mark All Present</button>
+                        <button class="btn btn-secondary btn-sm" onclick="loadAttendance()">Load Attendance</button>
+                        <button class="btn btn-primary" onclick="saveAttendance()">💾 Save Attendance</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div id="attendanceContainer"></div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h3 class="card-title">Attendance History</h3>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Employee</th>
+                                    <th>Status</th>
+                                    <th>Time In</th>
+                                    <th>Time Out</th>
+                                    <th>Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendanceHistoryBody">
+                                <tr>
+                                    <td colspan="6" class="text-center" style="color: var(--text-secondary);">
+                                        No attendance records yet.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings/Admin Module -->
+            <section id="settings" class="module">
+                <div class="page-header">
+                    <h2>Settings & Administration</h2>
+                    <p>Manage system configuration and data</p>
+                </div>
+
+                <!-- Data Export/Import -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h3 class="card-title">Data Export/Import</h3>
+                    </div>
+                    <div style="padding: var(--space-xl);">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-xl);">
+                            <!-- Export Section -->
+                            <div>
+                                <h4 style="margin-bottom: 1rem;">Export Data</h4>
+                                <div style="display: flex; flex-direction: column; gap: var(--space-md);">
+                                    <button class="btn btn-success" onclick="exportToJSON()">
+                                        📄 Export All Data (JSON)
+                                    </button>
+                                    <button class="btn btn-success" onclick="exportToExcel('inward')">
+                                        📊 Export Inward Invoices (Excel)
+                                    </button>
+                                    <button class="btn btn-success" onclick="exportToExcel('outward')">
+                                        📊 Export Outward Invoices (Excel)
+                                    </button>
+                                    <button class="btn btn-success" onclick="exportToExcel('employees')">
+                                        📊 Export Employees (Excel)
+                                    </button>
+                                    <button class="btn btn-success" onclick="exportToExcel('attendance')">
+                                        📊 Export Attendance (Excel)
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Import Section -->
+                            <div>
+                                <h4 style="margin-bottom: 1rem;">Import Data</h4>
+                                <div style="display: flex; flex-direction: column; gap: var(--space-md);">
+                                    <div>
+                                        <input type="file" id="jsonImportFile" accept=".json" style="display: none;"
+                                            onchange="importFromJSON(this)">
+                                        <button class="btn btn-secondary"
+                                            onclick="document.getElementById('jsonImportFile').click()">
+                                            📥 Import from JSON Backup
+                                        </button>
+                                    </div>
+                                    <div
+                                        style="padding: 1rem; background: var(--bg-tertiary); border-radius: var(--radius-md);">
+                                        <p style="font-size: 0.875rem; color: var(--text-secondary); margin: 0;">
+                                            <strong>Note:</strong> Import will merge with existing data. Create a backup
+                                            before importing.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Backup Management -->
+                <div class="card">
+                    <div class="card-header flex-between">
+                        <h3 class="card-title">Backup Management</h3>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn btn-secondary btn-sm" onclick="quickBackupToClipboard()"
+                                title="Copy backup data to clipboard">
+                                📋 Copy to Clipboard
+                            </button>
+                            <button class="btn btn-primary btn-sm" onclick="quickBackup()">
+                                💾 Export Backup
+                            </button>
+                        </div>
+                    </div>
+                    <div style="padding: var(--space-xl);">
+                        <div style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: var(--radius-md);">
+                            <h4 style="margin-bottom: 1rem;">Backup Information</h4>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg);">
+                                <div>
+                                    <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">Last Backup:</p>
+                                    <p id="lastBackupInfo" style="font-size: 1.1rem; font-weight: 600;">Never</p>
+                                </div>
+                                <div>
+                                    <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">Storage Used:</p>
+                                    <div id="storageUsageInfo" style="font-size: 1.1rem; font-weight: 600;">
+                                        Calculating...</div>
+                                    <div id="storageProgressContainer"></div>
+                                </div>
+                            </div>
+                            <div
+                                style="margin-top: 1rem; padding: 1rem; background: var(--warning); border-radius: var(--radius-sm);">
+                                <p style="margin: 0; color: var(--bg-primary);">
+                                    ⚠️ <strong>Reminder:</strong> Regular backups prevent data loss. Export your data
+                                    weekly!
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Inward Invoice Modal -->
+    <div id="inwardModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="inwardModalTitle">New Inward Invoice</h3>
+                <button class="modal-close" onclick="closeInwardModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="inwardForm">
+                    <input type="hidden" id="inwardId">
+
+                    <div class="form-group">
+                        <label class="form-label required">Invoice Number</label>
+                        <input type="text" id="inwardInvoiceNo" class="form-control" placeholder="e.g., INV-IN-001"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Date</label>
+                        <input type="date" id="inwardDate" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Select Existing Customer</label>
+                        <select id="inwardCustomerDropdown" class="form-control" onchange="fillInwardCustomerDetails()">
+                            <option value="">-- Select Customer --</option>
+                        </select>
+                        <small style="color: var(--text-secondary); display: block; margin-top: 0.5rem;">
+                            Or manually enter customer name below
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Customer Name</label>
+                        <input type="text" id="inwardCustomer" class="form-control" placeholder="e.g., ABC Industries"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Material Description</label>
+                        <textarea id="inwardMaterial" class="form-control"
+                            placeholder="Describe the materials received..." required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Quantity</label>
+                        <input type="number" id="inwardQuantity" class="form-control" placeholder="e.g., 100" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Unit</label>
+                        <input type="text" id="inwardUnit" class="form-control" placeholder="e.g., Nos, Kgs" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Rate (₹)</label>
+                        <input type="number" id="inwardRate" class="form-control" placeholder="0.00" step="0.01"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Total Amount (₹)</label>
+                        <input type="number" id="inwardAmount" class="form-control" placeholder="0.00" step="0.01"
+                            readonly required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Payment Status</label>
+                        <select id="inwardPaymentStatus" class="form-control" required>
+                            <option value="Pending">Pending</option>
+                            <option value="Partial">Partial</option>
+                            <option value="Paid">Paid</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Notes / Remarks</label>
+                        <textarea id="inwardNotes" class="form-control" placeholder="Additional notes..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeInwardModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveInwardInvoice()">Save Invoice</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Outward Invoice Modal -->
+    <div id="outwardModal" class="modal">
+        <div class="modal-content" style="max-width: 1000px;">
+            <div class="modal-header">
+                <h3 class="modal-title" id="outwardModalTitle">New Tax Invoice</h3>
+                <button class="modal-close" onclick="closeOutwardModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="outwardForm">
+                    <input type="hidden" id="outwardId">
+
+                    <h4 style="color: var(--text-primary); margin-bottom: 1rem;">Invoice Details</h4>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label required">Invoice No.</label>
+                            <input type="text" id="outwardInvoiceNo" class="form-control" placeholder="Auto-generated"
+                                readonly required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label required">Invoice Date</label>
+                            <input type="date" id="outwardDate" class="form-control" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label required">DC No.</label>
+                            <input type="text" id="outwardDCNo" class="form-control" placeholder="e.g., DC001" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label required">DC Date</label>
+                            <input type="date" id="outwardDCDate" class="form-control" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label required">State</label>
+                            <input type="text" id="outwardState" class="form-control" placeholder="e.g., Tamil Nadu"
+                                value="Tamil Nadu" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label required">State Code</label>
+                            <input type="text" id="outwardStateCode" class="form-control" placeholder="e.g., 33"
+                                value="33" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Payment Terms</label>
+                            <input type="text" id="outwardPaymentTerms" class="form-control" placeholder="e.g., 45 days"
+                                value="45 days">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Vehicle Number</label>
+                            <input type="text" id="outwardVehicle" class="form-control" placeholder="e.g., TN200K0156">
+                        </div>
+                    </div>
+
+                    <h4 style="color: var(--text-primary); margin: 1.5rem 0 1rem;">Customer Details</h4>
+
+                    <div class="form-group">
+                        <label class="form-label">Select Existing Customer</label>
+                        <select id="customerDropdown" class="form-control" onchange="fillCustomerDetails()">
+                            <option value="">-- Select Customer --</option>
+                        </select>
+                        <small style="color: var(--text-secondary); display: block; margin-top: 0.5rem;">
+                            Or manually enter details below
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Buyer Name</label>
+                        <input type="text" id="outwardBuyerName" class="form-control" placeholder="M/s. Company Name"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Buyer Address</label>
+                        <textarea id="outwardBuyerAddress" class="form-control"
+                            placeholder="Full address with city and pincode" required></textarea>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label required">Customer GSTIN</label>
+                            <input type="text" id="outwardGSTIN" class="form-control"
+                                placeholder="e.g., 33AASCM7320A1ZQ" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Contact Number</label>
+                            <input type="tel" id="outwardContact" class="form-control" placeholder="e.g., 9876543210"
+                                maxlength="10" pattern="[0-9]{10}">
+                        </div>
+                    </div>
+
+                    <h4 style="color: var(--text-primary); margin: 1.5rem 0 1rem;">Product Details</h4>
+
+                    <div id="productItems">
+                        <!-- Product rows will be added dynamically -->
+                    </div>
+
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="addProductRow()">+ Add Product
+                        Row</button>
+
+                    <h4 style="color: var(--text-primary); margin: 1.5rem 0 1rem;">Tax Calculation</h4>
+
+                    <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-md);">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span>Total Taxable Value:</span>
+                            <strong id="taxableValue">₹0.00</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span>CGST @ 9%:</span>
+                            <strong id="cgstValue">₹0.00</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span>SGST @ 9%:</span>
+                            <strong id="sgstValue">₹0.00</strong>
+                        </div>
+                        <div
+                            style="display: flex; justify-content: space-between; padding-top: 0.5rem; border-top: 1px solid var(--border-color); margin-top: 0.5rem;">
+                            <span style="font-size: 1.125rem; font-weight: 600;">Total Amount:</span>
+                            <strong id="totalValue" style="font-size: 1.25rem; color: var(--primary);">₹0.00</strong>
+                        </div>
+                        <div
+                            style="margin-top: 1rem; padding: 0.75rem; background: var(--bg-card); border-radius: var(--radius-sm);">
+                            <label class="form-label">Amount in Words:</label>
+                            <div id="amountInWords" style="color: var(--text-secondary); font-style: italic;">-</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group mt-2">
+                        <label class="form-label required">Payment Status</label>
+                        <select id="outwardPaymentStatus" class="form-control" required>
+                            <option value="Pending">Pending</option>
+                            <option value="Partial">Partial</option>
+                            <option value="Paid">Paid</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeOutwardModal()">Cancel</button>
+                <button class="btn btn-success" onclick="printInvoice()">🖨️ Print Invoice</button>
+                <button class="btn btn-primary" onclick="saveOutwardInvoice()">Save Invoice</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Modal -->
+    <div id="customerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="customerModalTitle">Add Customer</h3>
+                <button class="modal-close" onclick="closeCustomerModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="customerForm">
+                    <input type="hidden" id="customerId">
+
+                    <div class="form-group">
+                        <label class="form-label required">Company Name</label>
+                        <input type="text" id="customerCompanyName" class="form-control"
+                            placeholder="e.g., M/s. ABC Industries Pvt Ltd" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">GST Number</label>
+                        <input type="text" id="customerGSTIN" class="form-control" placeholder="e.g., 33AASCM7320A1ZQ"
+                            maxlength="15" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Address</label>
+                        <textarea id="customerAddress" class="form-control" required
+                            placeholder="Full address with city, state, and pincode"></textarea>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label">Contact Person</label>
+                            <input type="text" id="customerContactPerson" class="form-control"
+                                placeholder="e.g., John Doe">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label required">Phone Number</label>
+                            <input type="tel" id="customerPhone" class="form-control" placeholder="e.g., 9876543210"
+                                maxlength="10" pattern="[0-9]{10}" required>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" id="customerEmail" class="form-control"
+                                placeholder="e.g., info@company.com">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">City</label>
+                            <input type="text" id="customerCity" class="form-control" placeholder="e.g., Chennai">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Notes</label>
+                        <textarea id="customerNotes" class="form-control"
+                            placeholder="Additional notes about this customer"></textarea>
+                    </div>
+
+                    <!-- Product Catalog Section -->
+                    <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 2px solid var(--border-color);">
+                        <h4 style="color: var(--text-primary); margin-bottom: 0.5rem;">
+                            📦 Product Catalog
+                        </h4>
+                        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1rem;">
+                            Define products commonly ordered by this customer. These will appear in dropdown when
+                            creating invoices.
+                        </p>
+
+                        <div id="customerProductsList" style="margin-bottom: 1rem;">
+                            <!-- Product items will be dynamically added here -->
+                        </div>
+
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="addCustomerProduct()">
+                            + Add Product
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeCustomerModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveCustomer()">Save Customer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backup Reminder Modal -->
+    <div id="backupReminderModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 class="modal-title">💾 Backup Reminder</h3>
+                <button class="modal-close" onclick="closeBackupReminder()">×</button>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center; padding: 1rem 0;">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">⚠️</div>
+                    <p id="backupReminderMessage"
+                        style="font-size: 1.1rem; margin-bottom: 1.5rem; color: var(--text-primary);">
+                        Last backup was 7 days ago. Time to backup your data!
+                    </p>
+                    <div
+                        style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; text-align: left;">
+                        <h4 style="margin-bottom: 0.5rem;">Why backup?</h4>
+                        <ul style="margin: 0; padding-left: 1.5rem; color: var(--text-secondary);">
+                            <li>Browser cache can be cleared accidentally</li>
+                            <li>Computer crashes or system updates</li>
+                            <li>Protect your business data</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 1rem; justify-content: space-between;">
+                <button class="btn btn-secondary" onclick="dismissBackupReminder()">
+                    Remind Later (24hrs)
+                </button>
+                <button class="btn btn-success" onclick="quickBackup()" style="flex: 1;">
+                    💾 Backup Now
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employee Modal -->
+    <div id="employeeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="employeeModalTitle">Add Employee</h3>
+                <button class="modal-close" onclick="closeEmployeeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="employeeForm">
+                    <input type="hidden" id="employeeId">
+
+                    <div class="form-group">
+                        <label class="form-label">Employee ID</label>
+                        <input type="text" id="employeeEmpId" class="form-control" placeholder="Auto-generated"
+                            readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Full Name</label>
+                        <input type="text" id="employeeName" class="form-control" placeholder="e.g., John Doe" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Designation</label>
+                        <input type="text" id="employeeDesignation" class="form-control"
+                            placeholder="e.g., Machine Operator" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Department</label>
+                        <input type="text" id="employeeDepartment" class="form-control" placeholder="e.g., Production"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Contact Number</label>
+                        <input type="tel" id="employeeContact" class="form-control" placeholder="e.g., 9876543210"
+                            maxlength="10" pattern="[0-9]{10}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" id="employeeEmail" class="form-control"
+                            placeholder="e.g., john@example.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Date of Joining</label>
+                        <input type="date" id="employeeDOJ" class="form-control" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeEmployeeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveEmployee()">Save Employee</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expense Modal -->
+    <div id="expenseModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="expenseModalTitle">Add Expense</h3>
+                <button class="modal-close" onclick="closeExpenseModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="expenseForm" onsubmit="event.preventDefault(); saveExpense();">
+                    <input type="hidden" id="expenseId">
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label required">Date</label>
+                            <input type="date" id="expenseDate" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required">Category</label>
+                            <select id="expenseCategory" class="form-control" required>
+                                <option value="">Select Category</option>
+                                <option value="Raw Materials">Raw Materials</option>
+                                <option value="Utilities">Utilities (Electricity, Water)</option>
+                                <option value="Transportation">Transportation/Fuel</option>
+                                <option value="Maintenance">Maintenance & Repairs</option>
+                                <option value="Salaries">Salaries & Wages</option>
+                                <option value="Office Supplies">Office Supplies</option>
+                                <option value="Rent">Rent</option>
+                                <option value="Miscellaneous">Miscellaneous</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Description</label>
+                        <input type="text" id="expenseDescription" class="form-control"
+                            placeholder="e.g., Office furniture purchase" required>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label required">Amount (₹)</label>
+                            <input type="number" id="expenseAmount" class="form-control" step="0.01" min="0"
+                                placeholder="0.00" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required">Payment Method</label>
+                            <select id="expensePaymentMethod" class="form-control" required>
+                                <option value="">Select Method</option>
+                                <option value="Cash">Cash</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
+                                <option value="UPI">UPI</option>
+                                <option value="Cheque">Cheque</option>
+                                <option value="Credit Card">Credit Card</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Paid To</label>
+                        <input type="text" id="expensePaidTo" class="form-control" placeholder="Vendor/Person name">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Notes</label>
+                        <textarea id="expenseNotes" class="form-control" rows="3"
+                            placeholder="Additional notes..."></textarea>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeExpenseModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Expense</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recurring Expense Modal -->
+    <div id="recurringExpenseModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="recurringExpenseModalTitle">Add Recurring Expense</h3>
+                <button class="modal-close" onclick="closeRecurringExpenseModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="recurringExpenseForm" onsubmit="event.preventDefault(); saveRecurringExpenseTemplate();">
+                    <input type="hidden" id="recurringExpenseId">
+
+                    <div class="form-group">
+                        <label class="form-label required">Description</label>
+                        <input type="text" id="recurringDescription" class="form-control"
+                            placeholder="e.g., Office Rent" required>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label required">Category</label>
+                            <select id="recurringCategory" class="form-control" required>
+                                <option value="">Select Category</option>
+                                <option value="Raw Materials">Raw Materials</option>
+                                <option value="Utilities">Utilities</option>
+                                <option value="Transportation">Transportation/Fuel</option>
+                                <option value="Maintenance">Maintenance & Repairs</option>
+                                <option value="Salaries">Salaries & Wages</option>
+                                <option value="Office Supplies">Office Supplies</option>
+                                <option value="Rent">Rent</option>
+                                <option value="Miscellaneous">Miscellaneous</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required">Amount (₹)</label>
+                            <input type="number" id="recurringAmount" class="form-control" step="0.01" min="0"
+                                placeholder="0.00" required>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label required">Payment Method</label>
+                            <select id="recurringPaymentMethod" class="form-control" required>
+                                <option value=""> Select Method</option>
+                                <option value="Cash">Cash</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
+                                <option value="UPI">UPI</option>
+                                <option value="Cheque">Cheque</option>
+                                <option value="Credit Card">Credit Card</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Paid To</label>
+                            <input type="text" id="recurringPaidTo" class="form-control"
+                                placeholder="Vendor/Person name">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label required">Frequency</label>
+                            <select id="recurringFrequency" class="form-control" required>
+                                <option value="">Select Frequency</option>
+                                <option value="Daily">Daily</option>
+                                <option value="Weekly">Weekly</option>
+                                <option value="Monthly">Monthly</option>
+                                <option value="Yearly">Yearly</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required">Start Date</label>
+                            <input type="date" id="recurringStartDate" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">End Date (Optional)</label>
+                            <input type="date" id="recurringEndDate" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" id="recurringIsActive" checked>
+                            <span>Active (Generate expenses automatically)</span>
+                        </label>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary"
+                            onclick="closeRecurringExpenseModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Recurring Expense</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Generator Modal -->
+    <div id="reportGeneratorModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Generate Expense Report</h3>
+                <button class="modal-close" onclick="closeReportGenerator()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label required">Select Month</label>
+                    <select id="reportMonth" class="form-control" required>
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label required">Select Year</label>
+                    <input type="number" id="reportYear" class="form-control" min="2020" max="2030" value="2025"
+                        required>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeReportGenerator()">Cancel</button>
+                    <button class="btn btn-primary" onclick="generateMonthlyExpenseReport()">Generate Report</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Preview Modal -->
+    <div id="reportPreviewModal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Expense Report Preview</h3>
+                <button class="modal-close" onclick="closeReportPreview()">×</button>
+            </div>
+            <div class="modal-body" style="max-height: 80vh; overflow-y: auto;">
+                <div id="reportPreviewContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Authentication System (loaded first) -->
+    <script src="auth.js"></script>
+
+    <script src="search.js"></script>
+    <script src="backup-system.js"></script>
+    <script src="expenses.js"></script>
+    <script src="expenses-dashboard.js"></script>
+    <script src="expense-analytics.js"></script>
+    <script src="recurring-expenses.js"></script>
+    <script src="expense-reports.js"></script>
+    <script src="customers.js"></script>
+    <script src="advanced-features.js"></script>
+    <script src="expense-init.js"></script>
+    <script src="production-features.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

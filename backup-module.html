@@ -1,0 +1,84 @@
+<!-- Backup & Settings Module -->
+<section id="settings" class="module">
+    <div class="page-header">
+        <h2>💾 Backup & Settings</h2>
+        <p>Export, import, and manage your dashboard data</p>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">📦 Data Management</h3>
+        </div>
+
+        <div
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+            <!-- Export Data Card -->
+            <div
+                style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: var(--radius-lg); border: 2px solid var(--border-color);">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                    <span style="font-size: 2.5rem;">📥</span>
+                    <div>
+                        <h4 style="margin: 0; color: var(--text-primary); font-size: 1.25rem;">Export Data</h4>
+                        <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">Download complete backup
+                        </p>
+                    </div>
+                </div>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.95rem;">
+                    Create a backup file of all your invoices, customers, employees, attendance records, and expenses.
+                </p>
+                <button onclick="exportAllData()" class="btn btn-primary" style="width: 100%;">
+                    <span>📥</span> Export All Data
+                </button>
+            </div>
+
+            <!-- Import Data Card-->
+            <div
+                style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: var(--radius-lg); border: 2px solid var(--border-color);">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                    <span style="font-size: 2.5rem;">📤</span>
+                    <div>
+                        <h4 style="margin: 0; color: var(--text-primary); font-size: 1.25rem;">Import Data</h4>
+                        <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">Restore from backup file
+                        </p>
+                    </div>
+                </div>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.95rem;">
+                    Import data from a previously exported backup file. This will replace all existing data.
+                </p>
+                <button onclick="importData()" class="btn btn-success" style="width: 100%;">
+                    <span>📤</span> Import Data
+                </button>
+            </div>
+
+            <!-- Clear Data Card -->
+            <div
+                style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: var(--radius-lg); border: 2px solid var(--border-color);">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                    <span style="font-size: 2.5rem;">🗑️</span>
+                    <div>
+                        <h4 style="margin: 0; color: var(--danger); font-size: 1.25rem;">Clear All Data</h4>
+                        <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">Delete everything</p>
+                    </div>
+                </div>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.95rem;">
+                    ⚠️ Permanently delete all data. This action cannot be undone. Export backup before clearing!
+                </p>
+                <button onclick="clearAllData()" class="btn btn-danger" style="width: 100%;">
+                    <span>🗑️</span> Clear All Data
+                </button>
+            </div>
+        </div>
+
+        <div
+            style="margin-top: 2rem; padding: 1.5rem; background: var(--bg-secondary); border-radius: var(--radius-lg); border-left: 4px solid var(--info);">
+            <h4 style="color: var(--info); margin-bottom: 1rem;">ℹ️ Important Notes</h4>
+            <ul style="color: var(--text-secondary); line-height: 1.8; margin-left: 1.5rem;">
+                <li><strong>Export regularly</strong> to create backups of your data</li>
+                <li><strong>Backup files</strong> are saved as JSON format with date timestamp</li>
+                <li><strong>Import will replace</strong> all existing data - export current data first!</li>
+                <li><strong>Transfer between systems</strong> by exporting on one PC and importing on another</li>
+                <li><strong>Keep backups safe</strong> - store in multiple secure locations</li>
+            </ul>
+        </div>
+    </div>
+</section>
