@@ -277,6 +277,7 @@ function exportToJSON() {
             employees: getEmployees(),
             attendance: getAttendanceRecords(),
             expenses: getExpenses(),
+            salaryRecords: typeof getSalaryRecords === 'function' ? getSalaryRecords() : [],
             users: loadFromStorage('users') || [],
             activities: loadFromStorage('activities') || []
         }
@@ -378,7 +379,7 @@ function importFromJSON(fileInput) {
             }
 
             // Validate data arrays (all should be arrays or undefined)
-            const dataKeys = ['inwardInvoices', 'outwardInvoices', 'customers', 'employees', 'attendance', 'expenses'];
+            const dataKeys = ['inwardInvoices', 'outwardInvoices', 'customers', 'employees', 'attendance', 'expenses', 'salaryRecords'];
             for (const key of dataKeys) {
                 if (importData.data[key] !== undefined && !Array.isArray(importData.data[key])) {
                     throw new Error(`Invalid data format: "${key}" should be an array.`);
@@ -414,6 +415,7 @@ Total items: ${itemCount}
 • Employees: ${importData.data.employees?.length || 0}
 • Attendance: ${importData.data.attendance?.length || 0}
 • Expenses: ${importData.data.expenses?.length || 0}
+• Salary Records: ${importData.data.salaryRecords?.length || 0}
 
 This will merge with existing data.`;
 
@@ -457,6 +459,12 @@ This will merge with existing data.`;
                 const existing = getExpenses();
                 const merged = mergeArrays(existing, importData.data.expenses);
                 saveToStorage('expenses', merged);
+            }
+
+            if (importData.data.salaryRecords) {
+                const existing = typeof getSalaryRecords === 'function' ? getSalaryRecords() : [];
+                const merged = mergeArrays(existing, importData.data.salaryRecords);
+                localStorage.setItem('salaryRecords', JSON.stringify(merged));
             }
 
             logActivity('import', 'Imported data from JSON backup');
@@ -510,7 +518,8 @@ function createManualBackup() {
             customers: getCustomers(),
             employees: getEmployees(),
             attendance: getAttendanceRecords(),
-            expenses: getExpenses()
+            expenses: getExpenses(),
+            salaryRecords: typeof getSalaryRecords === 'function' ? getSalaryRecords() : []
         }
     };
 
@@ -627,6 +636,7 @@ function restoreBackup(backupId) {
     saveToStorage('employees', backup.data.employees);
     saveToStorage('attendance', backup.data.attendance);
     saveToStorage('expenses', backup.data.expenses || []);
+    localStorage.setItem('salaryRecords', JSON.stringify(backup.data.salaryRecords || []));
 
     logActivity('restore', `Restored backup from ${backup.date}`);
     showToast('Backup restored successfully!', 'success');

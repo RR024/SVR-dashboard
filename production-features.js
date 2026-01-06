@@ -198,7 +198,8 @@ async function quickBackupToClipboard() {
                 customers: typeof getCustomers === 'function' ? getCustomers() : [],
                 employees: typeof getEmployees === 'function' ? getEmployees() : [],
                 attendance: typeof getAttendanceRecords === 'function' ? getAttendanceRecords() : [],
-                expenses: typeof getExpenses === 'function' ? getExpenses() : []
+                expenses: typeof getExpenses === 'function' ? getExpenses() : [],
+                salaryRecords: typeof getSalaryRecords === 'function' ? getSalaryRecords() : []
             }
         };
 
@@ -232,7 +233,8 @@ async function quickBackupToClipboard() {
                 customers: typeof getCustomers === 'function' ? getCustomers() : [],
                 employees: typeof getEmployees === 'function' ? getEmployees() : [],
                 attendance: typeof getAttendanceRecords === 'function' ? getAttendanceRecords() : [],
-                expenses: typeof getExpenses === 'function' ? getExpenses() : []
+                expenses: typeof getExpenses === 'function' ? getExpenses() : [],
+                salaryRecords: typeof getSalaryRecords === 'function' ? getSalaryRecords() : []
             }
         };
 
@@ -283,6 +285,7 @@ function updateStorageIndicator() {
         'employees': 'Employees',
         'attendance': 'Attendance',
         'expenses': 'Expenses',
+        'salaryRecords': 'Salary Records',
         'svr_users': 'Users',
         'activities': 'Activity Log',
         'backups': 'Internal Backups'
@@ -379,7 +382,7 @@ function validateImportedJSON(importData) {
     }
 
     // Validate each data array
-    const expectedArrays = ['inwardInvoices', 'outwardInvoices', 'customers', 'employees', 'attendance', 'expenses'];
+    const expectedArrays = ['inwardInvoices', 'outwardInvoices', 'customers', 'employees', 'attendance', 'expenses', 'salaryRecords'];
 
     expectedArrays.forEach(key => {
         if (importData.data[key] !== undefined) {
@@ -436,7 +439,8 @@ function validateImportedJSON(importData) {
             customers: importData.data.customers?.length || 0,
             employees: importData.data.employees?.length || 0,
             attendance: importData.data.attendance?.length || 0,
-            expenses: importData.data.expenses?.length || 0
+            expenses: importData.data.expenses?.length || 0,
+            salaryRecords: importData.data.salaryRecords?.length || 0
         }
     };
 }

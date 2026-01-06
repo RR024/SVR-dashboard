@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Numbering Adjustment Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        
+        .status-card {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        
+        .status-card h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .status-item:last-child {
+            border-bottom: none;
+        }
+        
+        .status-label {
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .status-value {
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            color: #1565c0;
+        }
+        
+        .alert-success {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            color: #2e7d32;
+        }
+        
+        .alert-warning {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            color: #e65100;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .loading.active {
+            display: block;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .instructions {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+        
+        .instructions h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .instructions ol {
+            margin-left: 20px;
+            color: #666;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+        }
+        
+        code {
+            background: #e0e0e0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Invoice Numbering Adjustment</h1>
+        <p class="subtitle">Adjust invoice numbers to start from SVR/0301/25-26 for invoices created from January 1, 2026</p>
+        
+        <div id="statusDisplay"></div>
+        
+        <div class="loading" id="loadingIndicator">
+            <div class="spinner"></div>
+            <p>Processing...</p>
+        </div>
+        
+        <div class="button-group">
+            <button class="btn-secondary" onclick="checkStatus()">🔍 Check Status</button>
+            <button class="btn-primary" onclick="adjustNumbering()">✨ Adjust Numbering</button>
+        </div>
+        
+        <div class="instructions">
+            <h3>📝 How This Works</h3>
+            <ol>
+                <li>Click <strong>"Check Status"</strong> to see your current invoice count</li>
+                <li>The tool will analyze invoices before and after January 1, 2026</li>
+                <li>Click <strong>"Adjust Numbering"</strong> to create dummy invoices (if needed)</li>
+                <li>Dummy invoices will be dated between April-December 2025 and marked as <code>[DUMMY]</code></li>
+                <li>This ensures your next invoice from Jan 2026 starts at <code>SVR/0301/25-26</code></li>
+            </ol>
+        </div>
+    </div>
+    
+    <script src="adjust-invoice-numbering.js"></script>
+    <script>
+        function checkStatus() {
+            const statusDisplay = document.getElementById('statusDisplay');
+            
+            const invoices = JSON.parse(localStorage.getItem('outwardInvoices') || '[]');
+            
+            // Filter FY 25-26 invoices
+            const fy2526Invoices = invoices.filter(inv => {
+                if (!inv.invoiceNo) return false;
+                const parts = inv.invoiceNo.split('/');
+                return parts.length === 3 && parts[2] === '25-26';
+            });
+            
+            const beforeJan2026 = fy2526Invoices.filter(inv => {
+                const date = new Date(inv.date);
+                return date < new Date('2026-01-01');
+            });
+            
+            const fromJan2026 = fy2526Invoices.filter(inv => {
+                const date = new Date(inv.date);
+                return date >= new Date('2026-01-01');
+            });
+            
+            const dummiesNeeded = Math.max(0, 300 - beforeJan2026.length);
+            const nextInvoiceNum = 300 + beforeJan2026.length + fromJan2026.length + 1;
+            
+            let html = '<div class="status-card">';
+            html += '<h3>📈 Current Status</h3>';
+            html += `<div class="status-item"><span class="status-label">Total FY 25-26 Invoices:</span><span class="status-value">${fy2526Invoices.length}</span></div>`;
+            html += `<div class="status-item"><span class="status-label">Before Jan 1, 2026:</span><span class="status-value">${beforeJan2026.length}</span></div>`;
+            html += `<div class="status-item"><span class="status-label">From Jan 1, 2026:</span><span class="status-value">${fromJan2026.length}</span></div>`;
+            html += `<div class="status-item"><span class="status-label">Next Invoice Number:</span><span class="status-value">SVR/${String(nextInvoiceNum).padStart(4, '0')}/25-26</span></div>`;
+            html += '</div>';
+            
+            if (dummiesNeeded > 0) {
+                html += '<div class="alert alert-warning">';
+                html += `<strong>⚠️ Action Required:</strong> Need to create ${dummiesNeeded} dummy invoices to reach the target of 300 invoices before Jan 1, 2026.`;
+                html += '</div>';
+            } else if (beforeJan2026.length >= 300 && fromJan2026.length === 0) {
+                html += '<div class="alert alert-success">';
+                html += '<strong>✅ Ready:</strong> Next invoice from Jan 1, 2026 will be SVR/0301/25-26';
+                html += '</div>';
+            } else if (fromJan2026.length > 0) {
+                const firstJanInvoice = [...fromJan2026].sort((a, b) => {
+                    const numA = parseInt(a.invoiceNo.split('/')[1]);
+                    const numB = parseInt(b.invoiceNo.split('/')[1]);
+                    return numA - numB;
+                })[0];
+                
+                const firstNum = parseInt(firstJanInvoice.invoiceNo.split('/')[1]);
+                
+                if (firstNum >= 301) {
+                    html += '<div class="alert alert-success">';
+                    html += `<strong>✅ Correct:</strong> Jan 2026 invoices start from ${firstJanInvoice.invoiceNo}`;
+                    html += '</div>';
+                } else {
+                    html += '<div class="alert alert-warning">';
+                    html += `<strong>⚠️ Warning:</strong> Jan 2026 invoices are numbered below 301 (first: ${firstJanInvoice.invoiceNo})`;
+                    html += '</div>';
+                }
+            } else {
+                html += '<div class="alert alert-info">';
+                html += '<strong>ℹ️ Info:</strong> System is configured and ready for use.';
+                html += '</div>';
+            }
+            
+            statusDisplay.innerHTML = html;
+        }
+        
+        function adjustNumbering() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            loadingIndicator.classList.add('active');
+            
+            setTimeout(() => {
+                adjustInvoiceNumbering();
+                loadingIndicator.classList.remove('active');
+            }, 500);
+        }
+        
+        // Auto-check status on load
+        window.addEventListener('load', checkStatus);
+    </script>
+</body>
+</html>

@@ -202,8 +202,21 @@ function addCustomerProduct(productData = null) {
 
     const productId = productData?.id || 'prod_' + Date.now();
 
+    // Check if product is outdated (from previous month)
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const lastUpdated = productData?.lastUpdated || '';
+    const isOutdated = lastUpdated && lastUpdated < currentMonth;
+
+    // Format last updated display
+    let lastUpdatedBadge = '';
+    if (lastUpdated) {
+        const badgeColor = isOutdated ? 'var(--warning)' : 'var(--success)';
+        const badgeText = isOutdated ? `⚠️ Last updated: ${formatProductMonth(lastUpdated)}` : `✓ Current (${formatProductMonth(lastUpdated)})`;
+        lastUpdatedBadge = `<div style="font-size: 0.75rem; color: ${badgeColor}; margin-top: 0.25rem;">${badgeText}</div>`;
+    }
+
     const productHtml = `
-        <div class="customer-product-item" data-product-id="${productId}" style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1rem; position: relative;">
+        <div class="customer-product-item" data-product-id="${productId}" style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1rem; position: relative;${isOutdated ? ' border-left: 3px solid var(--warning);' : ''}">
             <button type="button" class="icon-btn delete" onclick="removeCustomerProduct('${productId}')" 
                     style="position: absolute; top: 0.5rem; right: 0.5rem;" title="Remove Product">×</button>
             
@@ -235,10 +248,19 @@ function addCustomerProduct(productData = null) {
                            title="Fixed price per unit">
                 </div>
             </div>
+            ${lastUpdatedBadge}
         </div>
     `;
 
     container.insertAdjacentHTML('beforeend', productHtml);
+}
+
+// Helper function to format month for display in customer product form
+function formatProductMonth(monthStr) {
+    if (!monthStr) return '';
+    const [year, month] = monthStr.split('-');
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${monthNames[parseInt(month) - 1]} ${year}`;
 }
 
 // Remove product from customer modal
@@ -273,6 +295,11 @@ function loadCustomerProducts(customerId) {
 function getCustomerProductsFromForm() {
     const productItems = document.querySelectorAll('.customer-product-item');
     const products = [];
+    const currentMonth = new Date().toISOString().slice(0, 7);
+
+    // Get existing products to compare for changes
+    const customerId = document.getElementById('customerId').value;
+    const existingProducts = customerId ? getCustomerProducts(customerId) : [];
 
     productItems.forEach(item => {
         const productId = item.getAttribute('data-product-id');
@@ -283,12 +310,32 @@ function getCustomerProductsFromForm() {
 
         // Only add if description is filled
         if (description) {
+            // Check if this is an existing product
+            const existingProduct = existingProducts.find(p => p.id === productId);
+
+            // Determine lastUpdated: update if price or PO changed, otherwise keep old value
+            let lastUpdated = currentMonth; // Default to current month for new products
+
+            if (existingProduct) {
+                const newPoQty = poQty ? parseFloat(poQty) : 0;
+                const newPrice = price ? parseFloat(price) : 0;
+
+                // If price or PO qty changed, update lastUpdated to current month
+                if (existingProduct.price !== newPrice || existingProduct.poQty !== newPoQty) {
+                    lastUpdated = currentMonth;
+                } else {
+                    // Keep existing lastUpdated if no changes
+                    lastUpdated = existingProduct.lastUpdated || currentMonth;
+                }
+            }
+
             products.push({
                 id: productId,
                 description: description,
                 hsn: hsn || '',
                 poQty: poQty ? parseFloat(poQty) : 0,
-                price: price ? parseFloat(price) : 0
+                price: price ? parseFloat(price) : 0,
+                lastUpdated: lastUpdated
             });
         }
     });
@@ -368,6 +415,8 @@ function updateProductDropdowns(customerId) {
             const selected = (currentValue === product.id) ? 'selected' : '';
             options += `<option value="${product.id}" ${selected}>${product.description}</option>`;
         });
+        // Add "+ Add New Product" option at the end
+        options += '<option value="__ADD_NEW__" style="color: var(--primary); font-weight: 600;">➕ Add New Product...</option>';
 
         select.innerHTML = options;
     });
@@ -442,8 +491,9 @@ function fillInwardCustomerDetails() {
     const customerId = dropdown.value;
 
     if (!customerId) {
-        // Clear the customer name field when no customer selected
+        // Clear fields when no customer selected
         document.getElementById('inwardCustomer').value = '';
+        document.getElementById('inwardGSTNo').value = '';
         return;
     }
 
@@ -453,6 +503,8 @@ function fillInwardCustomerDetails() {
     if (customer) {
         // Auto-fill the customer name
         document.getElementById('inwardCustomer').value = customer.companyName;
+        // Auto-fill the GST number from customer record
+        document.getElementById('inwardGSTNo').value = customer.gstin || '';
     }
 }
 

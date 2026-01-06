@@ -184,6 +184,7 @@ body::before {
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-glow);
     transition: transform var(--transition-base);
+    overflow: hidden;
 }
 
 .logo:hover {
@@ -502,7 +503,7 @@ body::before {
 /* Compact Stats Grid for Single Page Dashboard */
 .stats-grid-compact {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: var(--space-md);
     margin-bottom: var(--space-lg);
 }
@@ -574,6 +575,21 @@ body::before {
     transform: translateY(-4px);
     box-shadow: var(--shadow-xl);
     border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Clickable Card Styles (for navigation) */
+.stat-card.clickable-card {
+    cursor: pointer;
+}
+
+.stat-card.clickable-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 24px rgba(102, 126, 234, 0.3);
+    border-color: var(--primary);
+}
+
+.stat-card.clickable-card:active {
+    transform: translateY(-2px);
 }
 
 .stat-label {
@@ -1555,4 +1571,154 @@ td {
         transform: translateX(0);
         opacity: 1;
     }
+}
+
+/* Production Module Tab Buttons */
+.production-tab-btn {
+    padding: 0.75rem 1.5rem;
+    border: 2px solid var(--border-color);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    font-weight: 500;
+    transition: all var(--transition-base);
+}
+
+.production-tab-btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--primary);
+    color: var(--text-primary);
+}
+
+.production-tab-btn.active {
+    background: var(--primary-gradient);
+    border-color: var(--primary);
+    color: white;
+    box-shadow: var(--shadow-glow);
+}
+
+/* HR Module Tab Buttons */
+.hr-tab-btn {
+    padding: 0.75rem 1.5rem;
+    border: 2px solid var(--border-color);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    font-weight: 500;
+    transition: all var(--transition-base);
+}
+
+.hr-tab-btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--primary);
+    color: var(--text-primary);
+}
+
+.hr-tab-btn.active {
+    background: var(--primary-gradient);
+    border-color: var(--primary);
+    color: white;
+    box-shadow: var(--shadow-glow);
+}
+
+/* Column Filter Dropdown Styles */
+.data-table th {
+    position: relative;
+}
+
+.column-filter-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.15rem 0.35rem;
+    margin-left: 0.25rem;
+    font-size: 0.65rem;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+    vertical-align: middle;
+}
+
+.column-filter-btn:hover {
+    background: var(--bg-hover);
+    color: var(--primary);
+}
+
+.column-filter-btn.active {
+    background: var(--primary);
+    color: white;
+}
+
+.column-filter-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 200px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-xl);
+    z-index: 1000;
+    padding: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+.filter-input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+.filter-input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.filter-options {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.filter-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.5rem;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    transition: background var(--transition-fast);
+}
+
+.filter-option:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.filter-option input[type="checkbox"] {
+    accent-color: var(--primary);
+}
+
+/* Clear Filter Button */
+.filter-clear-btn {
+    width: 100%;
+    padding: 0.4rem;
+    margin-top: 0.5rem;
+    background: transparent;
+    border: 1px dashed var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.filter-clear-btn:hover {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: white;
 }

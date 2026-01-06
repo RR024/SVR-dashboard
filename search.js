@@ -56,15 +56,15 @@ function displayFilteredInward(invoices) {
 
     let html = '';
     invoices.forEach(inv => {
-        const badgeClass = inv.paymentStatus === 'Paid' ? 'success' : (inv.paymentStatus === 'Partial' ? 'warning' : 'danger');
+        const gstNo = inv.gstNo || '-';
         html += `
             <tr>
                 <td>${inv.invoiceNo}</td>
                 <td>${formatDate(inv.date)}</td>
                 <td>${inv.customer}</td>
+                <td style="font-size: 0.85rem;">${gstNo}</td>
                 <td>${inv.material}</td>
                 <td>₹${parseFloat(inv.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                <td><span class="badge badge-${badgeClass}">${inv.paymentStatus}</span></td>
                 <td>
                     <div class="action-buttons">
                         <button class="icon-btn edit" onclick="openInwardModal('${inv.id}')" title="Edit">✏️</button>
@@ -77,6 +77,7 @@ function displayFilteredInward(invoices) {
 
     tbody.innerHTML = html;
 }
+
 
 // Search Outward Invoices
 const searchOutward = debounce(function (query) {

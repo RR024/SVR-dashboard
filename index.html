@@ -150,13 +150,13 @@
                     <li class="nav-item">
                         <a href="#outward-invoice" class="nav-link" data-module="outward-invoice">
                             <span class="nav-icon">📤</span>
-                            <span>Outward Invoices</span>
+                            <span>Sales Invoices</span>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a href="#inward-invoice" class="nav-link" data-module="inward-invoice">
                             <span class="nav-icon">📥</span>
-                            <span>Inward Invoices</span>
+                            <span>Purchase Invoices</span>
                         </a>
                     </li>
                     <li class="nav-item">
@@ -166,21 +166,21 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="#employees" class="nav-link" data-module="employees">
-                            <span class="nav-icon">👥</span>
-                            <span>Employees</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#attendance" class="nav-link" data-module="attendance">
-                            <span class="nav-icon">✅</span>
-                            <span>Attendance</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
                         <a href="#expenses" class="nav-link" data-module="expenses">
                             <span class="nav-icon">💰</span>
                             <span>Expenses</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#production" class="nav-link" data-module="production">
+                            <span class="nav-icon">🏭</span>
+                            <span>Production</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#hr-management" class="nav-link" data-module="hr-management">
+                            <span class="nav-icon">👥</span>
+                            <span>HR Management</span>
                         </a>
                     </li>
 
@@ -223,62 +223,100 @@
 
             <!-- Dashboard Module -->
             <section id="dashboard" class="module active">
-                <div class="page-header">
-                    <h2>Dashboard</h2>
-                    <p>Overview of your manufacturing business</p>
+                <div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h2>Dashboard</h2>
+                        <p>Overview of your manufacturing business</p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <span style="color: var(--text-secondary); font-size: 0.9rem; font-weight: 500;"></span>
+                        <label class="toggle-switch"
+                            style="position: relative; display: inline-block; width: 50px; height: 26px;">
+                            <input type="checkbox" id="toggleFirstRowSwitch" onchange="toggleFirstRow()"
+                                style="opacity: 0; width: 0; height: 0;">
+                            <span class="toggle-slider"
+                                style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: 0.3s; border-radius: 26px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);"></span>
+                        </label>
+                    </div>
                 </div>
 
-                <!-- Statistics Cards -->
+
+
                 <div class="stats-grid-compact">
-                    <div class="stat-card success">
-                        <div class="stat-label">Total Outward Invoices</div>
-                        <div class="stat-value" id="totalOutward">0</div>
-                        <div class="stat-change">Products delivered</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Total Inward Invoices</div>
-                        <div class="stat-value" id="totalInward">0</div>
-                        <div class="stat-change">Materials received</div>
-                    </div>
-                    <div class="stat-card warning">
-                        <div class="stat-label">Total Outstanding</div>
-                        <div class="stat-value" id="totalOutstanding">₹0</div>
-                        <div class="stat-change">Pending payments</div>
+                    <div class="stat-card warning" onclick="showOutstandingSalesModal()" style="cursor: pointer;">
+                        <div class="stat-label">Outstanding Sales</div>
+                        <div class="stat-value" id="pendingSalesAmount">₹0</div>
+                        <div class="stat-change" id="pendingSalesCount">0 invoices unpaid</div>
                     </div>
                     <div class="stat-card danger">
-                        <div class="stat-label">Total Employees</div>
-                        <div class="stat-value" id="totalEmployees">0</div>
-                        <div class="stat-change">Active workforce</div>
+                        <div class="stat-label">Outstanding Purchase</div>
+                        <div class="stat-value" id="pendingPurchaseAmount">₹0</div>
+                        <div class="stat-change" id="pendingPurchaseCount">0 invoices unpaid</div>
+                    </div>
+                    <div class="stat-card" style="border-top: 4px solid #8b5cf6;">
+                        <div class="stat-label">Net Outstanding</div>
+                        <div class="stat-value" id="netPendingAmount">₹0</div>
+                        <div class="stat-change">Sales - Purchase</div>
                     </div>
                 </div>
 
-                <!-- Pending Payments Section - Side by Side -->
-                <div class="pending-payments-row">
-                    <div class="card pending-payment-card">
-                        <div class="card-header">
-                            <h3 class="card-title">Pending Payments - Outward Invoices</h3>
-                        </div>
-                        <div id="pendingOutward" class="pending-grid">
-                            <p style="color: var(--text-secondary);">No pending outward invoices</p>
-                        </div>
+                <!-- Statistics Cards - Row 2: Current Month Sales & Purchase -->
+                <div class="stats-grid-compact">
+                    <div class="stat-card success clickable-card" onclick="showCurrentMonthSalesModal()"
+                        title="Click to view Sales Details">
+                        <div class="stat-label">📈 Current Month Sales</div>
+                        <div class="stat-value" id="currentMonthSalesAmount">₹0</div>
+                        <div class="stat-change" id="currentMonthSalesCount">0 invoices</div>
                     </div>
-
-                    <div class="card pending-payment-card">
-                        <div class="card-header">
-                            <h3 class="card-title">Pending Payments - Inward Invoices</h3>
-                        </div>
-                        <div id="pendingInward" class="pending-grid">
-                            <p style="color: var(--text-secondary);">No pending inward invoices</p>
-                        </div>
+                    <div class="stat-card clickable-card" style="border-top: 4px solid #ef4444;"
+                        onclick="navigateToModule('inward-invoice')" title="Click to view Purchase Invoices">
+                        <div class="stat-label">📉 Current Month Purchase</div>
+                        <div class="stat-value" id="currentMonthPurchaseAmount">₹0</div>
+                        <div class="stat-change" id="currentMonthPurchaseCount">0 invoices</div>
                     </div>
                 </div>
 
-                <div class="card expense-summary-compact">
-                    <div class="card-header">
-                        <h3 class="card-title">💰 Today's Expenses</h3>
+                <!-- Statistics Cards - Row 3: Today's Summary -->
+                <div class="stats-grid-compact">
+                    <div class="stat-card" style="border-top: 4px solid #f59e0b;" onclick="navigateToModule('expenses')"
+                        title="Click to view Expenses">
+                        <div class="stat-label">💰 Today's Expenses</div>
+                        <div class="stat-value" id="todayExpensesAmount">₹0</div>
+                        <div class="stat-change" id="todayExpensesCount">0 expenses</div>
                     </div>
-                    <div id="expenseDashboardSummary" style="padding: var(--space-lg);">
-                        <p style="color: var(--text-secondary);">Loading expenses...</p>
+                    <div class="stat-card" style="border-top: 4px solid #10b981;"
+                        onclick="navigateToModule('production')" title="Click to view Production">
+                        <div class="stat-label">🏭 Today's Production</div>
+                        <div class="stat-value" id="todayProductionQty">0</div>
+                        <div class="stat-change" id="todayProductionItems">0 items produced</div>
+                    </div>
+                    <div class="stat-card" style="border-top: 4px solid #3b82f6;"
+                        onclick="navigateToModule('hr-management'); setTimeout(() => switchHRTab('attendance'), 100);"
+                        title="Click to view Attendance">
+                        <div class="stat-label">✅ Today's Attendance</div>
+                        <div class="stat-value" id="todayAttendancePresent">0</div>
+                        <div class="stat-change" id="todayAttendanceTotal">of 0 employees</div>
+                    </div>
+                </div>
+
+                <!-- Statistics Cards - Row 3: Total Sales/Purchase Summary (Toggleable) -->
+                <div id="firstStatsRow" class="stats-grid-compact" style="display: none;">
+                    <div class="stat-card success clickable-card" onclick="navigateToModule('outward-invoice')"
+                        title="Click to view Sales Invoices">
+                        <div class="stat-label">Total Sales Invoices</div>
+                        <div class="stat-value" id="totalOutwardCost">₹0</div>
+                        <div class="stat-change" id="totalOutward">0 invoices</div>
+                    </div>
+                    <div class="stat-card clickable-card" onclick="navigateToModule('inward-invoice')"
+                        title="Click to view Purchase Invoices">
+                        <div class="stat-label">Total Purchase Invoices</div>
+                        <div class="stat-value" id="totalInwardCost">₹0</div>
+                        <div class="stat-change" id="totalInward">0 invoices</div>
+                    </div>
+                    <div class="stat-card" style="border-top: 4px solid #10b981;">
+                        <div class="stat-label">Net Balance</div>
+                        <div class="stat-value" id="netBalance">₹0</div>
+                        <div class="stat-change">Sales - Purchase</div>
                     </div>
                 </div>
             </section>
@@ -286,7 +324,7 @@
             <!-- Inward Invoice Module -->
             <section id="inward-invoice" class="module">
                 <div class="page-header">
-                    <h2>Inward Invoices</h2>
+                    <h2>Purchase Invoices</h2>
                     <p>Track materials received from customers</p>
                 </div>
 
@@ -298,28 +336,82 @@
                             oninput="searchInward(this.value)" style="margin: 0;">
                     </div>
                     <button class="btn btn-primary" onclick="openInwardModal()">
-                        <span>➕</span> New Inward Invoice
+                        <span>➕</span> New Purchase Invoice
                     </button>
                 </div>
 
                 <div class="card">
                     <div class="table-container">
-                        <table class="data-table">
+                        <table class="data-table" id="inwardTable">
                             <thead>
                                 <tr>
-                                    <th>Invoice No.</th>
-                                    <th>Date</th>
-                                    <th>Customer</th>
+                                    <th>
+                                        Supplier Invoice No.
+                                        <button class="column-filter-btn"
+                                            onclick="toggleColumnFilter(event, 'inwardInvoiceNo')">▼</button>
+                                        <div class="column-filter-dropdown" id="filter-inwardInvoiceNo"
+                                            style="display: none;">
+                                            <input type="text" class="filter-input" placeholder="Search invoice..."
+                                                onkeyup="applyInwardFilter()">
+                                        </div>
+                                    </th>
+                                    <th>
+                                        Date
+                                        <button class="column-filter-btn"
+                                            onclick="toggleColumnFilter(event, 'inwardDate')">▼</button>
+                                        <div class="column-filter-dropdown" id="filter-inwardDate"
+                                            style="display: none;">
+                                            <div style="display: flex; gap: 0.5rem; flex-direction: column;">
+                                                <small style="color: var(--text-secondary);">From:</small>
+                                                <input type="date" id="filter-inward-date-from" class="filter-input"
+                                                    onchange="applyInwardFilter()">
+                                                <small style="color: var(--text-secondary);">To:</small>
+                                                <input type="date" id="filter-inward-date-to" class="filter-input"
+                                                    onchange="applyInwardFilter()">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th>
+                                        Customer
+                                        <button class="column-filter-btn"
+                                            onclick="toggleColumnFilter(event, 'inwardCustomer')">▼</button>
+                                        <div class="column-filter-dropdown" id="filter-inwardCustomer"
+                                            style="display: none;">
+                                            <select id="filter-inward-customer-select" class="filter-input"
+                                                onchange="applyInwardFilter()"
+                                                style="width: 100%; padding: 0.5rem; cursor: pointer;">
+                                                <option value="">All Customers</option>
+                                            </select>
+                                        </div>
+                                    </th>
+                                    <th>GST No.</th>
                                     <th>Material</th>
                                     <th>Amount</th>
-                                    <th>Payment Status</th>
+                                    <th>
+                                        Payment Status
+                                        <button class="column-filter-btn"
+                                            onclick="toggleColumnFilter(event, 'inwardPaymentStatus')">▼</button>
+                                        <div class="column-filter-dropdown" id="filter-inwardPaymentStatus"
+                                            style="display: none;">
+                                            <div class="filter-options">
+                                                <label class="filter-option"><input type="checkbox" value="All" checked
+                                                        onchange="applyInwardFilter()"> All</label>
+                                                <label class="filter-option"><input type="checkbox" value="Paid"
+                                                        onchange="applyInwardFilter()"> Paid</label>
+                                                <label class="filter-option"><input type="checkbox" value="Pending"
+                                                        onchange="applyInwardFilter()"> Pending</label>
+                                                <label class="filter-option"><input type="checkbox" value="Partial"
+                                                        onchange="applyInwardFilter()"> Partial</label>
+                                            </div>
+                                        </div>
+                                    </th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="inwardTableBody">
                                 <tr>
-                                    <td colspan="7" class="text-center" style="color: var(--text-secondary);">
-                                        No inward invoices yet. Click "New Inward Invoice" to create one.
+                                    <td colspan="8" class="text-center" style="color: var(--text-secondary);">
+                                        No purchase invoices yet. Click "New Purchase Invoice" to create one.
                                     </td>
                                 </tr>
                             </tbody>
@@ -331,7 +423,7 @@
             <!-- Outward Invoice Module -->
             <section id="outward-invoice" class="module">
                 <div class="page-header">
-                    <h2>Outward Invoices (Tax Invoice)</h2>
+                    <h2>Sales Invoices (Tax Invoice)</h2>
                     <p>Generate GST-compliant tax invoices for delivered products</p>
                 </div>
 
@@ -349,16 +441,68 @@
 
                 <div class="card">
                     <div class="table-container">
-                        <table class="data-table">
+                        <table class="data-table" id="outwardTable">
                             <thead>
                                 <tr>
-                                    <th>Invoice No.</th>
-                                    <th>Date</th>
-                                    <th>Customer</th>
+                                    <th>
+                                        Invoice No.
+                                        <button class="column-filter-btn"
+                                            onclick="toggleColumnFilter(event, 'invoiceNo')">▼</button>
+                                        <div class="column-filter-dropdown" id="filter-invoiceNo"
+                                            style="display: none;">
+                                            <input type="text" class="filter-input" placeholder="Search invoice..."
+                                                onkeyup="applyOutwardFilter()">
+                                            <div class="filter-options" id="filter-options-invoiceNo"></div>
+                                        </div>
+                                    </th>
+                                    <th>
+                                        Date
+                                        <button class="column-filter-btn"
+                                            onclick="toggleColumnFilter(event, 'date')">▼</button>
+                                        <div class="column-filter-dropdown" id="filter-date" style="display: none;">
+                                            <div style="display: flex; gap: 0.5rem; flex-direction: column;">
+                                                <small style="color: var(--text-secondary);">From:</small>
+                                                <input type="date" id="filter-date-from" class="filter-input"
+                                                    onchange="applyOutwardFilter()" placeholder="From">
+                                                <small style="color: var(--text-secondary);">To:</small>
+                                                <input type="date" id="filter-date-to" class="filter-input"
+                                                    onchange="applyOutwardFilter()" placeholder="To">
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th>
+                                        Customer
+                                        <button class="column-filter-btn"
+                                            onclick="toggleColumnFilter(event, 'customer')">▼</button>
+                                        <div class="column-filter-dropdown" id="filter-customer" style="display: none;">
+                                            <select id="filter-customer-select" class="filter-input"
+                                                onchange="applyOutwardFilter()"
+                                                style="width: 100%; padding: 0.5rem; cursor: pointer;">
+                                                <option value="">All Customers</option>
+                                            </select>
+                                        </div>
+                                    </th>
                                     <th>GSTIN</th>
                                     <th>Taxable Value</th>
                                     <th>Total (with GST)</th>
-                                    <th>Payment Status</th>
+                                    <th>
+                                        Payment Status
+                                        <button class="column-filter-btn"
+                                            onclick="toggleColumnFilter(event, 'paymentStatus')">▼</button>
+                                        <div class="column-filter-dropdown" id="filter-paymentStatus"
+                                            style="display: none;">
+                                            <div class="filter-options">
+                                                <label class="filter-option"><input type="checkbox" value="All" checked
+                                                        onchange="applyOutwardFilter()"> All</label>
+                                                <label class="filter-option"><input type="checkbox" value="Paid"
+                                                        onchange="applyOutwardFilter()"> Paid</label>
+                                                <label class="filter-option"><input type="checkbox" value="Pending"
+                                                        onchange="applyOutwardFilter()"> Pending</label>
+                                                <label class="filter-option"><input type="checkbox" value="Partial"
+                                                        onchange="applyOutwardFilter()"> Partial</label>
+                                            </div>
+                                        </div>
+                                    </th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -418,47 +562,172 @@
                 </div>
             </section>
 
-            <!-- Employee Module -->
-            <section id="employees" class="module">
+            <!-- HR Management Module (Combined Employees, Salary & Attendance) -->
+            <section id="hr-management" class="module">
                 <div class="page-header">
-                    <h2>Employee Management</h2>
-                    <p>Manage your workforce database</p>
+                    <h2>👥 HR Management</h2>
+                    <p>Manage employees, salaries, and attendance in one place</p>
                 </div>
 
-                <div
-                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem;">
-                    <div style="flex: 1; max-width: 400px;">
-                        <input type="text" id="employeeSearch" class="form-control"
-                            placeholder="🔍 Search by name, ID, department..." oninput="searchEmployees(this.value)"
-                            style="margin: 0;">
-                    </div>
-                    <button class="btn btn-primary" onclick="openEmployeeModal()">
-                        <span>➕</span> Add Employee
+                <!-- Tab Navigation -->
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                    <button class="btn btn-primary hr-tab-btn active" data-tab="employees-salary"
+                        onclick="switchHRTab('employees-salary')">
+                        👥 Employees & Salary
+                    </button>
+                    <button class="btn btn-secondary hr-tab-btn" data-tab="attendance"
+                        onclick="switchHRTab('attendance')">
+                        ✅ Attendance
                     </button>
                 </div>
 
-                <div class="card">
-                    <div class="table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Employee ID</th>
-                                    <th>Name</th>
-                                    <th>Designation</th>
-                                    <th>Department</th>
-                                    <th>Contact</th>
-                                    <th>Date of Joining</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="employeeTableBody">
-                                <tr>
-                                    <td colspan="7" class="text-center" style="color: var(--text-secondary);">
-                                        No employees yet. Click "Add Employee" to register.
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                <!-- Employees & Salary Tab -->
+                <div id="hr-employees-salary" class="hr-tab-content">
+                    <!-- Salary Summary Cards -->
+                    <div class="summary-cards"
+                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                        <div class="summary-card"
+                            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 10px; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">Total Employees</div>
+                            <div id="hrTotalEmployees" style="font-size: 2rem; font-weight: bold;">0</div>
+                        </div>
+                        <div class="summary-card"
+                            style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); padding: 1.5rem; border-radius: 10px; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">Total Monthly Payroll
+                            </div>
+                            <div id="totalMonthlyPayroll" style="font-size: 2rem; font-weight: bold;">₹0</div>
+                        </div>
+                        <div class="summary-card"
+                            style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 1.5rem; border-radius: 10px; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">Average Salary</div>
+                            <div id="averageSalary" style="font-size: 2rem; font-weight: bold;">₹0</div>
+                        </div>
+                    </div>
+
+                    <!-- Employees Section -->
+                    <div class="card" style="margin-bottom: 2rem;">
+                        <div class="card-header flex-between">
+                            <h3 class="card-title">👥 Employee List</h3>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <input type="text" id="employeeSearch" class="form-control"
+                                    placeholder="🔍 Search employees..." oninput="searchEmployees(this.value)"
+                                    style="margin: 0; max-width: 250px;">
+                                <button class="btn btn-primary" onclick="openEmployeeModal()">
+                                    <span>➕</span> Add Employee
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Employee ID</th>
+                                        <th>Name</th>
+                                        <th>Designation</th>
+                                        <th>Department</th>
+                                        <th>Contact</th>
+                                        <th>Net Salary</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="employeeTableBody">
+                                    <tr>
+                                        <td colspan="7" class="text-center" style="color: var(--text-secondary);">
+                                            No employees yet. Click "Add Employee" to register.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Salary Management Section -->
+                    <div class="card">
+                        <div class="card-header flex-between">
+                            <h3 class="card-title">💰 Salary Management</h3>
+                            <div style="display: flex; gap: 1rem; align-items: center;">
+                                <label class="form-label" style="margin: 0;">Select Month:</label>
+                                <input type="month" id="salaryMonth" class="form-control"
+                                    style="max-width: 200px; margin: 0;">
+                                <button class="btn btn-primary" onclick="openSalaryModal()">
+                                    <span>➕</span> Add/Update Salary
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Basic</th>
+                                        <th>HRA</th>
+                                        <th>DA</th>
+                                        <th>Allowances</th>
+                                        <th>Deductions</th>
+                                        <th>Net Salary</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="salaryTableBody">
+                                    <tr>
+                                        <td colspan="9" class="text-center" style="color: var(--text-secondary);">
+                                            No salary records yet. Click "Add/Update Salary" to get started.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attendance Tab -->
+                <div id="hr-attendance" class="hr-tab-content" style="display: none;">
+                    <div class="card" style="margin-bottom: 1.5rem;">
+                        <div class="card-header flex-between">
+                            <h3 class="card-title">✅ Mark Attendance</h3>
+                            <div style="display: flex; gap: 1rem; align-items: center;">
+                                <label class="form-label" style="margin: 0;">Date:</label>
+                                <input type="date" id="attendanceDate" class="form-control"
+                                    style="max-width: 180px; margin: 0;">
+                                <button class="btn btn-primary" onclick="saveAttendance()">
+                                    <span>💾</span> Save Attendance
+                                </button>
+                            </div>
+                        </div>
+                        <div id="attendanceContainer" style="padding: var(--space-lg);">
+                            <p style="color: var(--text-secondary); text-align: center; padding: 2rem;">
+                                Loading employees...
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Attendance History -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">📅 Attendance History</h3>
+                        </div>
+                        <div class="table-container" style="max-height: 400px; overflow-y: auto;">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Employee ID</th>
+                                        <th>Name</th>
+                                        <th>Status</th>
+                                        <th>Time In</th>
+                                        <th>Time Out</th>
+                                        <th>Remarks</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="attendanceHistoryBody">
+                                    <tr>
+                                        <td colspan="6" class="text-center" style="color: var(--text-secondary);">
+                                            No attendance records yet.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -513,36 +782,7 @@
                     </div>
                 </div>
 
-                <!-- Analytics Charts Section -->
-                <div class="card" style="margin-bottom: 2rem;">
-                    <div class="card-header">
-                        <h3 class="card-title">📊 Expense Analytics</h3>
-                    </div>
-                    <div style="padding: var(--space-xl);">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
-                            <div>
-                                <h4 style="margin-bottom: 1rem; color: var(--text-primary);">Monthly Trend (Last 12
-                                    Months)</h4>
-                                <div style="height: 250px;">
-                                    <canvas id="expenseTrendChart"></canvas>
-                                </div>
-                            </div>
-                            <div>
-                                <h4 style="margin-bottom: 1rem; color: var(--text-primary);">Category Distribution</h4>
-                                <div style="height: 250px;">
-                                    <canvas id="expenseCategoryChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                        <div>
-                            <h4 style="margin-bottom: 1rem; color: var(--text-primary);">Payment Method Distribution
-                            </h4>
-                            <div style="height: 200px; max-width: 600px;">
-                                <canvas id="paymentMethodChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
 
                 <!-- Tab Navigation -->
                 <div
@@ -576,12 +816,15 @@
                             <option value="Salaries">Salaries & Wages</option>
                             <option value="Office Supplies">Office Supplies</option>
                             <option value="Rent">Rent</option>
+                            <option value="Loan">Loan</option>
                             <option value="Miscellaneous">Miscellaneous</option>
                         </select>
                         <button class="btn btn-primary" onclick="openExpenseModal()">
                             <span>➕</span> Add Expense
                         </button>
                     </div>
+
+
 
                     <!-- Expense Table -->
                     <div class="card">
@@ -593,6 +836,8 @@
                                         <th>Category</th>
                                         <th>Description</th>
                                         <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Reminder</th>
                                         <th>Payment Method</th>
                                         <th>Paid To</th>
                                         <th>Actions</th>
@@ -600,12 +845,44 @@
                                 </thead>
                                 <tbody id="expenseTableBody">
                                     <tr>
-                                        <td colspan="7" class="text-center" style="color: var(--text-secondary);">
+                                        <td colspan="9" class="text-center" style="color: var(--text-secondary);">
                                             No expenses recorded yet. Click "Add Expense" to get started.
                                         </td>
                                     </tr>
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+
+                    <!-- Analytics Charts Section -->
+                    <div class="card" style="margin-bottom: 2rem;">
+                        <div class="card-header">
+                            <h3 class="card-title">📊 Expense Analytics</h3>
+                        </div>
+                        <div style="padding: var(--space-xl);">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+                                <div>
+                                    <h4 style="margin-bottom: 1rem; color: var(--text-primary);">Monthly Trend (Last 12
+                                        Months)</h4>
+                                    <div style="height: 250px;">
+                                        <canvas id="expenseTrendChart"></canvas>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 style="margin-bottom: 1rem; color: var(--text-primary);">Category Distribution
+                                    </h4>
+                                    <div style="height: 250px;">
+                                        <canvas id="expenseCategoryChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 style="margin-bottom: 1rem; color: var(--text-primary);">Payment Method Distribution
+                                </h4>
+                                <div style="height: 200px; max-width: 600px;">
+                                    <canvas id="paymentMethodChart"></canvas>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -618,6 +895,216 @@
                         </button>
                     </div>
                     <div id="recurringExpensesList"></div>
+                </div>
+            </section>
+
+            <!-- Production Module -->
+            <section id="production" class="module">
+                <div class="page-header">
+                    <h2>🏭 Production</h2>
+                    <p>Track machines, daily production, and maintenance</p>
+                </div>
+
+                <!-- Tab Navigation -->
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                    <button class="btn btn-primary production-tab-btn active" data-tab="machines"
+                        onclick="switchProductionTab('machines')">
+                        🔧 Machines
+                    </button>
+                    <button class="btn btn-secondary production-tab-btn" data-tab="logs"
+                        onclick="switchProductionTab('logs')">
+                        📊 Production Logs
+                    </button>
+                    <button class="btn btn-secondary production-tab-btn" data-tab="maintenance"
+                        onclick="switchProductionTab('maintenance')">
+                        🛠️ Maintenance
+                    </button>
+                    <button class="btn btn-secondary production-tab-btn" data-tab="live"
+                        onclick="switchProductionTab('live')">
+                        🔴 Live Production
+                    </button>
+                </div>
+
+                <!-- Machines Tab -->
+                <div id="production-machines" class="production-tab-content">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3 style="color: var(--text-primary);">Machine List</h3>
+                        <button class="btn btn-primary" onclick="openMachineModal()">
+                            <span>➕</span> Add Machine
+                        </button>
+                    </div>
+                    <div class="card">
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Machine ID</th>
+                                        <th>Name</th>
+                                        <th>Type</th>
+                                        <th>Status</th>
+                                        <th>Operator</th>
+                                        <th>Capacity/Day</th>
+                                        <th>Location</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="machinesTableBody">
+                                    <tr>
+                                        <td colspan="8" class="text-center" style="color: var(--text-secondary);">
+                                            No machines added yet. Click "Add Machine" to create one.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Production Logs Tab -->
+                <div id="production-logs" class="production-tab-content" style="display: none;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3 style="color: var(--text-primary);">Daily Production Logs</h3>
+                        <button class="btn btn-primary" onclick="openProductionLogModal()">
+                            <span>➕</span> Add Log
+                        </button>
+                    </div>
+                    <div class="card">
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Machine</th>
+                                        <th>Product</th>
+                                        <th>Quantity</th>
+                                        <th>Operator</th>
+                                        <th>Shift</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="productionLogsTableBody">
+                                    <tr>
+                                        <td colspan="7" class="text-center" style="color: var(--text-secondary);">
+                                            No production logs yet. Click "Add Log" to record production.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Maintenance Tab -->
+                <div id="production-maintenance" class="production-tab-content" style="display: none;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3 style="color: var(--text-primary);">Maintenance History</h3>
+                        <button class="btn btn-primary" onclick="openMaintenanceModal()">
+                            <span>➕</span> Add Maintenance
+                        </button>
+                    </div>
+                    <div class="card">
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Machine</th>
+                                        <th>Type</th>
+                                        <th>Description</th>
+                                        <th>Cost</th>
+                                        <th>Downtime</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="maintenanceTableBody">
+                                    <tr>
+                                        <td colspan="7" class="text-center" style="color: var(--text-secondary);">
+                                            No maintenance records yet. Click "Add Maintenance" to log maintenance.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Production Tab -->
+                <div id="production-live" class="production-tab-content" style="display: none;">
+                    <div style="text-align: center; max-width: 800px; margin: 0 auto;">
+                        <div class="card" style="padding: 2rem;">
+                            <h3 style="color: var(--text-primary); margin-bottom: 1.5rem;">🔴 Live Production Counter
+                            </h3>
+
+                            <!-- Setup Section -->
+                            <div id="liveSetupSection">
+                                <div
+                                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; text-align: left;">
+                                    <div class="form-group">
+                                        <label class="form-label required">Select Machine</label>
+                                        <select id="liveMachine" class="form-control"
+                                            onchange="loadProductsForMachine(this.value, 'liveProduct')">
+                                            <option value="">-- Select Machine --</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label required">Select Product</label>
+                                        <select id="liveProduct" class="form-control">
+                                            <option value="">-- Select Product --</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <button class="btn btn-primary btn-lg" onclick="startLiveProduction()"
+                                    style="width: 100%; padding: 1rem; font-size: 1.2rem;">
+                                    🚀 Start Production Session
+                                </button>
+                            </div>
+
+                            <!-- Live Counter Section (Hidden initially) -->
+                            <div id="liveCounterSection" style="display: none;">
+                                <div style="margin-bottom: 2rem;">
+                                    <div
+                                        style="font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                                        <span id="liveMachineDisplay"
+                                            style="font-weight: bold; color: var(--primary);">Machine
+                                            A</span> |
+                                        <span id="liveProductDisplay">Product X</span>
+                                    </div>
+                                    <div id="liveTimer"
+                                        style="font-family: monospace; font-size: 1.5rem; color: var(--text-secondary);">
+                                        00:00:00
+                                    </div>
+                                </div>
+
+                                <div
+                                    style="background: var(--bg-primary); padding: 3rem; border-radius: 20px; margin-bottom: 2rem; position: relative; overflow: hidden;">
+                                    <div id="strokeCounter"
+                                        style="font-size: 8rem; font-weight: bold; color: var(--success); line-height: 1; font-family: 'Courier New', monospace;">
+                                        0000
+                                    </div>
+                                    <p style="margin-top: 1rem; color: var(--text-secondary);">Strokes Counted</p>
+
+                                    <!-- Sensor Simulation Button -->
+                                    <button onclick="handleStroke()" id="sensorBtn"
+                                        style="margin-top: 2rem; padding: 1rem 2rem; border-radius: 50px; border: 4px solid var(--primary); background: transparent; color: var(--primary); font-weight: bold; cursor: pointer; transition: all 0.1s active;">
+                                        Tap or Press SPACE to Count
+                                    </button>
+                                </div>
+
+                                <div style="display: flex; gap: 1rem; justify-content: center;">
+                                    <button class="btn btn-danger btn-lg" onclick="stopLiveProduction()">
+                                        ⏹ Stop & Save
+                                    </button>
+                                    <button class="btn btn-secondary btn-lg" onclick="cancelLiveProduction()">
+                                        ❌ Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -706,8 +1193,8 @@
                         <table class="data-table">
                             <thead>
                                 <tr>
-                                    <th>Date</th>
-                                    <th>Employee</th>
+                                    <th>Employee Name</th>
+                                    <th>Emp ID</th>
                                     <th>Status</th>
                                     <th>Time In</th>
                                     <th>Time Out</th>
@@ -843,9 +1330,14 @@
                     <input type="hidden" id="inwardId">
 
                     <div class="form-group">
-                        <label class="form-label required">Invoice Number</label>
-                        <input type="text" id="inwardInvoiceNo" class="form-control" placeholder="e.g., INV-IN-001"
-                            required>
+                        <label class="form-label required">Supplier Invoice Number</label>
+                        <input type="text" id="inwardInvoiceNo" class="form-control"
+                            placeholder="Enter supplier's invoice number" required
+                            oninput="checkInwardInvoiceDuplicate(this.value)">
+                        <small id="invoiceDuplicateWarning"
+                            style="color: var(--warning); display: none; margin-top: 0.25rem;">
+                            ⚠️ This invoice number already exists!
+                        </small>
                     </div>
 
                     <div class="form-group">
@@ -870,40 +1362,70 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label required">Material Description</label>
-                        <textarea id="inwardMaterial" class="form-control"
-                            placeholder="Describe the materials received..." required></textarea>
+                        <label class="form-label">Customer GST Number</label>
+                        <input type="text" id="inwardGSTNo" class="form-control" placeholder="Auto-filled from customer"
+                            maxlength="15" style="text-transform: uppercase;" readonly
+                            pattern="[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}">
+                        <small style="color: var(--text-secondary); display: block; margin-top: 0.25rem;">
+                            Auto-fills when you select a customer with GST registered
+                        </small>
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label required">Quantity</label>
-                        <input type="number" id="inwardQuantity" class="form-control" placeholder="e.g., 100" required>
+                    <h4 style="color: var(--text-primary); margin: 1rem 0;">📦 Materials / Products</h4>
+
+                    <div id="inwardProductItems">
+                        <!-- Product rows will be added dynamically -->
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label required">Unit</label>
-                        <input type="text" id="inwardUnit" class="form-control" placeholder="e.g., Nos, Kgs" required>
-                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="addInwardProductRow()"
+                        style="margin-bottom: 1rem;">
+                        + Add Product Row
+                    </button>
 
-                    <div class="form-group">
-                        <label class="form-label required">Rate (₹)</label>
-                        <input type="number" id="inwardRate" class="form-control" placeholder="0.00" step="0.01"
-                            required>
-                    </div>
+                    <h4 style="color: var(--text-primary); margin: 1rem 0;">💰 Tax Calculation</h4>
 
-                    <div class="form-group">
-                        <label class="form-label required">Total Amount (₹)</label>
-                        <input type="number" id="inwardAmount" class="form-control" placeholder="0.00" step="0.01"
-                            readonly required>
+                    <div
+                        style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span>Total Taxable Value:</span>
+                            <strong id="inwardTaxableValue">₹0.00</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span>CGST @ 9%:</span>
+                            <strong id="inwardCGST">₹0.00</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span>SGST @ 9%:</span>
+                            <strong id="inwardSGST">₹0.00</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span>Rounding Off:</span>
+                            <strong id="inwardRoundOff">₹0.00</strong>
+                        </div>
+                        <div
+                            style="display: flex; justify-content: space-between; padding-top: 0.5rem; border-top: 1px solid var(--border-color); margin-top: 0.5rem;">
+                            <span style="font-size: 1.125rem; font-weight: 600;">Total Amount (Rounded):</span>
+                            <strong id="inwardTotalAmount"
+                                style="font-size: 1.25rem; color: var(--primary);">₹0.00</strong>
+                        </div>
                     </div>
 
                     <div class="form-group">
                         <label class="form-label required">Payment Status</label>
-                        <select id="inwardPaymentStatus" class="form-control" required>
+                        <select id="inwardPaymentStatus" class="form-control" required
+                            onchange="toggleInwardAmountPaid()">
                             <option value="Pending">Pending</option>
                             <option value="Partial">Partial</option>
                             <option value="Paid">Paid</option>
                         </select>
+                    </div>
+
+                    <div class="form-group" id="inwardAmountPaidGroup" style="display: none;">
+                        <label class="form-label required">Amount Paid (₹)</label>
+                        <input type="number" id="inwardAmountPaid" class="form-control" placeholder="Enter amount paid"
+                            step="0.01" min="0">
+                        <small id="inwardBalanceDisplay"
+                            style="color: var(--warning); display: block; margin-top: 0.25rem;"></small>
                     </div>
 
                     <div class="form-group">
@@ -942,6 +1464,16 @@
                         <div class="form-group">
                             <label class="form-label required">Invoice Date</label>
                             <input type="date" id="outwardDate" class="form-control" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">PO No.</label>
+                            <input type="text" id="outwardPONo" class="form-control" placeholder="e.g., PO12345">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">PO Date</label>
+                            <input type="date" id="outwardPODate" class="form-control">
                         </div>
 
                         <div class="form-group">
@@ -1040,9 +1572,13 @@
                             <span>SGST @ 9%:</span>
                             <strong id="sgstValue">₹0.00</strong>
                         </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span>Rounding Off:</span>
+                            <strong id="roundOffValue">₹0.00</strong>
+                        </div>
                         <div
                             style="display: flex; justify-content: space-between; padding-top: 0.5rem; border-top: 1px solid var(--border-color); margin-top: 0.5rem;">
-                            <span style="font-size: 1.125rem; font-weight: 600;">Total Amount:</span>
+                            <span style="font-size: 1.125rem; font-weight: 600;">Total Amount (Rounded):</span>
                             <strong id="totalValue" style="font-size: 1.25rem; color: var(--primary);">₹0.00</strong>
                         </div>
                         <div
@@ -1054,11 +1590,20 @@
 
                     <div class="form-group mt-2">
                         <label class="form-label required">Payment Status</label>
-                        <select id="outwardPaymentStatus" class="form-control" required>
+                        <select id="outwardPaymentStatus" class="form-control" required
+                            onchange="toggleOutwardAmountPaid()">
                             <option value="Pending">Pending</option>
                             <option value="Partial">Partial</option>
                             <option value="Paid">Paid</option>
                         </select>
+                    </div>
+
+                    <div class="form-group" id="outwardAmountPaidGroup" style="display: none;">
+                        <label class="form-label required">Amount Paid (₹)</label>
+                        <input type="number" id="outwardAmountPaid" class="form-control" placeholder="Enter amount paid"
+                            step="0.01" min="0">
+                        <small id="outwardBalanceDisplay"
+                            style="color: var(--warning); display: block; margin-top: 0.25rem;"></small>
                     </div>
                 </form>
             </div>
@@ -1196,6 +1741,38 @@
         </div>
     </div>
 
+    <!-- Sales Details Modal -->
+    <div id="salesDetailsModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 class="modal-title" id="salesDetailsModalTitle">Sales Details</h3>
+                <button class="modal-close" onclick="closeSalesDetailsModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="table-container" style="max-height: 400px; overflow-y: auto;">
+                    <table class="data-table" style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Customer Name</th>
+                                <th style="text-align: right;">Amount</th>
+                                <th style="text-align: center;">Invoices</th>
+                            </tr>
+                        </thead>
+                        <tbody id="salesDetailsTableBody">
+                            <!-- Content will be populated by JS -->
+                        </tbody>
+                        <tfoot id="salesDetailsTableFoot" style="font-weight: bold; background: var(--bg-tertiary);">
+                            <!-- Total will be populated by JS -->
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeSalesDetailsModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Employee Modal -->
     <div id="employeeModal" class="modal">
         <div class="modal-content">
@@ -1246,11 +1823,175 @@
                         <label class="form-label required">Date of Joining</label>
                         <input type="date" id="employeeDOJ" class="form-control" required>
                     </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label">Aadhar Number</label>
+                            <input type="text" id="employeeAadhar" class="form-control"
+                                placeholder="e.g., 1234 5678 9012" maxlength="14" oninput="formatAadhar(this)">
+                            <small style="color: var(--text-secondary); display: block; margin-top: 0.25rem;">
+                                12-digit unique identification number
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">PAN Number</label>
+                            <input type="text" id="employeePAN" class="form-control" placeholder="e.g., ABCDE1234F"
+                                maxlength="10" style="text-transform: uppercase;" pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}">
+                            <small style="color: var(--text-secondary); display: block; margin-top: 0.25rem;">
+                                10-character PAN card number
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Education Qualification</label>
+                        <select id="employeeEducation" class="form-control">
+                            <option value="">-- Select Qualification --</option>
+                            <option value="Below 10th">Below 10th</option>
+                            <option value="10th Pass">10th Pass</option>
+                            <option value="12th Pass">12th Pass</option>
+                            <option value="ITI">ITI</option>
+                            <option value="Diploma">Diploma</option>
+                            <option value="Graduate">Graduate</option>
+                            <option value="Post Graduate">Post Graduate</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeEmployeeModal()">Cancel</button>
                 <button class="btn btn-primary" onclick="saveEmployee()">Save Employee</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Salary Modal -->
+    <div id="salaryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="salaryModalTitle">Add/Update Salary</h3>
+                <button class="modal-close" onclick="closeSalaryModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="salaryForm">
+                    <input type="hidden" id="salaryId">
+
+                    <div class="form-group">
+                        <label class="form-label required">Select Employee</label>
+                        <select id="salaryEmployee" class="form-control" required
+                            onchange="loadEmployeeSalaryDetails()">
+                            <option value="">-- Select Employee --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Month</label>
+                        <input type="month" id="salaryForMonth" class="form-control" required>
+                    </div>
+
+                    <h4
+                        style="color: var(--text-primary); margin: 1.5rem 0 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                        💵 Earnings
+                    </h4>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label required">Basic Salary (₹)</label>
+                            <input type="number" id="salaryBasic" class="form-control" placeholder="0.00" step="0.01"
+                                min="0" required oninput="calculateNetSalary()">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">HRA (₹)</label>
+                            <input type="number" id="salaryHRA" class="form-control" placeholder="0.00" step="0.01"
+                                min="0" value="0" oninput="calculateNetSalary()">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">DA (₹)</label>
+                            <input type="number" id="salaryDA" class="form-control" placeholder="0.00" step="0.01"
+                                min="0" value="0" oninput="calculateNetSalary()">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Other Allowances (₹)</label>
+                            <input type="number" id="salaryAllowances" class="form-control" placeholder="0.00"
+                                step="0.01" min="0" value="0" oninput="calculateNetSalary()">
+                        </div>
+                    </div>
+
+                    <h4
+                        style="color: var(--text-primary); margin: 1.5rem 0 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                        📉 Deductions
+                    </h4>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label">PF Deduction (₹)</label>
+                            <input type="number" id="salaryPF" class="form-control" placeholder="0.00" step="0.01"
+                                min="0" value="0" oninput="calculateNetSalary()">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">ESI Deduction (₹)</label>
+                            <input type="number" id="salaryESI" class="form-control" placeholder="0.00" step="0.01"
+                                min="0" value="0" oninput="calculateNetSalary()">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Other Deductions (₹)</label>
+                            <input type="number" id="salaryOtherDeductions" class="form-control" placeholder="0.00"
+                                step="0.01" min="0" value="0" oninput="calculateNetSalary()">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Advance Taken (₹)</label>
+                            <input type="number" id="salaryAdvance" class="form-control" placeholder="0.00" step="0.01"
+                                min="0" value="0" oninput="calculateNetSalary()">
+                        </div>
+                    </div>
+
+                    <!-- Net Salary Display -->
+                    <div
+                        style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: var(--radius-md); margin-top: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                            <span>Gross Earnings:</span>
+                            <strong id="grossEarnings" style="color: var(--success);">₹0.00</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                            <span>Total Deductions:</span>
+                            <strong id="totalDeductions" style="color: var(--danger);">₹0.00</strong>
+                        </div>
+                        <div
+                            style="display: flex; justify-content: space-between; padding-top: 0.75rem; border-top: 2px solid var(--border-color);">
+                            <span style="font-size: 1.125rem; font-weight: 600;">Net Salary:</span>
+                            <strong id="netSalaryDisplay"
+                                style="font-size: 1.5rem; color: var(--primary);">₹0.00</strong>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 1.5rem;">
+                        <label class="form-label required">Payment Status</label>
+                        <select id="salaryPaymentStatus" class="form-control" required>
+                            <option value="Pending">Pending</option>
+                            <option value="Paid">Paid</option>
+                            <option value="Partial">Partial</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Remarks</label>
+                        <textarea id="salaryRemarks" class="form-control"
+                            placeholder="Any additional notes..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeSalaryModal()">Cancel</button>
+                <button class="btn btn-success" onclick="generateSalarySlip()">🖨️ Print Slip</button>
+                <button class="btn btn-primary" onclick="saveSalary()">Save Salary</button>
             </div>
         </div>
     </div>
@@ -1282,8 +2023,23 @@
                                 <option value="Salaries">Salaries & Wages</option>
                                 <option value="Office Supplies">Office Supplies</option>
                                 <option value="Rent">Rent</option>
+                                <option value="Loan">Loan</option>
                                 <option value="Miscellaneous">Miscellaneous</option>
                             </select>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label required">Status</label>
+                            <select id="expenseStatus" class="form-control" required onchange="toggleExpenseReminder()">
+                                <option value="Paid">Paid</option>
+                                <option value="Pending">Pending</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="expenseReminderGroup" style="display: none;">
+                            <label class="form-label">Reminder Date</label>
+                            <input type="date" id="expenseReminderDate" class="form-control">
                         </div>
                     </div>
 
@@ -1361,6 +2117,7 @@
                                 <option value="Salaries">Salaries & Wages</option>
                                 <option value="Office Supplies">Office Supplies</option>
                                 <option value="Rent">Rent</option>
+                                <option value="Loan">Loan</option>
                                 <option value="Miscellaneous">Miscellaneous</option>
                             </select>
                         </div>
@@ -1428,6 +2185,24 @@
         </div>
     </div>
 
+    <!-- Expense Reminder Modal -->
+    <div id="expenseReminderModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 class="modal-title">🔔 Pending Payment Reminders</h3>
+                <button class="modal-close" onclick="closeExpenseReminderModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="expenseReminderList" style="display: flex; flex-direction: column; gap: 1rem;">
+                    <!-- Reminders will be added here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeExpenseReminderModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Report Generator Modal -->
     <div id="reportGeneratorModal" class="modal">
         <div class="modal-content" style="max-width: 500px;">
@@ -1481,6 +2256,439 @@
         </div>
     </div>
 
+    <!-- Quick Product Modal (for adding products from outward invoice) -->
+    <div id="quickProductModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 class="modal-title">➕ Add New Product</h3>
+                <button class="modal-close" onclick="closeQuickProductModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div
+                    style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem;">
+                    <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">
+                        💡 This product will be added to the selected customer's product catalog and will be available
+                        in the dropdown for future invoices.
+                    </p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label required">Product Description</label>
+                    <input type="text" id="quickProductDescription" class="form-control"
+                        placeholder="e.g., Washer Plain, 5036" autofocus>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">HSN Code</label>
+                    <input type="text" id="quickProductHSN" class="form-control" placeholder="e.g., 87082900">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label class="form-label">Price (₹)</label>
+                        <input type="number" id="quickProductPrice" class="form-control" placeholder="0.00" step="0.01"
+                            min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">PO Qty/Month</label>
+                        <input type="number" id="quickProductPO" class="form-control" placeholder="e.g., 50000" min="0">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeQuickProductModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveQuickProduct()">Add Product</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PO Limit Exceeded Modal -->
+    <div id="poLimitModal" class="modal" style="z-index: 2000;">
+        <div class="modal-content" style="max-width: 550px; border-top: 5px solid var(--danger);">
+            <div class="modal-header">
+                <h3 class="modal-title" style="color: var(--danger);">⚠️ PO Limit Exceeded</h3>
+                <button class="modal-close"
+                    onclick="document.getElementById('poLimitModal').classList.remove('active')">×</button>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">🚫</div>
+                    <h4 style="color: var(--text-primary); margin-bottom: 0.5rem;">Cannot Save Invoice</h4>
+                    <p style="color: var(--text-secondary);">The quantity for the following product exceeds the monthly
+                        Purchase Order (PO) limit.</p>
+                </div>
+
+                <div
+                    style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                    <div class="form-group">
+                        <label class="form-label">Product Name</label>
+                        <div id="poErrorProduct" style="font-weight: 600; font-size: 1.1rem; color: var(--primary);">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                        <div>
+                            <label class="form-label">Monthly Limit</label>
+                            <div id="poErrorLimit" style="font-weight: 600;"></div>
+                        </div>
+                        <div>
+                            <label class="form-label">Current Month Usage</label>
+                            <div id="poErrorUsed" style="font-weight: 600;"></div>
+                        </div>
+                    </div>
+
+                    <div
+                        style="background: rgba(220, 53, 69, 0.1); padding: 1rem; border-radius: var(--radius-sm); border-left: 3px solid var(--danger);">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: var(--danger); font-weight: 600;">Attempting to Add:</span>
+                            <span id="poErrorAttempt" style="font-weight: bold; font-size: 1.1rem;"></span>
+                        </div>
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                            <span style="color: var(--danger); font-weight: 600;">Exceeds By:</span>
+                            <span id="poErrorExceed"
+                                style="font-weight: bold; font-size: 1.1rem; color: var(--danger);"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <p style="margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-secondary); text-align: center;">
+                    Please reduce the quantity or update the PO limit in the Customer module.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger"
+                    onclick="document.getElementById('poLimitModal').classList.remove('active')" style="width: 100%;">
+                    Close & Fix Quantity
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Update Required Modal -->
+    <div id="monthlyUpdateModal" class="modal" style="z-index: 2000;">
+        <div class="modal-content" style="max-width: 550px; border-top: 5px solid var(--warning);">
+            <div class="modal-header">
+                <h3 class="modal-title" style="color: var(--warning);">⚠️ Monthly Update Required</h3>
+                <button class="modal-close"
+                    onclick="document.getElementById('monthlyUpdateModal').classList.remove('active')">×</button>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">📅</div>
+                    <h4 style="color: var(--text-primary); margin-bottom: 0.5rem;">Product Needs Update</h4>
+                    <p style="color: var(--text-secondary);">The following product has not been updated for the current
+                        month.</p>
+                </div>
+
+                <div
+                    style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label class="form-label">Product Name</label>
+                        <div id="updateRequiredProduct"
+                            style="font-weight: 600; font-size: 1.1rem; color: var(--primary);"></div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Action Required</label>
+                        <p style="font-size: 0.95rem; line-height: 1.5;">
+                            Please go to the <b>Customer Management</b> module, edit this customer's products, and <span
+                                style="color: var(--success); font-weight: bold;">Save</span> the product details to
+                            confirm the Price and PO Limit for <b><span id="updateRequiredMonth"></span></b>.
+                        </p>
+                    </div>
+                </div>
+
+                <p style="margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-secondary); text-align: center;">
+                    This ensures that the invoice uses the correct approved rates and limits for this month.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary"
+                    onclick="document.getElementById('monthlyUpdateModal').classList.remove('active')">
+                    Close
+                </button>
+                <button class="btn btn-primary"
+                    onclick="document.getElementById('monthlyUpdateModal').classList.remove('active'); document.querySelector('[data-module=\'customers\']').click();">
+                    Go to Customers
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Machine Modal -->
+    <div id="machineModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="machineModalTitle">Add Machine</h3>
+                <button class="modal-close" onclick="closeMachineModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="machineForm">
+                    <input type="hidden" id="machineId">
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label required">Machine Name</label>
+                            <input type="text" id="machineName" class="form-control" placeholder="e.g., CNC Machine 1"
+                                required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Machine ID</label>
+                            <input type="text" id="machineCode" class="form-control" placeholder="e.g., MC-001">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label required">Machine Type</label>
+                            <select id="machineType" class="form-control" required>
+                                <option value="">-- Select Type --</option>
+                                <option value="CNC">CNC Machine</option>
+                                <option value="Lathe">Lathe Machine</option>
+                                <option value="Press">Press Machine</option>
+                                <option value="Drilling">Drilling Machine</option>
+                                <option value="Milling">Milling Machine</option>
+                                <option value="Welding">Welding Machine</option>
+                                <option value="Cutting">Cutting Machine</option>
+                                <option value="Grinding">Grinding Machine</option>
+                                <option value="Bending">Bending Machine</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Status</label>
+                            <select id="machineStatus" class="form-control">
+                                <option value="Running">Running</option>
+                                <option value="Idle">Idle</option>
+                                <option value="Maintenance">Under Maintenance</option>
+                                <option value="Breakdown">Breakdown</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label">Current Operator</label>
+                            <select id="machineOperator" class="form-control">
+                                <option value="">-- No Operator --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Capacity (Units/Day)</label>
+                            <input type="number" id="machineCapacity" class="form-control" placeholder="e.g., 500">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Location / Bay</label>
+                        <input type="text" id="machineLocation" class="form-control" placeholder="e.g., Bay A, Floor 1">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Products This Machine Can Make</label>
+                        <div id="productCheckboxes"
+                            style="max-height: 150px; overflow-y: auto; padding: 0.5rem; background: var(--bg-tertiary); border-radius: var(--radius-md);">
+                            <p style="color: var(--text-secondary);">Loading products...</p>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeMachineModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveMachine()">Save Machine</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Production Log Modal -->
+    <div id="productionLogModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="productionLogModalTitle">Add Production Log</h3>
+                <button class="modal-close" onclick="closeProductionLogModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="productionLogForm">
+                    <input type="hidden" id="productionLogId">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label required">Date</label>
+                            <input type="date" id="logDate" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required">Shift</label>
+                            <select id="logShift" class="form-control">
+                                <option value="Morning">Morning</option>
+                                <option value="Afternoon">Afternoon</option>
+                                <option value="Night">Night</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Machine</label>
+                        <select id="logMachine" class="form-control" required>
+                            <option value="">-- Select Machine --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Product</label>
+                        <select id="logProduct" class="form-control" required>
+                            <option value="">-- Select Product --</option>
+                        </select>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label required">Quantity Produced</label>
+                            <input type="number" id="logQuantity" class="form-control" placeholder="e.g., 250" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Operator</label>
+                            <select id="logOperator" class="form-control">
+                                <option value="">-- Select Operator --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Notes</label>
+                        <textarea id="logNotes" class="form-control" placeholder="Any remarks..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeProductionLogModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveProductionLog()">Save Log</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Maintenance Modal -->
+    <div id="maintenanceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Add Maintenance Log</h3>
+                <button class="modal-close" onclick="closeMaintenanceModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="maintenanceForm">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label required">Date</label>
+                            <input type="date" id="maintenanceDate" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required">Maintenance Type</label>
+                            <select id="maintenanceType" class="form-control" required>
+                                <option value="Scheduled">Scheduled Maintenance</option>
+                                <option value="Breakdown">Breakdown Repair</option>
+                                <option value="Repair">General Repair</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Machine</label>
+                        <select id="maintenanceMachine" class="form-control" required>
+                            <option value="">-- Select Machine --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea id="maintenanceDescription" class="form-control"
+                            placeholder="What maintenance was performed..."></textarea>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label">Cost (₹)</label>
+                            <input type="number" id="maintenanceCost" class="form-control" placeholder="e.g., 5000">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Downtime (Hours)</label>
+                            <input type="number" id="maintenanceDowntime" class="form-control" placeholder="e.g., 4"
+                                step="0.5">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeMaintenanceModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveMaintenanceLog()">Save Maintenance</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toggle First Row Script & Styles -->
+    <style>
+        /* Toggle Switch Slider Animation */
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        input:checked+.toggle-slider {
+            background-color: var(--primary, #667eea);
+        }
+
+        input:checked+.toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        .toggle-slider:hover {
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1), 0 0 8px rgba(102, 126, 234, 0.3);
+        }
+    </style>
+
+    <script>
+        // Toggle function for first row visibility (displays as 3rd row when enabled)
+        function toggleFirstRow() {
+            const firstRow = document.getElementById('firstStatsRow');
+            const toggleSwitch = document.getElementById('toggleFirstRowSwitch');
+
+            if (toggleSwitch.checked) {
+                // Show the row (as 3rd row)
+                firstRow.style.display = 'grid';
+                localStorage.setItem('firstRowVisible', 'true');
+            } else {
+                // Hide the row
+                firstRow.style.display = 'none';
+                localStorage.setItem('firstRowVisible', 'false');
+            }
+        }
+
+        // Restore the state on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            const firstRow = document.getElementById('firstStatsRow');
+            const toggleSwitch = document.getElementById('toggleFirstRowSwitch');
+            const isVisible = localStorage.getItem('firstRowVisible');
+
+            // Default to hidden (false), unless explicitly set to true
+            if (isVisible === 'true') {
+                firstRow.style.display = 'grid';
+                toggleSwitch.checked = true;
+            } else {
+                // Default state: hidden
+                firstRow.style.display = 'none';
+                toggleSwitch.checked = false;
+                localStorage.setItem('firstRowVisible', 'false');
+            }
+        });
+    </script>
+
+
     <!-- Authentication System (loaded first) -->
     <script src="auth.js"></script>
 
@@ -1492,9 +2700,12 @@
     <script src="recurring-expenses.js"></script>
     <script src="expense-reports.js"></script>
     <script src="customers.js"></script>
+    <script src="production.js"></script>
     <script src="advanced-features.js"></script>
     <script src="expense-init.js"></script>
     <script src="production-features.js"></script>
+    <script src="salary.js"></script>
+    <script src="dashboard_popups.js"></script>
     <script src="app.js"></script>
 </body>
 

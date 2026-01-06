@@ -44,6 +44,14 @@ function loadExpenses() {
             <td><span class="category-badge">${expense.category}</span></td>
             <td>${expense.description}</td>
             <td style="font-weight: 600; color: #e74c3c;">₹${parseFloat(expense.amount).toFixed(2)}</td>
+            <td>
+                <span style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem; font-weight: 600; background: ${expense.status === 'Pending' ? '#fff3cd' : '#d4edda'}; color: ${expense.status === 'Pending' ? '#856404' : '#155724'};">
+                    ${expense.status || 'Paid'}
+                </span>
+            </td>
+            <td>
+                ${expense.reminderDate ? `<span style="font-size: 0.85rem; color: ${new Date(expense.reminderDate) <= new Date() && expense.status === 'Pending' ? '#dc3545' : '#666'}">${formatDate(expense.reminderDate)}</span>` : '-'}
+            </td>
             <td>${expense.paymentMethod}</td>
             <td>${expense.paidTo || '-'}</td>
             <td>
@@ -56,6 +64,9 @@ function loadExpenses() {
             </td>
         </tr>
     `).join('');
+
+    // Check for reminders
+    checkExpenseReminders();
 
     // Update summary cards
     updateExpenseSummaries();
@@ -71,6 +82,8 @@ function saveExpense() {
     const paymentMethod = document.getElementById('expensePaymentMethod').value;
     const paidTo = document.getElementById('expensePaidTo').value;
     const notes = document.getElementById('expenseNotes').value;
+    const status = document.getElementById('expenseStatus').value;
+    const reminderDate = document.getElementById('expenseReminderDate').value;
 
     // Validation
     if (!date || !category || !description || !amount || !paymentMethod) {
@@ -92,6 +105,8 @@ function saveExpense() {
         paymentMethod: paymentMethod,
         paidTo: paidTo,
         notes: notes,
+        status: status,
+        reminderDate: reminderDate,
         createdAt: id ? getExpenses().find(exp => exp.id === id)?.createdAt || new Date().toISOString() : new Date().toISOString(),
         lastModified: new Date().toISOString()
     };
@@ -159,11 +174,17 @@ function openExpenseModal(id = null) {
             document.getElementById('expensePaymentMethod').value = expense.paymentMethod;
             document.getElementById('expensePaidTo').value = expense.paidTo || '';
             document.getElementById('expenseNotes').value = expense.notes || '';
+            document.getElementById('expenseStatus').value = expense.status || 'Paid';
+            document.getElementById('expenseReminderDate').value = expense.reminderDate || '';
+
+            toggleExpenseReminder();
         }
     } else {
         // New mode
         document.getElementById('expenseModalTitle').textContent = 'Add Expense';
         document.getElementById('expenseDate').valueAsDate = new Date();
+        document.getElementById('expenseStatus').value = 'Paid';
+        toggleExpenseReminder();
     }
 
     modal.classList.add('active');
@@ -203,7 +224,10 @@ function calculateExpenseSummary(period) {
         }
 
         if (include) {
-            total += parseFloat(expense.amount);
+            // Only count PAID expenses in the total
+            if (!expense.status || expense.status === 'Paid') {
+                total += parseFloat(expense.amount);
+            }
         }
     });
 
@@ -660,4 +684,88 @@ function getPaymentMethodDistribution() {
     });
 
     return distribution;
+}
+
+// ================================
+// REMINDER FUNCTIONALITY
+// ================================
+
+// Toggle reminder date field based on status
+function toggleExpenseReminder() {
+    const status = document.getElementById('expenseStatus').value;
+    const group = document.getElementById('expenseReminderGroup');
+    if (status === 'Pending') {
+        group.style.display = 'block';
+    } else {
+        group.style.display = 'none';
+        document.getElementById('expenseReminderDate').value = '';
+    }
+}
+
+// Check for pending expenses due for reminder
+function checkExpenseReminders() {
+    const expenses = getExpenses();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const pendingExpenses = expenses.filter(exp => {
+        // Show reminder for ANY pending expense that has a reminder date set
+        // accessible "until" that date (and after) per user request
+        return exp.status === 'Pending' && exp.reminderDate;
+    });
+
+    if (pendingExpenses.length > 0) {
+        showExpenseReminderModal(pendingExpenses);
+    }
+}
+
+// Show reminder modal
+function showExpenseReminderModal(expenses) {
+    const modal = document.getElementById('expenseReminderModal');
+    const container = document.getElementById('expenseReminderList');
+
+    if (!container || !modal) return;
+
+    container.innerHTML = expenses.map(exp => `
+        <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--warning); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div style="font-weight: 600; color: var(--text-primary);">${exp.description}</div>
+                <div style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                    Due: ${formatDate(exp.reminderDate)} • Amount: <span style="font-weight: bold; color: #e74c3c;">₹${parseFloat(exp.amount).toFixed(2)}</span>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                   To: ${exp.paidTo || 'N/A'} (${exp.category})
+                </div>
+            </div>
+            <button class="btn btn-success btn-sm" onclick="markExpenseAsPaid('${exp.id}')">
+                ✅ Mark Paid
+            </button>
+        </div>
+    `).join('');
+
+    modal.classList.add('active');
+}
+
+// Close reminder modal
+function closeExpenseReminderModal() {
+    const modal = document.getElementById('expenseReminderModal');
+    if (modal) modal.classList.remove('active');
+}
+
+// Mark expense as paid from reminder
+function markExpenseAsPaid(id) {
+    let expenses = getExpenses();
+    const index = expenses.findIndex(exp => exp.id === id);
+
+    if (index !== -1) {
+        expenses[index].status = 'Paid';
+        expenses[index].paymentMethod = expenses[index].paymentMethod || 'Cash'; // Default if missing
+        saveToExpenseStorage(expenses);
+
+        showToast('✅ Expense marked as paid!', 'success');
+
+        // Refresh UI
+        loadExpenses();
+        // Since loadExpenses calls checkExpenseReminders, the modal will update or close automatically if no more reminders
+    }
 }
