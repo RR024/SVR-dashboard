@@ -212,6 +212,33 @@ function getInwardInvoices() {
     return loadFromStorage('inwardInvoices') || [];
 }
 
+// Get unique materials from previous inward invoices for dropdown
+function getUniqueMaterials() {
+    const invoices = getInwardInvoices();
+    const materialsSet = new Set();
+    
+    invoices.forEach(invoice => {
+        // Handle both old (single material) and new (products array) format
+        if (invoice.products && Array.isArray(invoice.products)) {
+            invoice.products.forEach(product => {
+                if (product.material && product.material.trim()) {
+                    materialsSet.add(product.material.trim());
+                }
+            });
+        } else if (invoice.material && invoice.material.trim()) {
+            // Old format - single material field (might be comma-separated)
+            invoice.material.split(',').forEach(mat => {
+                if (mat.trim()) {
+                    materialsSet.add(mat.trim());
+                }
+            });
+        }
+    });
+    
+    // Return sorted array of unique materials
+    return Array.from(materialsSet).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+}
+
 function getOutwardInvoices() {
     return loadFromStorage('outwardInvoices') || [];
 }
@@ -696,11 +723,20 @@ function addInwardProductRow(data = null) {
     const container = document.getElementById('inwardProductItems');
     if (!container) return;
 
+    // Get unique materials for dropdown
+    const uniqueMaterials = getUniqueMaterials();
+    const materialOptionsHtml = uniqueMaterials.map(mat =>
+        `<option value="${mat}" ${data?.material === mat ? 'selected' : ''}>${mat}</option>`
+    ).join('');
+
     // UOM options
     const uomOptions = ['Nos', 'Kgs', 'Ltrs', 'Mtrs', 'Pcs', 'Sets', 'Boxes', 'Pairs', 'Grams', 'Tonnes'];
     const uomOptionsHtml = uomOptions.map(uom =>
         `<option value="${uom}" ${data?.unit === uom ? 'selected' : ''}>${uom}</option>`
     ).join('');
+
+    // Generate unique ID for datalist
+    const datalistId = 'materialList_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 
     const rowHtml = `
         <div class="inward-product-item" style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1rem; position: relative;">
@@ -708,7 +744,10 @@ function addInwardProductRow(data = null) {
             <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 0.75rem;">
                 <div class="form-group" style="margin: 0;">
                     <label class="form-label">Material Description</label>
-                    <input type="text" class="form-control inward-product-material" placeholder="e.g., Steel Rods, Bolts..." value="${data?.material || ''}" required>
+                    <input type="text" class="form-control inward-product-material" list="${datalistId}" placeholder="Select or type material..." value="${data?.material || ''}" autocomplete="off" required>
+                    <datalist id="${datalistId}">
+                        ${materialOptionsHtml}
+                    </datalist>
                 </div>
                 <div class="form-group" style="margin: 0;">
                     <label class="form-label">Quantity</label>
