@@ -1213,11 +1213,95 @@
                 </div>
             </section>
 
+            <!-- Reports & Analytics Module -->
+            <section id="reports" class="module">
+                <div class="page-header">
+                    <h2>Reports & Analytics</h2>
+                    <p>Comprehensive business insights and reports</p>
+                </div>
+
+                <!-- Analytics Charts -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h3 class="card-title">Business Analytics</h3>
+                    </div>
+                    <div style="padding: var(--space-xl);">
+                        <div
+                            style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-xl); margin-bottom: var(--space-xl);">
+                            <div>
+                                <h4 style="margin-bottom: 1rem;">Monthly Revenue</h4>
+                                <canvas id="revenueChart"></canvas>
+                            </div>
+                            <div>
+                                <h4 style="margin-bottom: 1rem;">Invoice Status Distribution</h4>
+                                <canvas id="statusChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Report Generation -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Generate Reports</h3>
+                    </div>
+                    <div style="padding: var(--space-xl);">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-lg);">
+                            <button class="btn btn-primary" onclick="generateMonthlyReport()">
+                                📊 Monthly Revenue Report
+                            </button>
+                            <button class="btn btn-primary" onclick="generateOutstandingReport()">
+                                💰 Outstanding Payments Report
+                            </button>
+                            <button class="btn btn-primary" onclick="generateAttendanceReport()">
+                                ✅ Attendance Summary Report
+                            </button>
+                            <button class="btn btn-success" onclick="generateGSTReport()">
+                                📄 GST Tax Summary
+                            </button>
+                            <button class="btn btn-secondary" onclick="exportAllReports()">
+                                📥 Export All Reports
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Settings/Admin Module -->
             <section id="settings" class="module">
                 <div class="page-header">
                     <h2>Settings & Administration</h2>
                     <p>Manage system configuration and data</p>
+                </div>
+
+                <!-- User Management -->
+                <div class="card mb-3">
+                    <div class="card-header flex-between">
+                        <h3 class="card-title">User Management</h3>
+                        <button class="btn btn-primary btn-sm" onclick="openUserModal()">
+                            ➕ Add User
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Full Name</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <tr>
+                                    <td colspan="5" class="text-center" style="color: var(--text-secondary);">
+                                        Loading users...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <!-- Data Export/Import -->
@@ -2706,6 +2790,8 @@
     <script src="production-features.js"></script>
     <script src="salary.js"></script>
     <script src="dashboard_popups.js"></script>
+    <script src="pdf-generator.js"></script>
+    <script src="enhanced-search.js"></script>
     <script src="app.js"></script>
 </body>
 

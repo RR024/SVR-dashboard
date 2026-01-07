@@ -809,28 +809,362 @@ function createStatusChart() {
 
 // Generate reports
 function generateMonthlyReport() {
-    showToast('Generating monthly report...', 'info');
-    // To be implemented with detailed report generation
+    try {
+        const { jsPDF } = window.jspdf;
+        if (!jsPDF) {
+            showToast('PDF library not loaded', 'error');
+            return;
+        }
+
+        const doc = new jsPDF();
+        const outwardInvoices = getOutwardInvoices();
+
+        // Group by month
+        const monthlyData = {};
+        outwardInvoices.forEach(inv => {
+            const month = new Date(inv.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+            if (!monthlyData[month]) {
+                monthlyData[month] = { invoices: [], total: 0 };
+            }
+            monthlyData[month].invoices.push(inv);
+            monthlyData[month].total += parseFloat(inv.total || 0);
+        });
+
+        // Header
+        doc.setFontSize(20);
+        doc.setTextColor(102, 126, 234);
+        doc.text('SVR Manufacturing', 105, 15, { align: 'center' });
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        doc.text('Monthly Revenue Report', 105, 22, { align: 'center' });
+        doc.setFontSize(9);
+        doc.setTextColor(128, 128, 128);
+        doc.text(`Generated on: ${new Date().toLocaleString()}`, 105, 28, { align: 'center' });
+
+        let yPos = 40;
+
+        // Table for each month
+        Object.keys(monthlyData).forEach((month, index) => {
+            const data = monthlyData[month];
+
+            // Add new page if needed
+            if (yPos > 250) {
+                doc.addPage();
+                yPos = 20;
+            }
+
+            // Month header
+            doc.setFontSize(14);
+            doc.setTextColor(0, 0, 0);
+            doc.text(month, 14, yPos);
+            yPos += 7;
+
+            // Table
+            const tableData = data.invoices.map(inv => [
+                inv.invoiceNo,
+                new Date(inv.date).toLocaleDateString(),
+                inv.buyerName,
+                `₹${parseFloat(inv.total || 0).toFixed(2)}`,
+                inv.paymentStatus
+            ]);
+
+            doc.autoTable({
+                startY: yPos,
+                head: [['Invoice No', 'Date', 'Customer', 'Amount', 'Status']],
+                body: tableData,
+                foot: [[{ content: `Total: ₹${data.total.toFixed(2)}`, colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }]],
+                styles: { fontSize: 9, cellPadding: 2 },
+                headStyles: { fillColor: [102, 126, 234] },
+                theme: 'striped'
+            });
+
+            yPos = doc.lastAutoTable.finalY + 10;
+        });
+
+        // Grand total
+        const grandTotal = Object.values(monthlyData).reduce((sum, data) => sum + data.total, 0);
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        doc.text(`Grand Total: ₹${grandTotal.toFixed(2)}`, 14, yPos);
+
+        // Save
+        doc.save(`Monthly_Revenue_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+        showToast('Monthly report generated successfully!', 'success');
+    } catch (error) {
+        console.error('Error generating monthly report:', error);
+        showToast('Error generating report: ' + error.message, 'error');
+    }
 }
 
 function generateOutstandingReport() {
-    showToast('Generating outstanding payments report...', 'info');
-    // To be implemented
+    try {
+        const { jsPDF } = window.jspdf;
+        if (!jsPDF) {
+            showToast('PDF library not loaded', 'error');
+            return;
+        }
+
+        const doc = new jsPDF();
+
+        // Get pending invoices
+        const allInvoices = [
+            ...getInwardInvoices().map(inv => ({ ...inv, type: 'Purchase' })),
+            ...getOutwardInvoices().map(inv => ({ ...inv, type: 'Sales' }))
+        ];
+
+        const pendingInvoices = allInvoices.filter(inv =>
+            inv.paymentStatus === 'Pending' || inv.paymentStatus === 'Partial'
+        );
+
+        // Header
+        doc.setFontSize(20);
+        doc.setTextColor(102, 126, 234);
+        doc.text('SVR Manufacturing', 105, 15, { align: 'center' });
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        doc.text('Outstanding Payments Report', 105, 22, { align: 'center' });
+        doc.setFontSize(9);
+        doc.setTextColor(128, 128, 128);
+        doc.text(`Generated on: ${new Date().toLocaleString()}`, 105, 28, { align: 'center' });
+
+        if (pendingInvoices.length === 0) {
+            doc.setFontSize(12);
+            doc.text('No outstanding payments found!', 105, 50, { align: 'center' });
+        } else {
+            // Table
+            const tableData = pendingInvoices.map(inv => [
+                inv.type,
+                inv.invoiceNo || inv.supplierInvoiceNo,
+                new Date(inv.date).toLocaleDateString(),
+                inv.buyerName || inv.customer,
+                `₹${parseFloat(inv.total || inv.totalAmount || 0).toFixed(2)}`,
+                inv.paymentStatus
+            ]);
+
+            doc.autoTable({
+                startY: 40,
+                head: [['Type', 'Invoice No', 'Date', 'Party', 'Amount', 'Status']],
+                body: tableData,
+                styles: { fontSize: 9, cellPadding: 2 },
+                headStyles: { fillColor: [239, 68, 68] },
+                theme: 'striped'
+            });
+
+            // Summary
+            const totalOutstanding = pendingInvoices.reduce((sum, inv) =>
+                sum + parseFloat(inv.total || inv.totalAmount || 0), 0
+            );
+
+            doc.setFontSize(12);
+            doc.text(`Total Outstanding: ₹${totalOutstanding.toFixed(2)}`, 14, doc.lastAutoTable.finalY + 10);
+            doc.text(`Number of Pending Invoices: ${pendingInvoices.length}`, 14, doc.lastAutoTable.finalY + 18);
+        }
+
+        doc.save(`Outstanding_Payments_${new Date().toISOString().split('T')[0]}.pdf`);
+        showToast('Outstanding payments report generated!', 'success');
+    } catch (error) {
+        console.error('Error generating outstanding report:', error);
+        showToast('Error generating report: ' + error.message, 'error');
+    }
 }
 
 function generateAttendanceReport() {
-    showToast('Generating attendance report...', 'info');
-    // To be implemented
+    try {
+        const { jsPDF } = window.jspdf;
+        if (!jsPDF) {
+            showToast('PDF library not loaded', 'error');
+            return;
+        }
+
+        const doc = new jsPDF();
+        const attendance = getAttendanceRecords();
+        const employees = getEmployees();
+
+        // Header
+        doc.setFontSize(20);
+        doc.setTextColor(102, 126, 234);
+        doc.text('SVR Manufacturing', 105, 15, { align: 'center' });
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        doc.text('Attendance Summary Report', 105, 22, { align: 'center' });
+        doc.setFontSize(9);
+        doc.setTextColor(128, 128, 128);
+        doc.text(`Generated on: ${new Date().toLocaleString()}`, 105, 28, { align: 'center' });
+
+        if (attendance.length === 0) {
+            doc.setFontSize(12);
+            doc.text('No attendance records found!', 105, 50, { align: 'center' });
+        } else {
+            // Calculate statistics per employee
+            const employeeStats = {};
+
+            attendance.forEach(record => {
+                if (!employeeStats[record.empId]) {
+                    employeeStats[record.empId] = {
+                        name: record.name,
+                        present: 0,
+                        absent: 0,
+                        halfDay: 0,
+                        leave: 0
+                    };
+                }
+
+                const status = record.status.toLowerCase();
+                if (status.includes('present')) employeeStats[record.empId].present++;
+                else if (status.includes('absent')) employeeStats[record.empId].absent++;
+                else if (status.includes('half')) employeeStats[record.empId].halfDay++;
+                else if (status.includes('leave')) employeeStats[record.empId].leave++;
+            });
+
+            // Table
+            const tableData = Object.values(employeeStats).map(stats => [
+                stats.name,
+                stats.present,
+                stats.absent,
+                stats.halfDay,
+                stats.leave,
+                stats.present + stats.absent + stats.halfDay + stats.leave
+            ]);
+
+            doc.autoTable({
+                startY: 40,
+                head: [['Employee', 'Present', 'Absent', 'Half Day', 'Leave', 'Total Days']],
+                body: tableData,
+                styles: { fontSize: 9, cellPadding: 2 },
+                headStyles: { fillColor: [59, 130, 246] },
+                theme: 'striped'
+            });
+
+            // Summary
+            doc.setFontSize(12);
+            doc.text(`Total Employees: ${employees.length}`, 14, doc.lastAutoTable.finalY + 10);
+            doc.text(`Total Attendance Records: ${attendance.length}`, 14, doc.lastAutoTable.finalY + 18);
+        }
+
+        doc.save(`Attendance_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+        showToast('Attendance report generated!', 'success');
+    } catch (error) {
+        console.error('Error generating attendance report:', error);
+        showToast('Error generating report: ' + error.message, 'error');
+    }
 }
 
 function generateGSTReport() {
-    showToast('Generating GST summary...', 'info');
-    // To be implemented
+    try {
+        const { jsPDF } = window.jspdf;
+        if (!jsPDF) {
+            showToast('PDF library not loaded', 'error');
+            return;
+        }
+
+        const doc = new jsPDF();
+        const outwardInvoices = getOutwardInvoices();
+
+        // Header
+        doc.setFontSize(20);
+        doc.setTextColor(102, 126, 234);
+        doc.text('SVR Manufacturing', 105, 15, { align: 'center' });
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        doc.text('GST Tax Summary Report', 105, 22, { align: 'center' });
+        doc.setFontSize(9);
+        doc.setTextColor(128, 128, 128);
+        doc.text(`Generated on: ${new Date().toLocaleString()}`, 105, 28, { align: 'center' });
+
+        if (outwardInvoices.length === 0) {
+            doc.setFontSize(12);
+            doc.text('No GST records found!', 105, 50, { align: 'center' });
+        } else {
+            // Calculate GST summary
+            let totalTaxable = 0;
+            let totalCGST = 0;
+            let totalSGST = 0;
+            let totalIGST = 0;
+
+            const tableData = outwardInvoices.map(inv => {
+                const taxable = parseFloat(inv.taxableValue || 0);
+                const cgst = parseFloat(inv.cgst || 0);
+                const sgst = parseFloat(inv.sgst || 0);
+                const igst = parseFloat(inv.igst || 0);
+
+                totalTaxable += taxable;
+                totalCGST += cgst;
+                totalSGST += sgst;
+                totalIGST += igst;
+
+                return [
+                    inv.invoiceNo,
+                    new Date(inv.date).toLocaleDateString(),
+                    inv.buyerName,
+                    inv.gstin || 'N/A',
+                    `₹${taxable.toFixed(2)}`,
+                    `₹${cgst.toFixed(2)}`,
+                    `₹${sgst.toFixed(2)}`,
+                    `₹${igst.toFixed(2)}`,
+                    `₹${parseFloat(inv.total || 0).toFixed(2)}`
+                ];
+            });
+
+            doc.autoTable({
+                startY: 40,
+                head: [['Invoice No', 'Date', 'Customer', 'GSTIN', 'Taxable', 'CGST', 'SGST', 'IGST', 'Total']],
+                body: tableData,
+                foot: [[
+                    { content: 'Total', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } },
+                    `₹${totalTaxable.toFixed(2)}`,
+                    `₹${totalCGST.toFixed(2)}`,
+                    `₹${totalSGST.toFixed(2)}`,
+                    `₹${totalIGST.toFixed(2)}`,
+                    `₹${(totalTaxable + totalCGST + totalSGST + totalIGST).toFixed(2)}`
+                ]],
+                styles: { fontSize: 8, cellPadding: 1.5 },
+                headStyles: { fillColor: [16, 185, 129] },
+                footStyles: { fillColor: [229, 231, 235], textColor: [0, 0, 0], fontStyle: 'bold' },
+                theme: 'striped',
+                columnStyles: {
+                    0: { cellWidth: 25 },
+                    1: { cellWidth: 20 },
+                    2: { cellWidth: 30 },
+                    3: { cellWidth: 25 }
+                }
+            });
+
+            // Summary box
+            const yPos = doc.lastAutoTable.finalY + 10;
+            doc.setFontSize(11);
+            doc.setFillColor(240, 240, 240);
+            doc.rect(14, yPos, 180, 30, 'F');
+            doc.setTextColor(0, 0, 0);
+            doc.text('GST Summary', 17, yPos + 7);
+            doc.setFontSize(9);
+            doc.text(`Total CGST Collected: ₹${totalCGST.toFixed(2)}`, 17, yPos + 14);
+            doc.text(`Total SGST Collected: ₹${totalSGST.toFixed(2)}`, 17, yPos + 20);
+            doc.text(`Total IGST Collected: ₹${totalIGST.toFixed(2)}`, 17, yPos + 26);
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'bold');
+            doc.text(`Total Tax Collected: ₹${(totalCGST + totalSGST + totalIGST).toFixed(2)}`, 120, yPos + 20);
+        }
+
+        doc.save(`GST_Summary_${new Date().toISOString().split('T')[0]}.pdf`);
+        showToast('GST summary generated!', 'success');
+    } catch (error) {
+        console.error('Error generating GST report:', error);
+        showToast('Error generating report: ' + error.message, 'error');
+    }
 }
 
 function exportAllReports() {
-    showToast('Exporting all reports...', 'info');
-    // To be implemented
+    showToast('Generating all reports. This may take a moment...', 'info');
+
+    // Generate all reports with slight delays to avoid overwhelming the browser
+    setTimeout(() => generateMonthlyReport(), 100);
+    setTimeout(() => generateOutstandingReport(), 500);
+    setTimeout(() => generateAttendanceReport(), 900);
+    setTimeout(() => generateGSTReport(), 1300);
+
+    setTimeout(() => {
+        showToast('All reports generated successfully!', 'success');
+    }, 2000);
 }
 
 // ===================================

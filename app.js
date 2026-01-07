@@ -119,6 +119,21 @@ function loadModuleData(moduleId) {
                 }
             }
             break;
+        case 'production':
+            if (typeof loadProductionModule === 'function') {
+                loadProductionModule();
+            }
+            break;
+        case 'reports':
+            if (typeof loadReportsModule === 'function') {
+                loadReportsModule();
+            }
+            break;
+        case 'settings':
+            if (typeof loadSettingsModule === 'function') {
+                loadSettingsModule();
+            }
+            break;
     }
 }
 
@@ -696,18 +711,6 @@ function addInwardProductRow(data = null) {
     const container = document.getElementById('inwardProductItems');
     if (!container) return;
 
-    // Get current selected customer products
-    const customerDropdown = document.getElementById('inwardCustomerDropdown');
-    const customerId = customerDropdown ? customerDropdown.value : null;
-    const customerProducts = customerId ? getCustomerProducts(customerId) : [];
-
-    // Build product dropdown options
-    let productOptions = '<option value="">-- Select Product --</option>';
-    customerProducts.forEach(product => {
-        const selected = (data && data.material === product.description) ? 'selected' : '';
-        productOptions += `<option value="${product.id}" ${selected}>${product.description}</option>`;
-    });
-
     // UOM options
     const uomOptions = ['Nos', 'Kgs', 'Ltrs', 'Mtrs', 'Pcs', 'Sets', 'Boxes', 'Pairs', 'Grams', 'Tonnes'];
     const uomOptionsHtml = uomOptions.map(uom =>
@@ -720,10 +723,7 @@ function addInwardProductRow(data = null) {
             <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 0.75rem;">
                 <div class="form-group" style="margin: 0;">
                     <label class="form-label">Material Description</label>
-                    <select class="form-control inward-product-material" onchange="onInwardProductSelected(this)" required>
-                        ${productOptions}
-                    </select>
-                    <input type="hidden" class="inward-product-material-text" value="${data?.material || ''}">
+                    <input type="text" class="form-control inward-product-material" placeholder="Enter material description" value="${data?.material || ''}" required>
                 </div>
                 <div class="form-group" style="margin: 0;">
                     <label class="form-label">Quantity</label>
@@ -900,9 +900,8 @@ function saveInwardInvoice() {
     let totalAmount = 0;
 
     productRows.forEach(row => {
-        // Get material from hidden text field (stores actual description)
-        const materialText = row.querySelector('.inward-product-material-text')?.value?.trim();
-        const material = materialText || row.querySelector('.inward-product-material')?.selectedOptions[0]?.text?.trim();
+        // Get material from text input
+        const material = row.querySelector('.inward-product-material')?.value?.trim();
         const quantity = parseFloat(row.querySelector('.inward-product-qty')?.value) || 0;
         const unit = row.querySelector('.inward-product-unit')?.value?.trim();
         const rate = parseFloat(row.querySelector('.inward-product-rate')?.value) || 0;
@@ -1078,6 +1077,7 @@ function loadInwardInvoices() {
                 <td><span class="badge badge-${statusClass}">${paymentStatus}</span></td>
                 <td>
                     <div class="action-buttons">
+                        <button class="icon-btn pdf" onclick="downloadInwardInvoicePDF('${inv.id}')" title="Download PDF">📄</button>
                         <button class="icon-btn edit" onclick="openInwardModal('${inv.id}')" title="Edit">✏️</button>
                         <button class="icon-btn delete" onclick="deleteInwardInvoice('${inv.id}')" title="Delete">🗑️</button>
                     </div>
@@ -2025,6 +2025,7 @@ function loadOutwardInvoices() {
                 <td><span class="badge badge-${badgeClass}">${inv.paymentStatus}</span></td>
                 <td>
                     <div class="action-buttons">
+                        <button class="icon-btn pdf" onclick="downloadOutwardInvoicePDF('${inv.id}')" title="Download PDF">📄</button>
                         <button class="icon-btn view" onclick="viewOutwardInvoice('${inv.id}')" title="View/Print">🖨️</button>
                         <button class="icon-btn edit" onclick="openOutwardModal('${inv.id}')" title="Edit">✏️</button>
                         <button class="icon-btn delete" onclick="deleteOutwardInvoice('${inv.id}')" title="Delete">🗑️</button>
