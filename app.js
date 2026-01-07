@@ -212,33 +212,6 @@ function getInwardInvoices() {
     return loadFromStorage('inwardInvoices') || [];
 }
 
-// Get unique materials from previous inward invoices for dropdown
-function getUniqueMaterials() {
-    const invoices = getInwardInvoices();
-    const materialsSet = new Set();
-    
-    invoices.forEach(invoice => {
-        // Handle both old (single material) and new (products array) format
-        if (invoice.products && Array.isArray(invoice.products)) {
-            invoice.products.forEach(product => {
-                if (product.material && product.material.trim()) {
-                    materialsSet.add(product.material.trim());
-                }
-            });
-        } else if (invoice.material && invoice.material.trim()) {
-            // Old format - single material field (might be comma-separated)
-            invoice.material.split(',').forEach(mat => {
-                if (mat.trim()) {
-                    materialsSet.add(mat.trim());
-                }
-            });
-        }
-    });
-    
-    // Return sorted array of unique materials
-    return Array.from(materialsSet).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-}
-
 function getOutwardInvoices() {
     return loadFromStorage('outwardInvoices') || [];
 }
@@ -723,11 +696,17 @@ function addInwardProductRow(data = null) {
     const container = document.getElementById('inwardProductItems');
     if (!container) return;
 
-    // Get unique materials for dropdown
-    const uniqueMaterials = getUniqueMaterials();
-    const materialOptionsHtml = uniqueMaterials.map(mat =>
-        `<option value="${mat}" ${data?.material === mat ? 'selected' : ''}>${mat}</option>`
-    ).join('');
+    // Get current selected customer products
+    const customerDropdown = document.getElementById('inwardCustomerDropdown');
+    const customerId = customerDropdown ? customerDropdown.value : null;
+    const customerProducts = customerId ? getCustomerProducts(customerId) : [];
+
+    // Build product dropdown options
+    let productOptions = '<option value="">-- Select Product --</option>';
+    customerProducts.forEach(product => {
+        const selected = (data && data.material === product.description) ? 'selected' : '';
+        productOptions += `<option value="${product.id}" ${selected}>${product.description}</option>`;
+    });
 
     // UOM options
     const uomOptions = ['Nos', 'Kgs', 'Ltrs', 'Mtrs', 'Pcs', 'Sets', 'Boxes', 'Pairs', 'Grams', 'Tonnes'];
@@ -735,19 +714,16 @@ function addInwardProductRow(data = null) {
         `<option value="${uom}" ${data?.unit === uom ? 'selected' : ''}>${uom}</option>`
     ).join('');
 
-    // Generate unique ID for datalist
-    const datalistId = 'materialList_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-
     const rowHtml = `
         <div class="inward-product-item" style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1rem; position: relative;">
             <button type="button" class="icon-btn delete" onclick="removeInwardProductRow(this)" style="position: absolute; top: 0.5rem; right: 0.5rem;" title="Remove">×</button>
             <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 0.75rem;">
                 <div class="form-group" style="margin: 0;">
                     <label class="form-label">Material Description</label>
-                    <input type="text" class="form-control inward-product-material" list="${datalistId}" placeholder="Select or type material..." value="${data?.material || ''}" autocomplete="off" required>
-                    <datalist id="${datalistId}">
-                        ${materialOptionsHtml}
-                    </datalist>
+                    <select class="form-control inward-product-material" onchange="onInwardProductSelected(this)" required>
+                        ${productOptions}
+                    </select>
+                    <input type="hidden" class="inward-product-material-text" value="${data?.material || ''}">
                 </div>
                 <div class="form-group" style="margin: 0;">
                     <label class="form-label">Quantity</label>
@@ -782,6 +758,45 @@ function removeInwardProductRow(button) {
     if (row) {
         row.remove();
         calculateInwardTotals();
+    }
+}
+
+// Handle product selection from dropdown for inward invoice
+function onInwardProductSelected(selectElement) {
+    const productId = selectElement.value;
+
+    if (!productId) return;
+
+    // Get the customer ID to fetch their products
+    const customerDropdown = document.getElementById('inwardCustomerDropdown');
+    const customerId = customerDropdown ? customerDropdown.value : null;
+
+    if (!customerId) return;
+
+    const customerProducts = getCustomerProducts(customerId);
+    const selectedProduct = customerProducts.find(p => p.id === productId);
+
+    if (selectedProduct) {
+        // Get the product row
+        const productRow = selectElement.closest('.inward-product-item');
+        const materialText = productRow.querySelector('.inward-product-material-text');
+        const unitSelect = productRow.querySelector('.inward-product-unit');
+        const rateInput = productRow.querySelector('.inward-product-rate');
+
+        // Set the material description text
+        if (materialText) materialText.value = selectedProduct.description;
+
+        // Auto-fill UOM if available
+        if (unitSelect && selectedProduct.uom) {
+            unitSelect.value = selectedProduct.uom;
+        }
+
+        // Auto-fill Rate/Price if available
+        if (rateInput && selectedProduct.price) {
+            rateInput.value = selectedProduct.price;
+            // Trigger calculation
+            rateInput.dispatchEvent(new Event('input'));
+        }
     }
 }
 
@@ -885,7 +900,9 @@ function saveInwardInvoice() {
     let totalAmount = 0;
 
     productRows.forEach(row => {
-        const material = row.querySelector('.inward-product-material')?.value?.trim();
+        // Get material from hidden text field (stores actual description)
+        const materialText = row.querySelector('.inward-product-material-text')?.value?.trim();
+        const material = materialText || row.querySelector('.inward-product-material')?.selectedOptions[0]?.text?.trim();
         const quantity = parseFloat(row.querySelector('.inward-product-qty')?.value) || 0;
         const unit = row.querySelector('.inward-product-unit')?.value?.trim();
         const rate = parseFloat(row.querySelector('.inward-product-rate')?.value) || 0;

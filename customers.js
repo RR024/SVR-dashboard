@@ -494,6 +494,9 @@ function fillInwardCustomerDetails() {
         // Clear fields when no customer selected
         document.getElementById('inwardCustomer').value = '';
         document.getElementById('inwardGSTNo').value = '';
+
+        // Clear existing product rows when customer is deselected
+        document.getElementById('inwardProductItems').innerHTML = '';
         return;
     }
 
@@ -505,7 +508,29 @@ function fillInwardCustomerDetails() {
         document.getElementById('inwardCustomer').value = customer.companyName;
         // Auto-fill the GST number from customer record
         document.getElementById('inwardGSTNo').value = customer.gstin || '';
+
+        // Reload existing product dropdowns with new customer's products
+        updateInwardMaterialDropdowns(customerId);
     }
+}
+
+// Update all material dropdowns in inward invoice with customer products
+function updateInwardMaterialDropdowns(customerId) {
+    const customerProducts = getCustomerProducts(customerId);
+    const materialSelects = document.querySelectorAll('.inward-product-material');
+
+    materialSelects.forEach(select => {
+        const currentValue = select.value;
+
+        // Rebuild options
+        let options = '<option value="">-- Select Product --</option>';
+        customerProducts.forEach(product => {
+            const selected = (currentValue === product.id) ? 'selected' : '';
+            options += `<option value="${product.id}" ${selected}>${product.description}</option>`;
+        });
+
+        select.innerHTML = options;
+    });
 }
 
 // Export customer functions to global scope
@@ -530,3 +555,4 @@ window.loadCustomerProducts = loadCustomerProducts;
 window.getCustomerProducts = getCustomerProducts;
 window.getCustomerProductsFromForm = getCustomerProductsFromForm;
 window.updateProductDropdowns = updateProductDropdowns;
+window.updateInwardMaterialDropdowns = updateInwardMaterialDropdowns;
