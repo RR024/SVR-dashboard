@@ -2205,13 +2205,15 @@ function generatePrintableInvoice(invoice) {
                     text-align: center;
                 }
                 .company-details { 
-                    font-size: 11px; 
+                    font-size: 13px; 
+                    font-weight: bold;
                     margin-bottom: 6px; 
                     line-height: 1.5;
                     text-align: center;
                 }
                 .gst-details { 
-                    font-size: 11px; 
+                    font-size: 13px; 
+                    font-weight: bold;
                     margin-top: 6px;
                     text-align: center;
                 }
