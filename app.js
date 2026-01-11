@@ -2344,7 +2344,7 @@ function generatePrintableInvoice(invoice) {
                 }
                 .footer-signature {
                     display: inline-block;
-                    padding-top: 6px;
+                    padding-top: 20px;
                     min-width: 180px;
                 }
                 
