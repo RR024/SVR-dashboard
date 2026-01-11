@@ -2199,19 +2199,19 @@ function generatePrintableInvoice(invoice) {
                     text-align: center;
                 }
                 .company-name { 
-                    font-size: 15px; 
+                    font-size: 18px; 
                     font-weight: bold; 
                     margin-bottom: 6px;
                     text-align: center;
                 }
                 .company-details { 
-                    font-size: 10px; 
+                    font-size: 11px; 
                     margin-bottom: 6px; 
                     line-height: 1.5;
                     text-align: center;
                 }
                 .gst-details { 
-                    font-size: 10px; 
+                    font-size: 11px; 
                     margin-top: 6px;
                     text-align: center;
                 }
