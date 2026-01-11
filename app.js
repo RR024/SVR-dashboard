@@ -2275,7 +2275,7 @@ function generatePrintableInvoice(invoice) {
                     display: table-cell;
                     width: 50%;
                     padding: 10px 12px;
-                    font-size: 11px;
+                    font-size: 13px;
                     vertical-align: top;
                     word-break: break-word;
                     overflow-wrap: break-word;
@@ -2443,7 +2443,7 @@ function generatePrintableInvoice(invoice) {
                         <div class="address-title">Buyer Address &nbsp;&nbsp;&nbsp;:</div>
                         <div style="margin-top: 4px;">
                             ${invoice.buyerName}<br>
-                            ${invoice.buyerAddress.replace(/\n/g, '<br>')}<br>
+                            ${invoice.buyerAddress.replace(/\n/g, '<br>').replace(/,\s*Thiruvallur/gi, ',<br>Thiruvallur')}<br>
                             <strong>Contact :</strong> ${invoice.contact || ''}<br>
                             <strong>GSTIN :</strong> ${invoice.gstin}
                         </div>
@@ -2452,7 +2452,7 @@ function generatePrintableInvoice(invoice) {
                         <div class="address-title">Shipment Address &nbsp;&nbsp;&nbsp;:</div>
                         <div style="margin-top: 4px;">
                             ${invoice.buyerName}<br>
-                            ${(invoice.shippingAddress || invoice.buyerAddress).replace(/\n/g, '<br>')}<br>
+                            ${(invoice.shippingAddress || invoice.buyerAddress).replace(/\n/g, '<br>').replace(/,\s*Thiruvallur/gi, ',<br>Thiruvallur')}<br>
                             <strong>Contact :</strong> ${invoice.contact || ''}<br>
                             <strong>GSTIN :</strong> ${invoice.gstin}
                         </div>
