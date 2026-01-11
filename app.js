@@ -2199,7 +2199,7 @@ function generatePrintableInvoice(invoice) {
                     text-align: center;
                 }
                 .company-name { 
-                    font-size: 22px; 
+                    font-size: 24px; 
                     font-weight: bold; 
                     margin-bottom: 6px;
                     text-align: center;
