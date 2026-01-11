@@ -2304,6 +2304,7 @@ function generatePrintableInvoice(invoice) {
                 }
                 .products-table td {
                     border: 1px solid #000;
+                    font-size: 14px;
                 }
                 .products-table .totals-row td {
                     padding: 6px 12px;
