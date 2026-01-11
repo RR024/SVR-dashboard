@@ -22,85 +22,93 @@ function downloadOutwardInvoicePDF(invoiceId) {
         return;
     }
 
-    const doc = new jsPDF();
-    let yPos = 20;
+    const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+    });
+    let yPos = 15;
 
     // Header Section
-    doc.setFontSize(22);
+    doc.setFontSize(24);
     doc.setFont(undefined, 'bold');
     doc.setTextColor(102, 126, 234); // Primary color
-    doc.text('SVR MANUFACTURING', 105, yPos, { align: 'center' });
+    doc.text('M/s.Sri Veera Raghava Sheet Metal Component', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
 
-    yPos += 8;
-    doc.setFontSize(10);
+    yPos += 6;
+    doc.setFontSize(9);
     doc.setFont(undefined, 'normal');
     doc.setTextColor(100, 100, 100);
-    doc.text('Sheet Metal Component', 105, yPos, { align: 'center' });
+    doc.text('S-115 Kakkak SIDCO Industrial Estate, Kakkalur, Thiruvallur, Tamilnadu - 602003', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
 
-    yPos += 5;
-    doc.setFontSize(9);
-    doc.text('GST No: 29AACCS1234F1Z5 | PAN: AACCS1234F', 105, yPos, { align: 'center' });
+    yPos += 4;
+    doc.setFontSize(8);
+    doc.text('Contact : 9841816976 / 7010458839 | Mail : sriveeraraaghavan@gmail.com', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+
+    yPos += 4;
+    doc.text('GSTIN : 33AHFPR3832J1ZH  PAN: AHFPR3832J', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
 
     // Horizontal line
-    yPos += 5;
+    yPos += 6;
     doc.setDrawColor(200, 200, 200);
-    doc.line(20, yPos, 190, yPos);
+    doc.line(15, yPos, doc.internal.pageSize.getWidth() - 15, yPos);
 
     // Invoice Title
-    yPos += 10;
+    yPos += 12;
     doc.setFontSize(16);
     doc.setFont(undefined, 'bold');
     doc.setTextColor(0, 0, 0);
-    doc.text('TAX INVOICE', 105, yPos, { align: 'center' });
+    doc.text('TAX INVOICE', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
 
     // Invoice Details
-    yPos += 10;
+    yPos += 12;
     doc.setFontSize(10);
     doc.setFont(undefined, 'normal');
 
     const invoiceDate = new Date(invoice.date).toLocaleDateString('en-IN');
-    doc.text(`Invoice No: ${invoice.invoiceNo}`, 20, yPos);
-    doc.text(`Date: ${invoiceDate}`, 150, yPos);
+    doc.text(`Invoice No: ${invoice.invoiceNo}`, 15, yPos);
+    doc.text(`Date: ${invoiceDate}`, doc.internal.pageSize.getWidth() - 60, yPos);
 
     yPos += 6;
     if (invoice.dcNo) {
-        doc.text(`DC No: ${invoice.dcNo}`, 20, yPos);
+        doc.text(`DC No: ${invoice.dcNo}`, 15, yPos);
         if (invoice.dcDate) {
-            doc.text(`DC Date: ${new Date(invoice.dcDate).toLocaleDateString('en-IN')}`, 80, yPos);
+            doc.text(`DC Date: ${new Date(invoice.dcDate).toLocaleDateString('en-IN')}`, 70, yPos);
         }
     }
     if (invoice.poNo) {
-        doc.text(`PO No: ${invoice.poNo}`, 150, yPos);
+        doc.text(`PO No: ${invoice.poNo}`, doc.internal.pageSize.getWidth() - 60, yPos);
     }
 
     // Buyer Details Box
-    yPos += 10;
+    yPos += 12;
     doc.setDrawColor(200, 200, 200);
     doc.setFillColor(245, 245, 245);
-    doc.rect(20, yPos, 170, 25, 'F');
-    doc.rect(20, yPos, 170, 25);
+    const boxWidth = doc.internal.pageSize.getWidth() - 30;
+    doc.rect(15, yPos, boxWidth, 30, 'F');
+    doc.rect(15, yPos, boxWidth, 30);
 
     yPos += 6;
     doc.setFont(undefined, 'bold');
-    doc.text('Bill To:', 22, yPos);
+    doc.text('Bill To:', 17, yPos);
     doc.setFont(undefined, 'normal');
 
     yPos += 5;
-    doc.text(invoice.buyerName || 'N/A', 22, yPos);
+    doc.text(invoice.buyerName || 'N/A', 17, yPos);
 
     yPos += 5;
     doc.setFontSize(9);
-    doc.text(`GSTIN: ${invoice.gstin || 'N/A'}`, 22, yPos);
+    doc.text(`GSTIN: ${invoice.gstin || 'N/A'}`, 17, yPos);
 
     yPos += 5;
     if (invoice.buyerAddress) {
-        const address = doc.splitTextToSize(invoice.buyerAddress, 160);
-        doc.text(address, 22, yPos);
+        const address = doc.splitTextToSize(invoice.buyerAddress, boxWidth - 10);
+        doc.text(address, 17, yPos);
         yPos += (address.length * 4);
     }
 
     // Products Table
-    yPos += 10;
+    yPos += 15;
     doc.setFontSize(10);
 
     const tableColumn = ["S.No", "Description", "HSN", "Qty", "Unit Price", "Amount"];
@@ -124,20 +132,21 @@ function downloadOutwardInvoicePDF(invoiceId) {
         body: tableRows,
         startY: yPos,
         theme: 'grid',
-        styles: { fontSize: 9, cellPadding: 3 },
+        styles: { fontSize: 9, cellPadding: 4 },
         headStyles: { fillColor: [102, 126, 234], textColor: 255, fontStyle: 'bold' },
+        margin: { left: 15, right: 15 },
         columnStyles: {
             0: { cellWidth: 15, halign: 'center' },
-            1: { cellWidth: 60 },
+            1: { cellWidth: 'auto' },
             2: { cellWidth: 25, halign: 'center' },
             3: { cellWidth: 20, halign: 'right' },
-            4: { cellWidth: 25, halign: 'right' },
-            5: { cellWidth: 25, halign: 'right' }
+            4: { cellWidth: 30, halign: 'right' },
+            5: { cellWidth: 30, halign: 'right' }
         }
     });
 
     // Get position after table
-    yPos = doc.lastAutoTable.finalY + 10;
+    yPos = doc.lastAutoTable.finalY + 12;
 
     // Tax Summary
     const taxableValue = parseFloat(invoice.taxableValue || 0);
@@ -146,42 +155,74 @@ function downloadOutwardInvoicePDF(invoiceId) {
     const igst = parseFloat(invoice.igst || 0);
     const total = parseFloat(invoice.total || 0);
 
-    const summaryX = 130;
+    const summaryX = doc.internal.pageSize.getWidth() - 75;
+    const summaryValueX = doc.internal.pageSize.getWidth() - 15;
     doc.setFont(undefined, 'normal');
     doc.text('Taxable Value:', summaryX, yPos);
-    doc.text(`₹${taxableValue.toFixed(2)}`, 185, yPos, { align: 'right' });
+    doc.text(`₹${taxableValue.toFixed(2)}`, summaryValueX, yPos, { align: 'right' });
 
-    yPos += 6;
+    yPos += 7;
     if (cgst > 0) {
         doc.text(`CGST (${invoice.gstRate / 2}%):`, summaryX, yPos);
-        doc.text(`₹${cgst.toFixed(2)}`, 185, yPos, { align: 'right' });
-        yPos += 6;
+        doc.text(`₹${cgst.toFixed(2)}`, summaryValueX, yPos, { align: 'right' });
+        yPos += 7;
         doc.text(`SGST (${invoice.gstRate / 2}%):`, summaryX, yPos);
-        doc.text(`₹${sgst.toFixed(2)}`, 185, yPos, { align: 'right' });
-        yPos += 6;
+        doc.text(`₹${sgst.toFixed(2)}`, summaryValueX, yPos, { align: 'right' });
+        yPos += 7;
     }
     if (igst > 0) {
         doc.text(`IGST (${invoice.gstRate}%):`, summaryX, yPos);
-        doc.text(`₹${igst.toFixed(2)}`, 185, yPos, { align: 'right' });
-        yPos += 6;
+        doc.text(`₹${igst.toFixed(2)}`, summaryValueX, yPos, { align: 'right' });
+        yPos += 7;
     }
 
     // Total
     doc.setDrawColor(0, 0, 0);
-    doc.line(summaryX, yPos - 2, 185, yPos - 2);
+    doc.line(summaryX, yPos - 2, summaryValueX, yPos - 2);
     doc.setFont(undefined, 'bold');
     doc.setFontSize(12);
-    doc.text('Total Amount:', summaryX, yPos + 4);
-    doc.text(`₹${total.toFixed(2)}`, 185, yPos + 4, { align: 'right' });
+    doc.text('Total Amount:', summaryX, yPos + 5);
+    doc.text(`₹${total.toFixed(2)}`, summaryValueX, yPos + 5, { align: 'right' });
 
     // Payment Status Badge
-    yPos += 12;
+    yPos += 15;
     doc.setFontSize(10);
     doc.setFont(undefined, 'bold');
     const statusColor = invoice.paymentStatus === 'Paid' ? [16, 185, 129] :
         invoice.paymentStatus === 'Pending' ? [239, 68, 68] : [245, 158, 11];
     doc.setTextColor(...statusColor);
-    doc.text(`Payment Status: ${invoice.paymentStatus}`, 20, yPos);
+    doc.text(`Payment Status: ${invoice.paymentStatus}`, 15, yPos);
+
+    // Terms & Conditions Section
+    yPos += 12;
+    doc.setTextColor(0, 0, 0);
+    doc.setFont(undefined, 'bold');
+    doc.setFontSize(9);
+    doc.text('Terms & Conditions:', 15, yPos);
+
+    yPos += 5;
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(8);
+    const terms = [
+        '1. Payment should be made within the agreed credit period.',
+        '2. Goods once sold will not be taken back.',
+        '3. Subject to jurisdiction matters only.'
+    ];
+    terms.forEach(term => {
+        doc.text(term, 15, yPos);
+        yPos += 4;
+    });
+
+    // Bank Details (Optional - adds more content)
+    yPos += 5;
+    doc.setFont(undefined, 'bold');
+    doc.setFontSize(9);
+    doc.text('Bank Details:', 15, yPos);
+
+    yPos += 5;
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(8);
+    doc.text('Bank: [Bank Name] | A/C No: XXXXXXXXXX | IFSC: XXXXXXXXX', 15, yPos);
 
     // Footer
     doc.setTextColor(0, 0, 0);
@@ -189,12 +230,12 @@ function downloadOutwardInvoicePDF(invoiceId) {
     doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
 
-    const footerY = 280;
-    doc.text('For SVR Manufacturing', 150, footerY);
-    doc.text('Authorized Signatory', 150, footerY + 10);
+    const footerY = doc.internal.pageSize.getHeight() - 20;
+    doc.text('For SVR Manufacturing', doc.internal.pageSize.getWidth() - 60, footerY);
+    doc.text('Authorized Signatory', doc.internal.pageSize.getWidth() - 60, footerY + 10);
 
-    doc.line(20, footerY + 5, 190, footerY + 5);
-    doc.text('This is a computer-generated invoice', 105, footerY + 12, { align: 'center' });
+    doc.line(15, footerY + 5, doc.internal.pageSize.getWidth() - 15, footerY + 5);
+    doc.text('This is a computer-generated invoice', doc.internal.pageSize.getWidth() / 2, footerY + 12, { align: 'center' });
 
     // Save PDF
     doc.save(`Invoice_${invoice.invoiceNo.replace(/\//g, '_')}.pdf`);
@@ -221,44 +262,48 @@ function downloadInwardInvoicePDF(invoiceId) {
         return;
     }
 
-    const doc = new jsPDF();
-    let yPos = 20;
+    const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+    });
+    let yPos = 15;
 
     // Header
     doc.setFontSize(22);
     doc.setFont(undefined, 'bold');
     doc.setTextColor(102, 126, 234);
-    doc.text('SVR MANUFACTURING', 105, yPos, { align: 'center' });
+    doc.text('SVR MANUFACTURING', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
 
     yPos += 8;
     doc.setFontSize(10);
     doc.setFont(undefined, 'normal');
     doc.setTextColor(100, 100, 100);
-    doc.text('Sheet Metal Component', 105, yPos, { align: 'center' });
+    doc.text('Sheet Metal Component', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
 
     yPos += 10;
     doc.setFontSize(16);
     doc.setFont(undefined, 'bold');
     doc.setTextColor(0, 0, 0);
-    doc.text('PURCHASE INVOICE', 105, yPos, { align: 'center' });
+    doc.text('PURCHASE INVOICE', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
 
     // Invoice Details
     yPos += 15;
     doc.setFontSize(10);
     doc.setFont(undefined, 'normal');
 
-    doc.text(`Supplier Invoice No: ${invoice.invoiceNo}`, 20, yPos);
-    doc.text(`Date: ${new Date(invoice.date).toLocaleDateString('en-IN')}`, 150, yPos);
+    doc.text(`Supplier Invoice No: ${invoice.invoiceNo}`, 15, yPos);
+    doc.text(`Date: ${new Date(invoice.date).toLocaleDateString('en-IN')}`, doc.internal.pageSize.getWidth() - 60, yPos);
 
     yPos += 10;
     doc.setFont(undefined, 'bold');
-    doc.text('Supplier Details:', 20, yPos);
+    doc.text('Supplier Details:', 15, yPos);
     doc.setFont(undefined, 'normal');
 
     yPos += 6;
-    doc.text(`Customer: ${invoice.customer}`, 20, yPos);
+    doc.text(`Customer: ${invoice.customer}`, 15, yPos);
     yPos += 5;
-    doc.text(`GST No: ${invoice.gstNo || 'N/A'}`, 20, yPos);
+    doc.text(`GST No: ${invoice.gstNo || 'N/A'}`, 15, yPos);
 
     // Material Details
     yPos += 15;
@@ -274,9 +319,10 @@ function downloadInwardInvoicePDF(invoiceId) {
         startY: yPos,
         theme: 'striped',
         styles: { fontSize: 10, cellPadding: 5 },
+        margin: { left: 15, right: 15 },
         columnStyles: {
             0: { cellWidth: 50, fontStyle: 'bold' },
-            1: { cellWidth: 120 }
+            1: { cellWidth: 'auto' }
         }
     });
 
@@ -287,7 +333,7 @@ function downloadInwardInvoicePDF(invoiceId) {
     const statusColor = invoice.paymentStatus === 'Paid' ? [16, 185, 129] :
         invoice.paymentStatus === 'Pending' ? [239, 68, 68] : [245, 158, 11];
     doc.setTextColor(...statusColor);
-    doc.text(`Payment Status: ${invoice.paymentStatus}`, 20, yPos);
+    doc.text(`Payment Status: ${invoice.paymentStatus}`, 15, yPos);
 
     // Save PDF
     doc.save(`Purchase_Invoice_${invoice.invoiceNo.replace(/\//g, '_')}.pdf`);
@@ -307,7 +353,11 @@ function generateMonthlyReport() {
         return;
     }
 
-    const doc = new jsPDF();
+    const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+    });
     const currentDate = new Date();
     const currentMonth = currentDate.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 
@@ -386,7 +436,11 @@ function generateOutstandingReport() {
         return;
     }
 
-    const doc = new jsPDF();
+    const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+    });
 
     // Header
     doc.setFontSize(20);
@@ -487,7 +541,11 @@ function generateAttendanceReport() {
         return;
     }
 
-    const doc = new jsPDF();
+    const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+    });
     const currentMonth = new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 
     // Header
@@ -558,7 +616,11 @@ function generateGSTReport() {
         return;
     }
 
-    const doc = new jsPDF();
+    const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+    });
     const currentMonth = new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 
     // Header

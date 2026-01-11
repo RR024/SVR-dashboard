@@ -1244,6 +1244,9 @@ function populateOutwardForm(invoice) {
     document.getElementById('outwardVehicle').value = invoice.vehicle || '';
     document.getElementById('outwardBuyerName').value = invoice.buyerName;
     document.getElementById('outwardBuyerAddress').value = invoice.buyerAddress;
+    document.getElementById('outwardShippingAddress').value = invoice.shippingAddress || invoice.buyerAddress;
+    document.getElementById('sameAsBuyerAddress').checked = invoice.sameAsBuyerAddress !== false && invoice.shippingAddress === invoice.buyerAddress;
+    toggleShippingAddress();
     document.getElementById('outwardGSTIN').value = invoice.gstin;
     document.getElementById('outwardContact').value = invoice.contact || '';
     document.getElementById('outwardPaymentStatus').value = invoice.paymentStatus;
@@ -1270,6 +1273,34 @@ function populateOutwardForm(invoice) {
 function closeOutwardModal() {
     clearPOError();
     document.getElementById('outwardModal').classList.remove('active');
+}
+
+// Toggle shipping address based on checkbox
+function toggleShippingAddress() {
+    const checkbox = document.getElementById('sameAsBuyerAddress');
+    const shippingAddress = document.getElementById('outwardShippingAddress');
+    const buyerAddress = document.getElementById('outwardBuyerAddress');
+    
+    if (checkbox.checked) {
+        shippingAddress.value = buyerAddress.value;
+        shippingAddress.disabled = true;
+        shippingAddress.style.backgroundColor = 'var(--bg-tertiary)';
+        shippingAddress.style.cursor = 'not-allowed';
+    } else {
+        shippingAddress.disabled = false;
+        shippingAddress.style.backgroundColor = '';
+        shippingAddress.style.cursor = '';
+    }
+}
+
+// Sync shipping address when buyer address changes (if checkbox is checked)
+function syncShippingAddress() {
+    const checkbox = document.getElementById('sameAsBuyerAddress');
+    if (checkbox && checkbox.checked) {
+        const buyerAddress = document.getElementById('outwardBuyerAddress');
+        const shippingAddress = document.getElementById('outwardShippingAddress');
+        shippingAddress.value = buyerAddress.value;
+    }
 }
 
 function addProductRow(data = null) {
@@ -1895,6 +1926,8 @@ function saveOutwardInvoice() {
         vehicle: document.getElementById('outwardVehicle').value,
         buyerName: document.getElementById('outwardBuyerName').value,
         buyerAddress: document.getElementById('outwardBuyerAddress').value,
+        shippingAddress: document.getElementById('outwardShippingAddress').value || document.getElementById('outwardBuyerAddress').value,
+        sameAsBuyerAddress: document.getElementById('sameAsBuyerAddress').checked,
         gstin: document.getElementById('outwardGSTIN').value,
         contact: document.getElementById('outwardContact').value,
         products: products,
@@ -2110,18 +2143,30 @@ function generatePrintableInvoice(invoice) {
             <meta charset="UTF-8">
             <title>Tax Invoice - ${invoice.invoiceNo}</title>
             <style>
-                @page { margin: 10mm 8mm; }
+                @page { 
+                    size: A4; 
+                    margin: 8mm; 
+                }
                 * { margin: 0; padding: 0; box-sizing: border-box; }
+                html, body { 
+                    width: 100%;
+                    height: 100%;
+                    margin: 0;
+                    padding: 0;
+                }
                 body { 
                     font-family: Arial, sans-serif; 
-                    font-size: 10px; 
+                    font-size: 11px; 
                     color: #000; 
-                    line-height: 1.3;
+                    line-height: 1.4;
                 }
                 .invoice-container { 
-                    max-width: 100%; 
-                    margin: 0 auto; 
+                    width: 100%;
+                    min-height: 100vh;
+                    margin: 0; 
                     border: 2px solid #000;
+                    display: flex;
+                    flex-direction: column;
                 }
                 
                 /* Header Section */
@@ -2132,49 +2177,53 @@ function generatePrintableInvoice(invoice) {
                 }
                 .header-left {
                     display: table-cell;
-                    width: 80px;
+                    width: 85px;
                     vertical-align: middle;
-                    padding: 10px;
+                    padding: 12px;
                     border-right: 1px solid #000;
                 }
                 .logo-box {
-                    width: 60px;
-                    height: 60px;
+                    width: 65px;
+                    height: 65px;
                     border: 1px solid #000;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     font-weight: bold;
-                    font-size: 18px;
+                    font-size: 20px;
                 }
                 .header-right {
                     display: table-cell;
-                    vertical-align: top;
-                    padding: 8px 10px;
+                    vertical-align: middle;
+                    padding: 10px 12px;
+                    text-align: center;
                 }
                 .company-name { 
-                    font-size: 13px; 
+                    font-size: 15px; 
                     font-weight: bold; 
-                    margin-bottom: 4px; 
+                    margin-bottom: 6px;
+                    text-align: center;
                 }
                 .company-details { 
-                    font-size: 9px; 
-                    margin-bottom: 4px; 
-                    line-height: 1.4; 
+                    font-size: 10px; 
+                    margin-bottom: 6px; 
+                    line-height: 1.5;
+                    text-align: center;
                 }
                 .gst-details { 
-                    font-size: 9px; 
-                    margin-top: 4px;
+                    font-size: 10px; 
+                    margin-top: 6px;
+                    text-align: center;
                 }
                 
                 /* Title */
                 .invoice-title-section {
                     text-align: center;
-                    padding: 6px;
+                    padding: 8px;
                     border-bottom: 2px solid #000;
                 }
                 .invoice-title { 
-                    font-size: 16px; 
+                    font-size: 18px; 
                     font-weight: bold;
                 }
                 
@@ -2187,20 +2236,26 @@ function generatePrintableInvoice(invoice) {
                 .info-left, .info-right {
                     display: table-cell;
                     width: 50%;
-                    padding: 8px 10px;
-                    font-size: 9px;
+                    padding: 10px 12px;
+                    font-size: 10px;
                     vertical-align: top;
                 }
                 .info-left {
                     border-right: 1px solid #000;
                 }
                 .info-row {
-                    margin-bottom: 3px;
+                    margin-bottom: 5px;
                     display: flex;
+                    align-items: baseline;
                 }
                 .info-label {
                     font-weight: normal;
-                    min-width: 110px;
+                    width: 100px;
+                    flex-shrink: 0;
+                }
+                .info-colon {
+                    width: 15px;
+                    text-align: center;
                     flex-shrink: 0;
                 }
                 .info-value {
@@ -2216,8 +2271,8 @@ function generatePrintableInvoice(invoice) {
                 .address-left, .address-right {
                     display: table-cell;
                     width: 50%;
-                    padding: 8px 10px;
-                    font-size: 9px;
+                    padding: 10px 12px;
+                    font-size: 10px;
                     vertical-align: top;
                 }
                 .address-left {
@@ -2225,21 +2280,22 @@ function generatePrintableInvoice(invoice) {
                 }
                 .address-title {
                     font-weight: bold;
-                    margin-bottom: 4px;
+                    margin-bottom: 6px;
                 }
                 
                 /* Products Table */
                 .products-table { 
                     width: 100%; 
                     border-collapse: collapse;
+                    flex-grow: 1;
                 }
                 .products-table thead {
                     background-color: #b4c7e7;
                 }
                 .products-table th { 
                     border: 1px solid #000; 
-                    padding: 6px 4px; 
-                    font-size: 9px;
+                    padding: 8px 6px; 
+                    font-size: 10px;
                     font-weight: bold;
                     text-align: center;
                 }
@@ -2247,8 +2303,8 @@ function generatePrintableInvoice(invoice) {
                     border: 1px solid #000;
                 }
                 .products-table .totals-row td {
-                    padding: 5px 8px;
-                    font-size: 9px;
+                    padding: 8px 12px;
+                    font-size: 11px;
                 }
                 .products-table .totals-label {
                     text-align: right;
@@ -2261,41 +2317,43 @@ function generatePrintableInvoice(invoice) {
                 
                 /* Amount in Words */
                 .amount-words-section {
-                    padding: 6px 10px;
-                    font-size: 9px;
+                    padding: 10px 12px;
+                    font-size: 11px;
                     border-bottom: 2px solid #000;
                 }
                 
                 /* Declaration */
                 .declaration-section {
-                    padding: 8px 10px;
-                    font-size: 9px;
-                    line-height: 1.4;
+                    padding: 12px 12px;
+                    font-size: 10px;
+                    line-height: 1.5;
                     border-bottom: 2px solid #000;
-                    min-height: 80px;
+                    min-height: 100px;
+                    flex-grow: 1;
                 }
                 
                 /* Footer */
                 .footer-section {
                     text-align: right;
-                    padding: 30px 10px 8px 10px;
-                    font-size: 9px;
+                    padding: 40px 12px 12px 12px;
+                    font-size: 11px;
                 }
                 .footer-company {
                     font-weight: bold;
-                    margin-bottom: 40px;
+                    margin-bottom: 50px;
                 }
                 .footer-signature {
                     display: inline-block;
-                    padding-top: 4px;
-                    min-width: 150px;
+                    padding-top: 6px;
+                    min-width: 180px;
                 }
                 
                 /* Jurisdiction */
                 .jurisdiction-section {
                     text-align: center;
-                    padding: 6px;
-                    font-size: 8px;
+                    padding: 10px;
+                    font-size: 10px;
+                    margin-top: auto;
                 }
             </style>
         </head>
@@ -2325,41 +2383,50 @@ function generatePrintableInvoice(invoice) {
                 <div class="info-section">
                     <div class="info-left">
                         <div class="info-row">
-                            <span class="info-label">Invoice No &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</span>
+                            <span class="info-label">Invoice No</span>
+                            <span class="info-colon">:</span>
                             <span class="info-value">${invoice.invoiceNo}</span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">Invoice Date &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</span>
+                            <span class="info-label">Invoice Date</span>
+                            <span class="info-colon">:</span>
                             <span class="info-value">${formatDate(invoice.date)}</span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">DC No. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</span>
+                            <span class="info-label">DC No.</span>
+                            <span class="info-colon">:</span>
                             <span class="info-value">${invoice.dcNo || ''}</span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">DC Date &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</span>
+                            <span class="info-label">DC Date</span>
+                            <span class="info-colon">:</span>
                             <span class="info-value">${formatDate(invoice.dcDate)}</span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">Payment Terms &nbsp;:</span>
+                            <span class="info-label">Payment Terms</span>
+                            <span class="info-colon">:</span>
                             <span class="info-value">${invoice.paymentTerms || ''}</span>
                         </div>
                     </div>
                     <div class="info-right">
                         <div class="info-row">
-                            <span class="info-label">PO No &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</span>
+                            <span class="info-label">PO No</span>
+                            <span class="info-colon">:</span>
                             <span class="info-value">${invoice.poNo || ''}</span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">PO Date &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</span>
+                            <span class="info-label">PO Date</span>
+                            <span class="info-colon">:</span>
                             <span class="info-value">${formatDate(invoice.poDate)}</span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">Transporter Name &nbsp;:</span>
+                            <span class="info-label">Transporter Name</span>
+                            <span class="info-colon">:</span>
                             <span class="info-value"></span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">Vechical No &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</span>
+                            <span class="info-label">Vehicle No</span>
+                            <span class="info-colon">:</span>
                             <span class="info-value">${invoice.vehicle || ''}</span>
                         </div>
                     </div>
@@ -2380,7 +2447,7 @@ function generatePrintableInvoice(invoice) {
                         <div class="address-title">Shipment Address &nbsp;&nbsp;&nbsp;:</div>
                         <div style="margin-top: 4px;">
                             ${invoice.buyerName}<br>
-                            ${invoice.buyerAddress.replace(/\n/g, '<br>')}<br>
+                            ${(invoice.shippingAddress || invoice.buyerAddress).replace(/\n/g, '<br>')}<br>
                             <strong>Contact :</strong> ${invoice.contact || ''}<br>
                             <strong>GSTIN :</strong> ${invoice.gstin}
                         </div>

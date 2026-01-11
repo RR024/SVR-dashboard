@@ -1615,7 +1615,19 @@
                     <div class="form-group">
                         <label class="form-label required">Buyer Address</label>
                         <textarea id="outwardBuyerAddress" class="form-control"
-                            placeholder="Full address with city and pincode" required></textarea>
+                            placeholder="Full address with city and pincode" required oninput="syncShippingAddress()"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                            <label class="form-label" style="margin: 0; margin-right: 1rem;">Shipping Address</label>
+                            <label style="display: flex; align-items: center; cursor: pointer; font-size: 0.875rem; color: var(--text-secondary);">
+                                <input type="checkbox" id="sameAsBuyerAddress" onchange="toggleShippingAddress()" style="margin-right: 0.5rem;">
+                                Same as Buyer Address
+                            </label>
+                        </div>
+                        <textarea id="outwardShippingAddress" class="form-control"
+                            placeholder="Full shipping address with city and pincode"></textarea>
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">

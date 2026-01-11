@@ -2,9 +2,21 @@
 // CUSTOMER MANAGEMENT MODULE
 // =========================================
 
-// Get customers from storage
+// Get customers from storage (with deduplication)
 function getCustomers() {
-    return loadFromStorage('customers') || [];
+    const customers = loadFromStorage('customers') || [];
+    
+    // Remove duplicates based on customer ID and clean up storage if duplicates found
+    const uniqueCustomers = customers.filter((customer, index, self) =>
+        index === self.findIndex(c => c.id === customer.id)
+    );
+    
+    // If duplicates were found, clean up the storage
+    if (uniqueCustomers.length < customers.length) {
+        saveToStorage('customers', uniqueCustomers);
+    }
+    
+    return uniqueCustomers;
 }
 
 // Load customers into table
@@ -359,9 +371,14 @@ function loadCustomerDropdown() {
     if (!dropdown) return;
 
     const customers = getCustomers();
+    
+    // Remove duplicates based on customer ID
+    const uniqueCustomers = customers.filter((customer, index, self) =>
+        index === self.findIndex(c => c.id === customer.id)
+    );
 
     let html = '<option value="">-- Select Customer --</option>';
-    customers.forEach(customer => {
+    uniqueCustomers.forEach(customer => {
         html += `<option value="${customer.id}">${customer.companyName}</option>`;
     });
 
@@ -474,9 +491,14 @@ function loadInwardCustomerDropdown() {
     if (!dropdown) return;
 
     const customers = getCustomers();
+    
+    // Remove duplicates based on customer ID
+    const uniqueCustomers = customers.filter((customer, index, self) =>
+        index === self.findIndex(c => c.id === customer.id)
+    );
 
     let html = '<option value="">-- Select Customer --</option>';
-    customers.forEach(customer => {
+    uniqueCustomers.forEach(customer => {
         html += `<option value="${customer.id}">${customer.companyName}</option>`;
     });
 
