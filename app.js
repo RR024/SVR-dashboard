@@ -1163,11 +1163,11 @@ function generateOutwardInvoiceNumber() {
     });
 
     // Calculate next invoice number
-    // For FY 25-26: Use 300 as base (first invoice = 301, second = 302, etc.)
+    // For FY 25-26: Use 269 as base (first invoice = 270, second = 271, etc.)
     // For other FYs: Start from 1 (first invoice = 1, second = 2, etc.)
     let nextNum;
     if (fyString === '25-26') {
-        nextNum = 300 + fyInvoices.length + 1;
+        nextNum = 269 + fyInvoices.length + 1;
     } else {
         nextNum = fyInvoices.length + 1;
     }
