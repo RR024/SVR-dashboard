@@ -2330,7 +2330,6 @@ function generatePrintableInvoice(invoice) {
                     padding: 12px 12px;
                     font-size: 10px;
                     line-height: 1.5;
-                    border-bottom: 2px solid #000;
                     min-height: 100px;
                     flex-grow: 1;
                 }
