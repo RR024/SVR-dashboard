@@ -2157,6 +2157,7 @@ function generatePrintableInvoice(invoice) {
                 body { 
                     font-family: Arial, sans-serif; 
                     font-size: 11px; 
+                    font-weight: bold;
                     color: #000; 
                     line-height: 1.4;
                 }
@@ -2346,7 +2347,7 @@ function generatePrintableInvoice(invoice) {
                 }
                 .footer-signature {
                     display: inline-block;
-                    padding-top: 20px;
+                    padding-top: 50px;
                     min-width: 180px;
                 }
                 
@@ -2356,6 +2357,7 @@ function generatePrintableInvoice(invoice) {
                     padding: 10px;
                     font-size: 10px;
                     margin-top: auto;
+                    border-top: 2px solid #000;
                 }
             </style>
         </head>
