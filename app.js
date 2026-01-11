@@ -2252,7 +2252,7 @@ function generatePrintableInvoice(invoice) {
                     align-items: baseline;
                 }
                 .info-label {
-                    font-weight: normal;
+                    font-weight: bold;
                     width: 100px;
                     flex-shrink: 0;
                 }
@@ -2357,7 +2357,7 @@ function generatePrintableInvoice(invoice) {
                     padding: 10px;
                     font-size: 10px;
                     margin-top: auto;
-                    border-top: 2px solid #000;
+                    border-bottom: 2px solid #000;
                 }
             </style>
         </head>
