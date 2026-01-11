@@ -2303,8 +2303,8 @@ function generatePrintableInvoice(invoice) {
                     border: 1px solid #000;
                 }
                 .products-table .totals-row td {
-                    padding: 8px 12px;
-                    font-size: 11px;
+                    padding: 6px 12px;
+                    font-size: 12px;
                 }
                 .products-table .totals-label {
                     text-align: right;
@@ -2474,12 +2474,12 @@ function generatePrintableInvoice(invoice) {
                             <td class="totals-value">${parseFloat(invoice.taxableValue).toFixed(2)}</td>
                         </tr>
                         <tr class="totals-row">
-                            <td colspan="6" style="text-align: right; padding: 5px 8px; font-size: 9px;">Out Put CGST @ 9%</td>
-                            <td style="text-align: right; padding: 5px 8px; font-size: 9px;">${parseFloat(invoice.cgst).toFixed(2)}</td>
+                            <td colspan="6" style="text-align: right; padding: 6px 12px; font-size: 10px; font-weight: normal;">Out Put CGST @ 9%</td>
+                            <td style="text-align: right; padding: 6px 12px; font-size: 10px; font-weight: normal;">${parseFloat(invoice.cgst).toFixed(2)}</td>
                         </tr>
                         <tr class="totals-row">
-                            <td colspan="6" style="text-align: right; padding: 5px 8px; font-size: 9px;">Out Put SGST @ 9%</td>
-                            <td style="text-align: right; padding: 5px 8px; font-size: 9px;">${parseFloat(invoice.sgst).toFixed(2)}</td>
+                            <td colspan="6" style="text-align: right; padding: 6px 12px; font-size: 10px; font-weight: normal;">Out Put SGST @ 9%</td>
+                            <td style="text-align: right; padding: 6px 12px; font-size: 10px; font-weight: normal;">${parseFloat(invoice.sgst).toFixed(2)}</td>
                         </tr>
                         <tr class="totals-row">
                             <td colspan="6" class="totals-label">Total Amount ( Including Tax )</td>
