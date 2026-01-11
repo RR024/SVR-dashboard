@@ -2275,8 +2275,10 @@ function generatePrintableInvoice(invoice) {
                     display: table-cell;
                     width: 50%;
                     padding: 10px 12px;
-                    font-size: 12px;
+                    font-size: 11px;
                     vertical-align: top;
+                    word-break: break-word;
+                    overflow-wrap: break-word;
                 }
                 .address-left {
                     border-right: 1px solid #000;
