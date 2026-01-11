@@ -3,7 +3,7 @@
 // Enables offline access (PWA)
 // ===================================
 
-const CACHE_NAME = 'svr-dashboard-v11';
+const CACHE_NAME = 'svr-dashboard-v12';
 const STATIC_ASSETS = [
     './',
     './index.html',

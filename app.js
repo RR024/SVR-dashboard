@@ -2162,9 +2162,9 @@ function generatePrintableInvoice(invoice) {
                     line-height: 1.4;
                 }
                 .invoice-container { 
-                    width: 100%;
-                    min-height: 100vh;
-                    margin: 0; 
+                    width: calc(100% - 8px);
+                    min-height: calc(100vh - 8px);
+                    margin: 4px; 
                     border: 2px solid #000;
                     display: flex;
                     flex-direction: column;
@@ -2357,7 +2357,6 @@ function generatePrintableInvoice(invoice) {
                     padding: 10px;
                     font-size: 10px;
                     margin-top: auto;
-                    border-bottom: 2px solid #000;
                 }
             </style>
         </head>
