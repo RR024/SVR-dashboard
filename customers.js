@@ -6,10 +6,21 @@
 function getCustomers() {
     const customers = loadFromStorage('customers') || [];
     
-    // Remove duplicates based on customer ID and clean up storage if duplicates found
-    const uniqueCustomers = customers.filter((customer, index, self) =>
-        index === self.findIndex(c => c.id === customer.id)
-    );
+    // Remove duplicates based on customer ID and company name, clean up storage if duplicates found
+    const seenIds = new Set();
+    const seenNames = new Set();
+    const uniqueCustomers = customers.filter(customer => {
+        // Check for duplicate IDs
+        if (seenIds.has(customer.id)) return false;
+        seenIds.add(customer.id);
+        
+        // Check for duplicate company names (case-insensitive)
+        const normalizedName = (customer.companyName || '').toLowerCase().trim();
+        if (seenNames.has(normalizedName)) return false;
+        seenNames.add(normalizedName);
+        
+        return true;
+    });
     
     // If duplicates were found, clean up the storage
     if (uniqueCustomers.length < customers.length) {
@@ -372,10 +383,19 @@ function loadCustomerDropdown() {
 
     const customers = getCustomers();
     
-    // Remove duplicates based on customer ID
-    const uniqueCustomers = customers.filter((customer, index, self) =>
-        index === self.findIndex(c => c.id === customer.id)
-    );
+    // Remove duplicates based on customer ID and company name
+    const seenNames = new Set();
+    const uniqueCustomers = customers.filter((customer, index, self) => {
+        // First check for duplicate IDs
+        const isUniqueId = index === self.findIndex(c => c.id === customer.id);
+        if (!isUniqueId) return false;
+        
+        // Then check for duplicate company names (case-insensitive)
+        const normalizedName = (customer.companyName || '').toLowerCase().trim();
+        if (seenNames.has(normalizedName)) return false;
+        seenNames.add(normalizedName);
+        return true;
+    });
 
     let html = '<option value="">-- Select Customer --</option>';
     uniqueCustomers.forEach(customer => {
@@ -492,10 +512,19 @@ function loadInwardCustomerDropdown() {
 
     const customers = getCustomers();
     
-    // Remove duplicates based on customer ID
-    const uniqueCustomers = customers.filter((customer, index, self) =>
-        index === self.findIndex(c => c.id === customer.id)
-    );
+    // Remove duplicates based on customer ID and company name
+    const seenNames = new Set();
+    const uniqueCustomers = customers.filter((customer, index, self) => {
+        // First check for duplicate IDs
+        const isUniqueId = index === self.findIndex(c => c.id === customer.id);
+        if (!isUniqueId) return false;
+        
+        // Then check for duplicate company names (case-insensitive)
+        const normalizedName = (customer.companyName || '').toLowerCase().trim();
+        if (seenNames.has(normalizedName)) return false;
+        seenNames.add(normalizedName);
+        return true;
+    });
 
     let html = '<option value="">-- Select Customer --</option>';
     uniqueCustomers.forEach(customer => {
