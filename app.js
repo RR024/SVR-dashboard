@@ -2156,7 +2156,7 @@ function generatePrintableInvoice(invoice) {
                 }
                 body { 
                     font-family: Arial, sans-serif; 
-                    font-size: 11px; 
+                    font-size: 13px; 
                     font-weight: bold;
                     color: #000; 
                     line-height: 1.4;
@@ -2226,7 +2226,7 @@ function generatePrintableInvoice(invoice) {
                     border-bottom: 2px solid #000;
                 }
                 .invoice-title { 
-                    font-size: 18px; 
+                    font-size: 20px; 
                     font-weight: bold;
                 }
                 
@@ -2240,7 +2240,7 @@ function generatePrintableInvoice(invoice) {
                     display: table-cell;
                     width: 50%;
                     padding: 10px 12px;
-                    font-size: 10px;
+                    font-size: 12px;
                     vertical-align: top;
                 }
                 .info-left {
@@ -2275,7 +2275,7 @@ function generatePrintableInvoice(invoice) {
                     display: table-cell;
                     width: 50%;
                     padding: 10px 12px;
-                    font-size: 10px;
+                    font-size: 12px;
                     vertical-align: top;
                 }
                 .address-left {
@@ -2298,7 +2298,7 @@ function generatePrintableInvoice(invoice) {
                 .products-table th { 
                     border: 1px solid #000; 
                     padding: 8px 6px; 
-                    font-size: 10px;
+                    font-size: 12px;
                     font-weight: bold;
                     text-align: center;
                 }
@@ -2307,7 +2307,7 @@ function generatePrintableInvoice(invoice) {
                 }
                 .products-table .totals-row td {
                     padding: 6px 12px;
-                    font-size: 12px;
+                    font-size: 14px;
                 }
                 .products-table .totals-label {
                     text-align: right;
@@ -2321,14 +2321,14 @@ function generatePrintableInvoice(invoice) {
                 /* Amount in Words */
                 .amount-words-section {
                     padding: 10px 12px;
-                    font-size: 11px;
+                    font-size: 13px;
                     border-bottom: 2px solid #000;
                 }
                 
                 /* Declaration */
                 .declaration-section {
                     padding: 12px 12px;
-                    font-size: 10px;
+                    font-size: 12px;
                     line-height: 1.5;
                     min-height: 100px;
                     flex-grow: 1;
@@ -2338,7 +2338,7 @@ function generatePrintableInvoice(invoice) {
                 .footer-section {
                     text-align: right;
                     padding: 40px 12px 12px 12px;
-                    font-size: 11px;
+                    font-size: 13px;
                 }
                 .footer-company {
                     font-weight: bold;
@@ -2354,7 +2354,7 @@ function generatePrintableInvoice(invoice) {
                 .jurisdiction-section {
                     text-align: center;
                     padding: 10px;
-                    font-size: 10px;
+                    font-size: 12px;
                     margin-top: auto;
                 }
             </style>
