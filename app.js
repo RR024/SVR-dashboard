@@ -2486,8 +2486,8 @@ function generatePrintableInvoice(invoice) {
                             <td class="totals-value">${parseFloat(invoice.total).toFixed(2)}</td>
                         </tr>
                         <tr class="totals-row">
-                            <td colspan="6" style="text-align: right; padding: 5px 8px; font-size: 9px;">Rounding off</td>
-                            <td style="text-align: right; padding: 5px 8px; font-size: 9px;">${Math.round(parseFloat(invoice.total))}.00</td>
+                            <td colspan="6" class="totals-label">Rounding off</td>
+                            <td class="totals-value">${Math.round(parseFloat(invoice.total))}.00</td>
                         </tr>
                     </tbody>
                 </table>
