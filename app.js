@@ -2200,7 +2200,7 @@ function generatePrintableInvoice(invoice) {
                     text-align: center;
                 }
                 .company-name { 
-                    font-size: 24px; 
+                    font-size: 26px; 
                     font-weight: bold; 
                     margin-bottom: 6px;
                     text-align: center;
@@ -2298,7 +2298,7 @@ function generatePrintableInvoice(invoice) {
                 .products-table th { 
                     border: 1px solid #000; 
                     padding: 8px 6px; 
-                    font-size: 12px;
+                    font-size: 14px;
                     font-weight: bold;
                     text-align: center;
                 }
@@ -2476,12 +2476,12 @@ function generatePrintableInvoice(invoice) {
                             <td class="totals-value">${parseFloat(invoice.taxableValue).toFixed(2)}</td>
                         </tr>
                         <tr class="totals-row">
-                            <td colspan="6" style="text-align: right; padding: 6px 12px; font-size: 10px; font-weight: normal;">Out Put CGST @ 9%</td>
-                            <td style="text-align: right; padding: 6px 12px; font-size: 10px; font-weight: normal;">${parseFloat(invoice.cgst).toFixed(2)}</td>
+                            <td colspan="6" style="text-align: right; padding: 6px 14px; font-size: 14px; font-weight: normal;">Out Put CGST @ 9%</td>
+                            <td style="text-align: right; padding: 6px 12px; font-size: 14px; font-weight: normal;">${parseFloat(invoice.cgst).toFixed(2)}</td>
                         </tr>
                         <tr class="totals-row">
-                            <td colspan="6" style="text-align: right; padding: 6px 12px; font-size: 10px; font-weight: normal;">Out Put SGST @ 9%</td>
-                            <td style="text-align: right; padding: 6px 12px; font-size: 10px; font-weight: normal;">${parseFloat(invoice.sgst).toFixed(2)}</td>
+                            <td colspan="6" style="text-align: right; padding: 6px 12px; font-size: 14px; font-weight: normal;">Out Put SGST @ 9%</td>
+                            <td style="text-align: right; padding: 6px 12px; font-size: 14px; font-weight: normal;">${parseFloat(invoice.sgst).toFixed(2)}</td>
                         </tr>
                         <tr class="totals-row">
                             <td colspan="6" class="totals-label">Total Amount ( Including Tax )</td>
