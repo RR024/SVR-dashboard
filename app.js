@@ -2209,10 +2209,12 @@ function generatePrintableInvoice(invoice) {
                 }
                 .invoice-container { 
                     width: 100%;
-                    min-height: calc(100vh - 8px);
+                    max-height: 100%;
                     border: 2px solid #000;
                     display: flex;
                     flex-direction: column;
+                    page-break-inside: avoid;
+                    overflow: hidden;
                 }
                 
                 /* Header Section */
