@@ -131,9 +131,18 @@ function downloadOutwardInvoicePDF(invoiceId) {
         head: [tableColumn],
         body: tableRows,
         startY: yPos,
-        theme: 'grid',
-        styles: { fontSize: 9, cellPadding: 4 },
-        headStyles: { fillColor: [102, 126, 234], textColor: 255, fontStyle: 'bold' },
+        theme: 'plain',
+        styles: {
+            fontSize: 9,
+            cellPadding: 4
+        },
+        headStyles: {
+            fillColor: [102, 126, 234],
+            textColor: 255,
+            fontStyle: 'bold',
+            lineWidth: 0.3,
+            lineColor: [102, 126, 234]
+        },
         margin: { left: 15, right: 15 },
         columnStyles: {
             0: { cellWidth: 15, halign: 'center' },
@@ -142,6 +151,36 @@ function downloadOutwardInvoicePDF(invoiceId) {
             3: { cellWidth: 20, halign: 'right' },
             4: { cellWidth: 30, halign: 'right' },
             5: { cellWidth: 30, halign: 'right' }
+        },
+        didDrawCell: function (data) {
+            if (data.section === 'body') {
+                // Only draw vertical lines between columns
+                doc.setDrawColor(200, 200, 200);
+                doc.setLineWidth(0.1);
+
+                // Draw right border of each cell (vertical lines)
+                if (data.column.index < data.table.columns.length - 1) {
+                    doc.line(
+                        data.cell.x + data.cell.width,
+                        data.cell.y,
+                        data.cell.x + data.cell.width,
+                        data.cell.y + data.cell.height
+                    );
+                }
+            }
+        },
+        didDrawPage: function (data) {
+            // Draw outer border around entire table
+            const tableStartX = data.settings.margin.left;
+            const tableEndX = doc.internal.pageSize.getWidth() - data.settings.margin.right;
+            const tableStartY = data.cursor?.y ? data.table.startPageY : yPos;
+            const tableEndY = data.cursor?.y || data.table.finalY;
+
+            doc.setDrawColor(200, 200, 200);
+            doc.setLineWidth(0.1);
+
+            // Draw rectangle around table
+            doc.rect(tableStartX, tableStartY, tableEndX - tableStartX, tableEndY - tableStartY);
         }
     });
 
