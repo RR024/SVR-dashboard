@@ -271,6 +271,11 @@ function updateExpenseSummaries() {
     if (totalElement) {
         totalElement.textContent = `₹${calculateExpenseSummary('all').toFixed(2)}`;
     }
+
+    // Update net balance if income module is loaded
+    if (typeof updateNetBalance === 'function') {
+        updateNetBalance();
+    }
 }
 
 // Search expenses

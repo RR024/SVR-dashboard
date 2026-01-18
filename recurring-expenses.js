@@ -218,18 +218,30 @@ function toggleRecurringExpense(id) {
 function switchExpenseTab(tab) {
     const allExpensesTab = document.getElementById('allExpensesTab');
     const recurringTab = document.getElementById('recurringExpensesTab');
+    const incomeTab = document.getElementById('incomeTab');
     const allExpensesContent = document.getElementById('allExpensesContent');
     const recurringContent = document.getElementById('recurringExpensesContent');
+    const incomeContent = document.getElementById('incomeContent');
+
+    // Remove active from all tabs
+    allExpensesTab.classList.remove('active');
+    recurringTab.classList.remove('active');
+    if (incomeTab) incomeTab.classList.remove('active');
+
+    // Hide all content
+    allExpensesContent.style.display = 'none';
+    recurringContent.style.display = 'none';
+    if (incomeContent) incomeContent.style.display = 'none';
 
     if (tab === 'all') {
         allExpensesTab.classList.add('active');
-        recurringTab.classList.remove('active');
         allExpensesContent.style.display = 'block';
-        recurringContent.style.display = 'none';
+    } else if (tab === 'income') {
+        if (incomeTab) incomeTab.classList.add('active');
+        if (incomeContent) incomeContent.style.display = 'block';
+        if (typeof loadIncomeEntries === 'function') loadIncomeEntries();
     } else {
-        allExpensesTab.classList.remove('active');
         recurringTab.classList.add('active');
-        allExpensesContent.style.display = 'none';
         recurringContent.style.display = 'block';
         loadRecurringExpensesList();
     }

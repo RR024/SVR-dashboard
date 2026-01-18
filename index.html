@@ -732,11 +732,11 @@
                 </div>
             </section>
 
-            <!-- Expense Tracking Module -->
+            <!-- Expense & Income Tracking Module -->
             <section id="expenses" class="module">
                 <div class="page-header">
-                    <h2>Expense Tracking</h2>
-                    <p>Monitor daily operational costs and expenses</p>
+                    <h2>Expense & Income Tracking</h2>
+                    <p>Monitor daily operational costs, expenses, and income</p>
                 </div>
 
                 <!-- Export & Report Buttons -->
@@ -780,6 +780,16 @@
                         <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">Total Expenses</div>
                         <div id="totalExpense" style="font-size: 2rem; font-weight: bold;">₹0</div>
                     </div>
+                    <div class="summary-card"
+                        style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); padding: 1.5rem; border-radius: 10px; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
+                        <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">Total Income</div>
+                        <div id="totalIncome" style="font-size: 2rem; font-weight: bold;">₹0</div>
+                    </div>
+                    <div class="summary-card"
+                        style="background: linear-gradient(135deg, #232526 0%, #414345 100%); padding: 1.5rem; border-radius: 10px; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
+                        <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">Net Balance</div>
+                        <div id="netBalance" style="font-size: 2rem; font-weight: bold;">₹0</div>
+                    </div>
                 </div>
 
 
@@ -790,6 +800,10 @@
                     <button id="allExpensesTab" class="expense-tab active" onclick="switchExpenseTab('all')"
                         style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--text-secondary); border-bottom: 3px solid transparent; transition: all 0.3s;">
                         All Expenses
+                    </button>
+                    <button id="incomeTab" class="expense-tab" onclick="switchExpenseTab('income')"
+                        style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--text-secondary); border-bottom: 3px solid transparent; transition: all 0.3s;">
+                        💰 Income
                     </button>
                     <button id="recurringExpensesTab" class="expense-tab" onclick="switchExpenseTab('recurring')"
                         style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--text-secondary); border-bottom: 3px solid transparent; transition: all 0.3s;">
@@ -895,6 +909,84 @@
                         </button>
                     </div>
                     <div id="recurringExpensesList"></div>
+                </div>
+
+                <!-- Income Content -->
+                <div id="incomeContent" style="display: none;">
+                    <!-- Income Summary Cards -->
+                    <div class="income-summary-cards"
+                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                        <div class="summary-card"
+                            style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); padding: 1.5rem; border-radius: 10px; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
+                            <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">Today's Income</div>
+                            <div id="todayIncome" style="font-size: 2rem; font-weight: bold;">₹0</div>
+                        </div>
+                        <div class="summary-card"
+                            style="background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%); padding: 1.5rem; border-radius: 10px; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
+                            <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">This Week</div>
+                            <div id="weekIncome" style="font-size: 2rem; font-weight: bold;">₹0</div>
+                        </div>
+                        <div class="summary-card"
+                            style="background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%); padding: 1.5rem; border-radius: 10px; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
+                            <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">This Month</div>
+                            <div id="monthIncome" style="font-size: 2rem; font-weight: bold;">₹0</div>
+                        </div>
+                    </div>
+
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem;">
+                        <div style="flex: 1; max-width: 400px;">
+                            <input type="text" id="incomeSearch" class="form-control"
+                                placeholder="🔍 Search income..." oninput="searchIncome(this.value)"
+                                style="margin: 0;">
+                        </div>
+                        <select id="incomeCategoryFilter" class="form-control" onchange="filterIncomeByCategory(this.value)"
+                            style="max-width: 200px; margin: 0;">
+                            <option value="">All Categories</option>
+                            <option value="Invoice Payment">Invoice Payment</option>
+                            <option value="Cash Sales">Cash Sales</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="Advance Payment">Advance Payment</option>
+                            <option value="Refund">Refund</option>
+                            <option value="Interest">Interest</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn btn-success btn-sm" onclick="exportIncomeToExcel()" title="Export to Excel">
+                                📊 Excel
+                            </button>
+                            <button class="btn btn-primary" onclick="openIncomeModal()">
+                                <span>➕</span> Add Income
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Income Table -->
+                    <div class="card">
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Category</th>
+                                        <th>Description</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Received From</th>
+                                        <th>Payment Method</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="incomeTableBody">
+                                    <tr>
+                                        <td colspan="8" class="text-center" style="color: var(--text-secondary);">
+                                            No income recorded yet. Click "Add Income" to get started.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -2182,6 +2274,91 @@
         </div>
     </div>
 
+    <!-- Income Modal -->
+    <div id="incomeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="incomeModalTitle">Add Income</h3>
+                <button class="modal-close" onclick="closeIncomeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="incomeForm" onsubmit="event.preventDefault(); saveIncome();">
+                    <input type="hidden" id="incomeId">
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label required">Date</label>
+                            <input type="date" id="incomeDate" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required">Category</label>
+                            <select id="incomeCategory" class="form-control" required>
+                                <option value="">Select Category</option>
+                                <option value="Invoice Payment">Invoice Payment</option>
+                                <option value="Cash Sales">Cash Sales</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
+                                <option value="Advance Payment">Advance Payment</option>
+                                <option value="Refund">Refund</option>
+                                <option value="Interest">Interest</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label required">Status</label>
+                            <select id="incomeStatus" class="form-control" required>
+                                <option value="Received">Received</option>
+                                <option value="Pending">Pending</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Received From</label>
+                            <input type="text" id="incomeReceivedFrom" class="form-control" placeholder="Customer/Company name">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Description</label>
+                        <input type="text" id="incomeDescription" class="form-control"
+                            placeholder="e.g., Invoice #123 payment" required>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label required">Amount (₹)</label>
+                            <input type="number" id="incomeAmount" class="form-control" step="0.01" min="0"
+                                placeholder="0.00" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required">Payment Method</label>
+                            <select id="incomePaymentMethod" class="form-control" required>
+                                <option value="">Select Method</option>
+                                <option value="Cash">Cash</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
+                                <option value="UPI">UPI</option>
+                                <option value="Cheque">Cheque</option>
+                                <option value="Credit Card">Credit Card</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Notes</label>
+                        <textarea id="incomeNotes" class="form-control" rows="3"
+                            placeholder="Additional notes..."></textarea>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeIncomeModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">Save Income</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Recurring Expense Modal -->
     <div id="recurringExpenseModal" class="modal">
         <div class="modal-content">
@@ -2793,6 +2970,7 @@
     <script src="expense-analytics.js"></script>
     <script src="recurring-expenses.js"></script>
     <script src="expense-reports.js"></script>
+    <script src="income.js"></script>
     <script src="customers.js"></script>
     <script src="production.js"></script>
     <script src="advanced-features.js"></script>
