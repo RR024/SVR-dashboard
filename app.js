@@ -2193,6 +2193,14 @@ function generatePrintableInvoice(invoice) {
                     size: A4; 
                     margin: 11mm; 
                 }
+                @media print {
+                    html, body {
+                        width: 210mm;
+                        height: 297mm;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                }
                 * { margin: 0; padding: 0; box-sizing: border-box; }
                 html, body { 
                     width: 100%;
@@ -2206,6 +2214,8 @@ function generatePrintableInvoice(invoice) {
                     font-weight: bold;
                     color: #000; 
                     line-height: 1.4;
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
                 }
                 .invoice-container { 
                     width: 100%;
@@ -2241,7 +2251,7 @@ function generatePrintableInvoice(invoice) {
                 .header-right {
                     display: table-cell;
                     vertical-align: middle;
-                    padding: 10px 12px;
+                    padding: 10px 12px 10px 0;
                     text-align: center;
                 }
                 .company-name { 
@@ -2249,6 +2259,7 @@ function generatePrintableInvoice(invoice) {
                     font-weight: bold; 
                     margin-bottom: 6px;
                     text-align: center;
+                    margin-left: -20px;
                 }
                 .company-details { 
                     font-size: 12px; 
@@ -2256,12 +2267,14 @@ function generatePrintableInvoice(invoice) {
                     margin-bottom: 6px; 
                     line-height: 1.5;
                     text-align: center;
+                    margin-left: -20px;
                 }
                 .gst-details { 
                     font-size: 13px; 
                     font-weight: bold;
                     margin-top: 6px;
                     text-align: center;
+                    margin-left: -20px;
                 }
                 
                 /* Title */
@@ -2406,7 +2419,7 @@ function generatePrintableInvoice(invoice) {
                 }
                 .footer-signature {
                     display: inline-block;
-                    padding-top: 50px;
+                    padding-top: 35px;
                     min-width: 180px;
                 }
                 
@@ -2494,7 +2507,7 @@ function generatePrintableInvoice(invoice) {
                     <div class="address-left">
                         <div class="address-title"><span style="text-decoration: underline;">Buyer Address</span> &nbsp;&nbsp;&nbsp;:</div>
                         <div style="margin-top: 4px;">
-                            <span style="font-size: 13px;">${invoice.buyerName}</span><br>
+                            <span style="font-size: 15px; font-weight: bold;">${invoice.buyerName}</span><br>
                             ${invoice.buyerAddress.replace(/\n/g, '<br>').replace(/,\s*Thiruvallur/gi, ',<br>Thiruvallur')}<br>
                             Contact : ${invoice.contact || ''}<br>
                             GSTIN : ${invoice.gstin}
@@ -2503,7 +2516,7 @@ function generatePrintableInvoice(invoice) {
                     <div class="address-right">
                         <div class="address-title"><span style="text-decoration: underline;">Shipment Address</span> &nbsp;&nbsp;&nbsp;:</div>
                         <div style="margin-top: 4px;">
-                            <span style="font-size: 13px;">${invoice.buyerName}</span><br>
+                            <span style="font-size: 15px; font-weight: bold;">${invoice.buyerName}</span><br>
                             ${(invoice.shippingAddress || invoice.buyerAddress).replace(/\n/g, '<br>').replace(/,\s*Thiruvallur/gi, ',<br>Thiruvallur')}<br>
                             Contact : ${invoice.contact || ''}<br>
                             GSTIN : ${invoice.gstin}
@@ -2528,23 +2541,23 @@ function generatePrintableInvoice(invoice) {
                         ${productsHTML}
                         <tr class="totals-row">
                             <td colspan="6" class="totals-label">Total Taxable Value</td>
-                            <td class="totals-value">${parseFloat(invoice.taxableValue).toFixed(2)}</td>
+                            <td class="totals-value" style="font-size: 19px;">${parseFloat(invoice.taxableValue).toFixed(2)}</td>
                         </tr>
                         <tr class="totals-row">
-                            <td colspan="6" style="text-align: right; padding: 6px 14px; font-size: 13px; font-weight: normal;">Out Put CGST @ 9%</td>
-                            <td style="text-align: right; padding: 6px 12px; font-size: 13px; font-weight: normal;">${parseFloat(invoice.cgst).toFixed(2)}</td>
+                            <td colspan="6" style="text-align: right; padding: 6px 14px; font-size: 13px; font-weight: normal; border-bottom: none;">Out Put CGST @ 9%</td>
+                            <td style="text-align: right; padding: 6px 12px; font-size: 13px; font-weight: normal; border-bottom: none;">${parseFloat(invoice.cgst).toFixed(2)}</td>
                         </tr>
                         <tr class="totals-row">
-                            <td colspan="6" style="text-align: right; padding: 6px 12px; font-size: 13px; font-weight: normal;">Out Put SGST @ 9%</td>
-                            <td style="text-align: right; padding: 6px 12px; font-size: 13px; font-weight: normal;">${parseFloat(invoice.sgst).toFixed(2)}</td>
+                            <td colspan="6" style="text-align: right; padding: 6px 12px; font-size: 13px; font-weight: normal; border-bottom: none; border-top: none;">Out Put SGST @ 9%</td>
+                            <td style="text-align: right; padding: 6px 12px; font-size: 13px; font-weight: normal; border-bottom: none; border-top: none;">${parseFloat(invoice.sgst).toFixed(2)}</td>
                         </tr>
                         <tr class="totals-row">
-                            <td colspan="6" class="totals-label">Total Amount ( Including Tax )</td>
-                            <td class="totals-value">${parseFloat(invoice.total).toFixed(2)}</td>
+                            <td colspan="6" class="totals-label" style="border-top: none;">Total Amount ( Including Tax )</td>
+                            <td class="totals-value" style="font-size: 19px; border-top: none;">${parseFloat(invoice.total).toFixed(2)}</td>
                         </tr>
                         <tr class="totals-row">
                             <td colspan="6" style="text-align: right; padding: 6px 12px; font-size: 16px; font-weight: bold;">Rounding off</td>
-                            <td class="totals-value" style="font-size: 18px;">${Math.round(parseFloat(invoice.total))}.00</td>
+                            <td class="totals-value" style="font-size: 20px;">${Math.round(parseFloat(invoice.total))}.00</td>
                         </tr>
                     </tbody>
                 </table>
