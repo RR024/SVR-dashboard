@@ -12,6 +12,9 @@ document.addEventListener('DOMContentLoaded', function () {
 // ===================================
 
 function initializeApp() {
+    // Seed default dummy invoices if not already seeded
+    seedDefaultInvoices();
+    
     // Migrate old invoice number format to new format
     migrateInvoiceNumberFormat();
     
@@ -49,6 +52,211 @@ function initializeApp() {
             checkExpenseReminders();
         }
     }, 2000);
+}
+
+// ===================================
+// SEED DEFAULT MONTHLY INVOICES
+// ===================================
+
+function seedDefaultInvoices() {
+    const seedKey = 'monthlyInvoicesSeeded_v4';
+    
+    // Check if already seeded
+    if (localStorage.getItem(seedKey)) {
+        return;
+    }
+    
+    console.log('Seeding monthly invoices...');
+    
+    // Monthly data for April to October 2025 - ACTUAL VALUES
+    const monthlyData = [
+        { month: 4, year: 2025, sales: 2233096.27, purchase: 1719549.43, monthName: 'April' },
+        { month: 5, year: 2025, sales: 963958.87, purchase: 743137.96, monthName: 'May' },
+        { month: 6, year: 2025, sales: 2052185.32, purchase: 1852652.08, monthName: 'June' },
+        { month: 7, year: 2025, sales: 2141125.02, purchase: 1409439.86, monthName: 'July' },
+        { month: 8, year: 2025, sales: 1453129.16, purchase: 924805.05, monthName: 'August' },
+        { month: 9, year: 2025, sales: 1791872.02, purchase: 1511755.50, monthName: 'September' },
+        { month: 10, year: 2025, sales: 668186.54, purchase: 840641.52, monthName: 'October' }
+    ];
+    
+    // Get existing invoices
+    let outwardInvoices = loadFromStorage('outwardInvoices') || [];
+    let inwardInvoices = loadFromStorage('inwardInvoices') || [];
+    
+    // Remove any existing dummy/monthly invoices first (to prevent duplicates)
+    outwardInvoices = outwardInvoices.filter(inv => !inv.id.startsWith('dummy_') && !inv.id.startsWith('monthly_'));
+    inwardInvoices = inwardInvoices.filter(inv => !inv.id.startsWith('dummy_') && !inv.id.startsWith('monthly_'));
+    
+    // Customer/Supplier names for realistic invoices
+    const salesCustomers = [
+        'Ashok Leyland Ltd',
+        'TVS Motor Company',
+        'Sundaram Fasteners',
+        'Rane Holdings',
+        'Lucas TVS',
+        'Wheels India Ltd',
+        'India Pistons Ltd'
+    ];
+    
+    const purchaseSuppliers = [
+        'Steel Authority of India',
+        'Tata Steel Ltd',
+        'JSW Steel',
+        'Hindalco Industries',
+        'Vedanta Ltd',
+        'NALCO',
+        'Jindal Steel'
+    ];
+    
+    // Generate outward (sales) invoices
+    monthlyData.forEach((data, index) => {
+        const dateStr = `${data.year}-${String(data.month).padStart(2, '0')}-15`;
+        const baseTimestamp = new Date(dateStr).getTime();
+        
+        // Calculate amounts (reverse from total to get taxable value)
+        // Total = Taxable + CGST(9%) + SGST(9%) = Taxable * 1.18
+        const taxableValue = data.sales / 1.18;
+        const cgst = taxableValue * 0.09;
+        const sgst = taxableValue * 0.09;
+        
+        const outwardInvoice = {
+            id: `monthly_outward_${data.month}_${data.year}`,
+            invoiceNo: `SVR${String(100 + index).padStart(4, '0')}/${data.year.toString().slice(-2)}-${(data.year + 1).toString().slice(-2)}`,
+            date: dateStr,
+            poNo: `PO/${data.monthName.substring(0,3).toUpperCase()}/${data.year}/001`,
+            poDate: `${data.year}-${String(data.month).padStart(2, '0')}-01`,
+            dcNo: `DC/${String(100 + index).padStart(4, '0')}`,
+            dcDate: dateStr,
+            state: 'Tamil Nadu',
+            stateCode: '33',
+            paymentTerms: '30 Days',
+            vehicle: `TN-38-AB-${String(1000 + index).padStart(4, '0')}`,
+            buyerName: salesCustomers[index],
+            buyerAddress: 'Chennai, Tamil Nadu',
+            shippingAddress: 'Chennai, Tamil Nadu',
+            sameAsBuyerAddress: true,
+            gstin: `33AAAC${String(index + 1).padStart(4, '0')}A1Z5`,
+            contact: `98765${String(43210 + index).padStart(5, '0')}`,
+            products: [{
+                description: 'Manufacturing Components - Monthly Supply',
+                hsn: '8477',
+                quantity: '1',
+                uom: 'LOT',
+                rate: taxableValue.toFixed(2),
+                value: taxableValue.toFixed(2)
+            }],
+            taxableValue: taxableValue.toFixed(2),
+            cgst: cgst.toFixed(2),
+            sgst: sgst.toFixed(2),
+            total: data.sales.toFixed(2),
+            paymentStatus: 'Unpaid',
+            amountPaid: 0,
+            amountInWords: numberToWordsSimple(Math.round(data.sales)) + ' Only',
+            locked: true
+        };
+        
+        outwardInvoices.push(outwardInvoice);
+    });
+    
+    // Generate inward (purchase) invoices
+    monthlyData.forEach((data, index) => {
+        const dateStr = `${data.year}-${String(data.month).padStart(2, '0')}-10`;
+        
+        // Calculate amounts (reverse from total to get taxable value)
+        const taxableValue = data.purchase / 1.18;
+        const cgst = taxableValue * 0.09;
+        const sgst = taxableValue * 0.09;
+        const roundedTotal = Math.round(data.purchase);
+        const roundOff = roundedTotal - data.purchase;
+        
+        const inwardInvoice = {
+            id: `monthly_inward_${data.month}_${data.year}`,
+            invoiceNo: `INV/${purchaseSuppliers[index].substring(0,3).toUpperCase()}/${data.year}/${String(index + 1).padStart(3, '0')}`,
+            date: dateStr,
+            customer: purchaseSuppliers[index],
+            gstNo: `33AABC${String(index + 1).padStart(4, '0')}B1Z9`,
+            products: [{
+                material: 'Raw Materials - Monthly Purchase',
+                quantity: 1,
+                unit: 'LOT',
+                rate: taxableValue,
+                amount: taxableValue
+            }],
+            taxableValue: taxableValue.toFixed(2),
+            cgst: cgst.toFixed(2),
+            sgst: sgst.toFixed(2),
+            roundOff: roundOff.toFixed(2),
+            amount: roundedTotal.toString(),
+            material: 'Raw Materials - Monthly Purchase',
+            quantity: 1,
+            unit: 'LOT',
+            rate: taxableValue,
+            notes: `${data.monthName} ${data.year} purchase`,
+            paymentStatus: 'Unpaid',
+            amountPaid: 0,
+            locked: true
+        };
+        
+        inwardInvoices.push(inwardInvoice);
+    });
+    
+    // Save to storage
+    saveToStorage('outwardInvoices', outwardInvoices);
+    saveToStorage('inwardInvoices', inwardInvoices);
+    
+    // Mark as seeded
+    localStorage.setItem(seedKey, 'true');
+    
+    console.log('Monthly invoices seeded successfully!');
+}
+
+// Simple number to words function for seeding (backup if main function not loaded yet)
+function numberToWordsSimple(num) {
+    if (typeof numberToWords === 'function') {
+        return numberToWords(num);
+    }
+    
+    const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine',
+        'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+    
+    if (num === 0) return 'Zero';
+    if (num < 0) return 'Minus ' + numberToWordsSimple(-num);
+    
+    let words = '';
+    
+    if (Math.floor(num / 10000000) > 0) {
+        words += numberToWordsSimple(Math.floor(num / 10000000)) + ' Crore ';
+        num %= 10000000;
+    }
+    
+    if (Math.floor(num / 100000) > 0) {
+        words += numberToWordsSimple(Math.floor(num / 100000)) + ' Lakh ';
+        num %= 100000;
+    }
+    
+    if (Math.floor(num / 1000) > 0) {
+        words += numberToWordsSimple(Math.floor(num / 1000)) + ' Thousand ';
+        num %= 1000;
+    }
+    
+    if (Math.floor(num / 100) > 0) {
+        words += numberToWordsSimple(Math.floor(num / 100)) + ' Hundred ';
+        num %= 100;
+    }
+    
+    if (num > 0) {
+        if (num < 20) {
+            words += ones[num];
+        } else {
+            words += tens[Math.floor(num / 10)];
+            if (num % 10 > 0) {
+                words += ' ' + ones[num % 10];
+            }
+        }
+    }
+    
+    return words.trim();
 }
 
 // ===================================
