@@ -14,10 +14,13 @@ document.addEventListener('DOMContentLoaded', function () {
 function initializeApp() {
     // Seed default dummy invoices if not already seeded
     seedDefaultInvoices();
-    
+
     // Migrate old invoice number format to new format
     migrateInvoiceNumberFormat();
-    
+
+    // Remove banned customers (Cleanup)
+    removeBannedCustomers();
+
     // Set default date for attendance (if element exists)
     const attendanceDateEl = document.getElementById('attendanceDate');
     if (attendanceDateEl) {
@@ -60,14 +63,14 @@ function initializeApp() {
 
 function seedDefaultInvoices() {
     const seedKey = 'monthlyInvoicesSeeded_v4';
-    
+
     // Check if already seeded
     if (localStorage.getItem(seedKey)) {
         return;
     }
-    
+
     console.log('Seeding monthly invoices...');
-    
+
     // Monthly data for April to October 2025 - ACTUAL VALUES
     const monthlyData = [
         { month: 4, year: 2025, sales: 2233096.27, purchase: 1719549.43, monthName: 'April' },
@@ -78,26 +81,26 @@ function seedDefaultInvoices() {
         { month: 9, year: 2025, sales: 1791872.02, purchase: 1511755.50, monthName: 'September' },
         { month: 10, year: 2025, sales: 668186.54, purchase: 840641.52, monthName: 'October' }
     ];
-    
+
     // Get existing invoices
     let outwardInvoices = loadFromStorage('outwardInvoices') || [];
     let inwardInvoices = loadFromStorage('inwardInvoices') || [];
-    
+
     // Remove any existing dummy/monthly invoices first (to prevent duplicates)
     outwardInvoices = outwardInvoices.filter(inv => !inv.id.startsWith('dummy_') && !inv.id.startsWith('monthly_'));
     inwardInvoices = inwardInvoices.filter(inv => !inv.id.startsWith('dummy_') && !inv.id.startsWith('monthly_'));
-    
+
     // Customer/Supplier names for realistic invoices
     const salesCustomers = [
-        'Ashok Leyland Ltd',
-        'TVS Motor Company',
-        'Sundaram Fasteners',
-        'Rane Holdings',
-        'Lucas TVS',
-        'Wheels India Ltd',
-        'India Pistons Ltd'
+        'SVR Customer 001',
+        'SVR Customer 002',
+        'SVR Customer 003',
+        'SVR Customer 004',
+        'SVR Customer 005',
+        'SVR Customer 006',
+        'SVR Customer 007'
     ];
-    
+
     const purchaseSuppliers = [
         'Steel Authority of India',
         'Tata Steel Ltd',
@@ -107,23 +110,23 @@ function seedDefaultInvoices() {
         'NALCO',
         'Jindal Steel'
     ];
-    
+
     // Generate outward (sales) invoices
     monthlyData.forEach((data, index) => {
         const dateStr = `${data.year}-${String(data.month).padStart(2, '0')}-15`;
         const baseTimestamp = new Date(dateStr).getTime();
-        
+
         // Calculate amounts (reverse from total to get taxable value)
         // Total = Taxable + CGST(9%) + SGST(9%) = Taxable * 1.18
         const taxableValue = data.sales / 1.18;
         const cgst = taxableValue * 0.09;
         const sgst = taxableValue * 0.09;
-        
+
         const outwardInvoice = {
             id: `monthly_outward_${data.month}_${data.year}`,
             invoiceNo: `SVR${String(100 + index).padStart(4, '0')}/${data.year.toString().slice(-2)}-${(data.year + 1).toString().slice(-2)}`,
             date: dateStr,
-            poNo: `PO/${data.monthName.substring(0,3).toUpperCase()}/${data.year}/001`,
+            poNo: `PO/${data.monthName.substring(0, 3).toUpperCase()}/${data.year}/001`,
             poDate: `${data.year}-${String(data.month).padStart(2, '0')}-01`,
             dcNo: `DC/${String(100 + index).padStart(4, '0')}`,
             dcDate: dateStr,
@@ -154,24 +157,24 @@ function seedDefaultInvoices() {
             amountInWords: numberToWordsSimple(Math.round(data.sales)) + ' Only',
             locked: true
         };
-        
+
         outwardInvoices.push(outwardInvoice);
     });
-    
+
     // Generate inward (purchase) invoices
     monthlyData.forEach((data, index) => {
         const dateStr = `${data.year}-${String(data.month).padStart(2, '0')}-10`;
-        
+
         // Calculate amounts (reverse from total to get taxable value)
         const taxableValue = data.purchase / 1.18;
         const cgst = taxableValue * 0.09;
         const sgst = taxableValue * 0.09;
         const roundedTotal = Math.round(data.purchase);
         const roundOff = roundedTotal - data.purchase;
-        
+
         const inwardInvoice = {
             id: `monthly_inward_${data.month}_${data.year}`,
-            invoiceNo: `INV/${purchaseSuppliers[index].substring(0,3).toUpperCase()}/${data.year}/${String(index + 1).padStart(3, '0')}`,
+            invoiceNo: `INV/${purchaseSuppliers[index].substring(0, 3).toUpperCase()}/${data.year}/${String(index + 1).padStart(3, '0')}`,
             date: dateStr,
             customer: purchaseSuppliers[index],
             gstNo: `33AABC${String(index + 1).padStart(4, '0')}B1Z9`,
@@ -196,17 +199,17 @@ function seedDefaultInvoices() {
             amountPaid: 0,
             locked: true
         };
-        
+
         inwardInvoices.push(inwardInvoice);
     });
-    
+
     // Save to storage
     saveToStorage('outwardInvoices', outwardInvoices);
     saveToStorage('inwardInvoices', inwardInvoices);
-    
+
     // Mark as seeded
     localStorage.setItem(seedKey, 'true');
-    
+
     console.log('Monthly invoices seeded successfully!');
 }
 
@@ -215,36 +218,36 @@ function numberToWordsSimple(num) {
     if (typeof numberToWords === 'function') {
         return numberToWords(num);
     }
-    
+
     const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine',
         'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
     const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
-    
+
     if (num === 0) return 'Zero';
     if (num < 0) return 'Minus ' + numberToWordsSimple(-num);
-    
+
     let words = '';
-    
+
     if (Math.floor(num / 10000000) > 0) {
         words += numberToWordsSimple(Math.floor(num / 10000000)) + ' Crore ';
         num %= 10000000;
     }
-    
+
     if (Math.floor(num / 100000) > 0) {
         words += numberToWordsSimple(Math.floor(num / 100000)) + ' Lakh ';
         num %= 100000;
     }
-    
+
     if (Math.floor(num / 1000) > 0) {
         words += numberToWordsSimple(Math.floor(num / 1000)) + ' Thousand ';
         num %= 1000;
     }
-    
+
     if (Math.floor(num / 100) > 0) {
         words += numberToWordsSimple(Math.floor(num / 100)) + ' Hundred ';
         num %= 100;
     }
-    
+
     if (num > 0) {
         if (num < 20) {
             words += ones[num];
@@ -255,7 +258,7 @@ function numberToWordsSimple(num) {
             }
         }
     }
-    
+
     return words.trim();
 }
 
@@ -438,10 +441,10 @@ function loadFromStorage(key) {
 function migrateInvoiceNumberFormat() {
     const migrationKey = 'invoiceFormatMigrated_v1';
     if (localStorage.getItem(migrationKey)) return; // Already migrated
-    
+
     const invoices = loadFromStorage('outwardInvoices') || [];
     let updated = false;
-    
+
     invoices.forEach(inv => {
         if (inv.invoiceNo && inv.invoiceNo.match(/^SVR\/\d{4}\/\d{2}-\d{2}$/)) {
             // Convert SVR/XXXX/YY-YY to SVRXXXX/YY-YY
@@ -450,11 +453,61 @@ function migrateInvoiceNumberFormat() {
             updated = true;
         }
     });
-    
+
     if (updated) {
         saveToStorage('outwardInvoices', invoices);
     }
     localStorage.setItem(migrationKey, 'true');
+}
+
+// Remove specific customers and their data (Cleanup)
+function removeBannedCustomers() {
+    const cleanupKey = 'bannedCustomersCleanup_v1';
+    if (localStorage.getItem(cleanupKey)) return;
+
+    // List of banned phrases to check against customer names
+    const bannedPhrases = [
+        'ashok leyland',
+        'india pistons',
+        'lucas tvs',
+        'rane',
+        'sundaram',
+        'tvs',
+        'wheels'
+    ];
+
+    let customersRemoved = 0;
+    let invoicesRemoved = 0;
+
+    // 1. Clean Customers
+    let customers = loadFromStorage('customers') || [];
+    const initialCustomerCount = customers.length;
+    customers = customers.filter(c => {
+        const nameLower = (c.companyName || '').toLowerCase();
+        return !bannedPhrases.some(phrase => nameLower.includes(phrase));
+    });
+
+    if (customers.length !== initialCustomerCount) {
+        saveToStorage('customers', customers);
+        customersRemoved = initialCustomerCount - customers.length;
+        console.log(`Removed ${customersRemoved} banned customers.`);
+    }
+
+    // 2. Clean Outward Invoices
+    let outwardInvoices = loadFromStorage('outwardInvoices') || [];
+    const initialInvoiceCount = outwardInvoices.length;
+    outwardInvoices = outwardInvoices.filter(inv => {
+        const buyerLower = (inv.buyerName || '').toLowerCase();
+        return !bannedPhrases.some(phrase => buyerLower.includes(phrase));
+    });
+
+    if (outwardInvoices.length !== initialInvoiceCount) {
+        saveToStorage('outwardInvoices', outwardInvoices);
+        invoicesRemoved = initialInvoiceCount - outwardInvoices.length;
+        console.log(`Removed ${invoicesRemoved} banned invoices.`);
+    }
+
+    localStorage.setItem(cleanupKey, 'true');
 }
 
 function getInwardInvoices() {
@@ -2344,13 +2397,13 @@ function printInvoice() {
 function generatePrintableInvoice(invoice) {
     let productsHTML = '';
     const minRows = 5; // Minimum number of rows to display
-    
+
     // Filter only products with actual data
     const validProducts = invoice.products.filter(product => {
         const desc = product.description && product.description.trim();
         return desc && desc !== '-- Select Product --';
     });
-    
+
     let rowCount = 0;
     validProducts.forEach((product, index) => {
         const desc = product.description;
@@ -2373,7 +2426,7 @@ function generatePrintableInvoice(invoice) {
         `;
         rowCount++;
     });
-    
+
     // Add empty rows to maintain minimum 5 rows
     const emptyRowsNeeded = minRows - rowCount;
     for (let i = 0; i < emptyRowsNeeded; i++) {
