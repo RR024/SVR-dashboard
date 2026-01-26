@@ -36,7 +36,7 @@ function displayProductSalesSummary() {
 
     // Get registered customers from Customer module
     const registeredCustomers = getCustomers();
-    const registeredCustomerNames = new Set(registeredCustomers.map(c => c.name));
+    const registeredCustomerNames = new Set(registeredCustomers.map(c => c.companyName));
 
     // Aggregate all product sales across all invoices
     invoices.forEach(inv => {
@@ -63,8 +63,8 @@ function displayProductSalesSummary() {
                 productSummary[desc].quantity += qty;
                 productSummary[desc].total += value;
 
-                // Only add customer if they are registered in Customer module
-                if (customer && registeredCustomerNames.has(customer)) {
+                // Add customer if name exists on invoice
+                if (customer) {
                     productSummary[desc].customers.add(customer);
                 }
             });
