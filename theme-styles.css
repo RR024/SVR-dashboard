@@ -1,0 +1,219 @@
+/* ===================================
+   DARK/LIGHT THEME STYLES
+   =================================== */
+
+/* Default: Dark Mode Variables (existing) */
+:root {
+    /* Dark mode variables are already defined in styles.css */
+    /* No additional variables needed for default dark theme */
+}
+
+/* Light Mode Variables */
+[data-theme="light"] {
+    /* Color Palette - Light Mode */
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    --warning-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+
+    --primary: #667eea;
+    --primary-dark: #5568d3;
+    --secondary: #764ba2;
+    --accent: #f5576c;
+
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #3b82f6;
+
+    /* Backgrounds - Light Mode */
+    --bg-primary: #f8f9fa;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #e9ecef;
+    --bg-card: #ffffff;
+    --bg-hover: rgba(0, 0, 0, 0.05);
+
+    /* Text - Light Mode */
+    --text-primary: #1a1a2e;
+    --text-secondary: #4a5568;
+    --text-muted: #9ca3af;
+
+    /* Borders - Light Mode */
+    --border-color: rgba(0, 0, 0, 0.1);
+    --border-focus: rgba(102, 126, 234, 0.5);
+
+    /* Shadows - Light Mode */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* Theme Toggle Button */
+.theme-toggle-btn {
+    width: 100%;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.theme-toggle-btn:hover {
+    background: var(--bg-hover);
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.theme-toggle-btn:active {
+    transform: scale(0.95);
+}
+
+/* Theme transition for smooth switching */
+* {
+    transition: background-color 0.3s ease,
+        color 0.3s ease,
+        border-color 0.3s ease;
+}
+
+/* Prevent transition on page load */
+.no-transition * {
+    transition: none !important;
+}
+
+/* Light mode specific adjustments */
+[data-theme="light"] .sidebar {
+    background: var(--bg-secondary);
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .card,
+[data-theme="light"] .stat-card {
+    background: var(--bg-card);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+}
+
+[data-theme="light"] .card:hover,
+[data-theme="light"] .stat-card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+[data-theme="light"] .data-table {
+    background: var(--bg-secondary);
+}
+
+[data-theme="light"] .data-table th {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .data-table tr:hover {
+    background: var(--bg-hover);
+}
+
+[data-theme="light"] .modal {
+    background: var(--bg-secondary);
+    box-shadow: var(--shadow-lg);
+}
+
+[data-theme="light"] .modal-overlay {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="light"] .btn {
+    box-shadow: var(--shadow-sm);
+}
+
+[data-theme="light"] .btn:hover {
+    box-shadow: var(--shadow-md);
+}
+
+[data-theme="light"] input,
+[data-theme="light"] select,
+[data-theme="light"] textarea {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+[data-theme="light"] input:focus,
+[data-theme="light"] select:focus,
+[data-theme="light"] textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--border-focus);
+}
+
+/* Chart adjustments for light mode */
+[data-theme="light"] .chart-container {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+}
+
+/* Login page light mode */
+[data-theme="light"] .login-page {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+[data-theme="light"] .login-container {
+    background: var(--bg-secondary);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Storage widget light mode */
+[data-theme="light"] .storage-bar {
+    background: var(--bg-tertiary);
+}
+
+/* Pagination light mode */
+[data-theme="light"] .pagination-container {
+    background: var(--bg-card);
+    border-top: 1px solid var(--border-color);
+}
+
+[data-theme="light"] .page-btn,
+[data-theme="light"] .page-num {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+}
+
+[data-theme="light"] .page-num.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+/* Toast notifications light mode */
+[data-theme="light"] .toast {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Make gradients work in both modes */
+.gradient-text {
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Scrollbar theming */
+[data-theme="light"] ::-webkit-scrollbar {
+    background: var(--bg-tertiary);
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}

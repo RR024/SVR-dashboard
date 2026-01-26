@@ -421,6 +421,20 @@ body::before {
     color: var(--text-primary);
 }
 
+/* Sales Tab Styling */
+.sales-tab {
+    position: relative;
+}
+
+.sales-tab.active {
+    color: var(--primary) !important;
+    border-bottom-color: var(--primary) !important;
+}
+
+.sales-tab:hover {
+    color: var(--text-primary);
+}
+
 /* Recurring Expense Cards */
 .recurring-expense-card {
     transition: transform 0.2s ease, box-shadow 0.2s ease;

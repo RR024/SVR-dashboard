@@ -1,0 +1,33 @@
+/* Force hamburger menu to show on mobile */
+@media (max-width: 768px) {
+    #mobileMenuToggle {
+        display: flex !important;
+    }
+}
+
+@media (min-width: 769px) {
+    #mobileMenuToggle {
+        display: none !important;
+    }
+}
+
+/* Ensure overlay appears above everything except toggle */
+#mobileOverlay.active {
+    display: block !important;
+}
+
+/* Sidebar mobile positioning */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed !important;
+        left: -280px !important;
+        top: 0 !important;
+        height: 100vh !important;
+        z-index: 1000 !important;
+        transition: left 0.3s ease !important;
+    }
+
+    .sidebar.active {
+        left: 0 !important;
+    }
+}

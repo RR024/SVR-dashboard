@@ -9,6 +9,11 @@
     <meta name="keywords" content="manufacturing, invoice, GST, employee management, attendance">
     <title>SVR Manufacturing Dashboard</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="utility-styles.css">
+    <link rel="stylesheet" href="theme-styles.css">
+    <link rel="stylesheet" href="mobile-responsive.css">
+    <link rel="stylesheet" href="mobile-fixes.css">
+    <link rel="stylesheet" href="mobile-menu-override.css">
 
     <!-- PWA Support -->
     <link rel="manifest" href="manifest.json">
@@ -34,6 +39,15 @@
 
 <body>
     <!-- Login Page (shown before main app) -->
+    <!-- Mobile Menu Elements -->
+    <button id="mobileMenuToggle" onclick="toggleMobileMenu()" aria-label="Toggle Menu" style="position: fixed; top: 1rem; left: 1rem; z-index: 10001; width: 50px; height: 50px; 
+               background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; 
+               border-radius: 0.5rem; color: white; font-size: 1.75rem; cursor: pointer; 
+               display: none; align-items: center; justify-content: center; 
+               box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);">☰</button>
+    <div id="mobileOverlay" onclick="closeMobileMenu()" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
+               background: rgba(0, 0, 0, 0.5); z-index: 999;"></div>
+
     <!-- Login/Signup Page -->
     <div id="loginPage" class="login-page">
         <div class="login-container">
@@ -210,6 +224,13 @@
                         style="width: 100%; display: none; background: var(--bg-tertiary); border: 1px dashed var(--primary); color: var(--primary); font-size: 0.75rem;">
                         📱 Install App
                     </button>
+
+                    <!-- Theme Toggle Button -->
+                    <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Theme">
+                        <span id="themeIcon">🌙</span>
+                        <span style="font-size: 0.875rem;">Theme</span>
+                    </button>
+
                     <a href="#" class="nav-link" onclick="logout(); return false;" style="margin-top: 0.5rem;">
                         <span class="nav-icon">🚪</span>
                         <span>Logout</span>
@@ -229,6 +250,12 @@
                         <p>Overview of your manufacturing business</p>
                     </div>
                     <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <button class="btn btn-sm" onclick="openDiaryModal()"
+                            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 0.5rem 1rem; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"
+                            title="Open Activity Diary">
+                            <span style="font-size: 1.2rem;">📔</span>
+                            <span>Diary</span>
+                        </button>
                         <span style="color: var(--text-secondary); font-size: 0.9rem; font-weight: 500;"></span>
                         <label class="toggle-switch"
                             style="position: relative; display: inline-block; width: 50px; height: 26px;">
@@ -241,6 +268,9 @@
                 </div>
 
 
+
+                <!-- Diary Alerts Container (for dashboard popups) -->
+                <div id="diaryAlertsContainer" class="diary-alerts-container"></div>
 
                 <div class="stats-grid-compact">
                     <div class="stat-card warning" onclick="showOutstandingSalesModal()" style="cursor: pointer;">
@@ -439,83 +469,247 @@
                     </button>
                 </div>
 
-                <div class="card">
-                    <div class="table-container">
-                        <table class="data-table" id="outwardTable">
-                            <thead>
-                                <tr>
-                                    <th>
-                                        Invoice No.
-                                        <button class="column-filter-btn"
-                                            onclick="toggleColumnFilter(event, 'invoiceNo')">▼</button>
-                                        <div class="column-filter-dropdown" id="filter-invoiceNo"
-                                            style="display: none;">
-                                            <input type="text" class="filter-input" placeholder="Search invoice..."
-                                                onkeyup="applyOutwardFilter()">
-                                            <div class="filter-options" id="filter-options-invoiceNo"></div>
-                                        </div>
-                                    </th>
-                                    <th>
-                                        Date
-                                        <button class="column-filter-btn"
-                                            onclick="toggleColumnFilter(event, 'date')">▼</button>
-                                        <div class="column-filter-dropdown" id="filter-date" style="display: none;">
-                                            <div style="display: flex; gap: 0.5rem; flex-direction: column;">
-                                                <small style="color: var(--text-secondary);">From:</small>
-                                                <input type="date" id="filter-date-from" class="filter-input"
-                                                    onchange="applyOutwardFilter()" placeholder="From">
-                                                <small style="color: var(--text-secondary);">To:</small>
-                                                <input type="date" id="filter-date-to" class="filter-input"
-                                                    onchange="applyOutwardFilter()" placeholder="To">
+                <!-- Tab Navigation -->
+                <div
+                    style="display: flex; gap: 1rem; border-bottom: 2px solid var(--bg-tertiary); margin-bottom: 1.5rem;">
+                    <button id="allInvoicesTab" class="sales-tab active" onclick="switchSalesTab('all')"
+                        style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--text-secondary); border-bottom: 3px solid transparent; transition: all 0.3s;">
+                        📋 All Invoices
+                    </button>
+                    <button id="productDetailsTab" class="sales-tab" onclick="switchSalesTab('products')"
+                        style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--text-secondary); border-bottom: 3px solid transparent; transition: all 0.3s;">
+                        📦 Product Sales Details
+                    </button>
+                </div>
+
+                <!-- All Invoices Content -->
+                <div id="allInvoicesContent">
+                    <div class="card">
+                        <div class="table-container">
+                            <table class="data-table" id="outwardTable">
+                                <thead>
+                                    <tr>
+                                        <th>
+                                            Invoice No.
+                                            <button class="column-filter-btn"
+                                                onclick="toggleColumnFilter(event, 'invoiceNo')">▼</button>
+                                            <div class="column-filter-dropdown" id="filter-invoiceNo"
+                                                style="display: none;">
+                                                <input type="text" class="filter-input" placeholder="Search invoice..."
+                                                    onkeyup="applyOutwardFilter()">
+                                                <div class="filter-options" id="filter-options-invoiceNo"></div>
                                             </div>
-                                        </div>
-                                    </th>
-                                    <th>
-                                        Customer
-                                        <button class="column-filter-btn"
-                                            onclick="toggleColumnFilter(event, 'customer')">▼</button>
-                                        <div class="column-filter-dropdown" id="filter-customer" style="display: none;">
-                                            <select id="filter-customer-select" class="filter-input"
-                                                onchange="applyOutwardFilter()"
-                                                style="width: 100%; padding: 0.5rem; cursor: pointer;">
-                                                <option value="">All Customers</option>
-                                            </select>
-                                        </div>
-                                    </th>
-                                    <th>GSTIN</th>
-                                    <th>Taxable Value</th>
-                                    <th>Total (with GST)</th>
-                                    <th>
-                                        Payment Status
-                                        <button class="column-filter-btn"
-                                            onclick="toggleColumnFilter(event, 'paymentStatus')">▼</button>
-                                        <div class="column-filter-dropdown" id="filter-paymentStatus"
-                                            style="display: none;">
-                                            <div class="filter-options">
-                                                <label class="filter-option"><input type="checkbox" value="All" checked
-                                                        onchange="applyOutwardFilter()"> All</label>
-                                                <label class="filter-option"><input type="checkbox" value="Paid"
-                                                        onchange="applyOutwardFilter()"> Paid</label>
-                                                <label class="filter-option"><input type="checkbox" value="Pending"
-                                                        onchange="applyOutwardFilter()"> Pending</label>
-                                                <label class="filter-option"><input type="checkbox" value="Partial"
-                                                        onchange="applyOutwardFilter()"> Partial</label>
+                                        </th>
+                                        <th>
+                                            Date
+                                            <button class="column-filter-btn"
+                                                onclick="toggleColumnFilter(event, 'date')">▼</button>
+                                            <div class="column-filter-dropdown" id="filter-date" style="display: none;">
+                                                <div style="display: flex; gap: 0.5rem; flex-direction: column;">
+                                                    <small style="color: var(--text-secondary);">From:</small>
+                                                    <input type="date" id="filter-date-from" class="filter-input"
+                                                        onchange="applyOutwardFilter()" placeholder="From">
+                                                    <small style="color: var(--text-secondary);">To:</small>
+                                                    <input type="date" id="filter-date-to" class="filter-input"
+                                                        onchange="applyOutwardFilter()" placeholder="To">
+                                                </div>
                                             </div>
-                                        </div>
-                                    </th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="outwardTableBody">
-                                <tr>
-                                    <td colspan="8" class="text-center" style="color: var(--text-secondary);">
-                                        No outward invoices yet. Click "New Tax Invoice" to create one.
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                                        </th>
+                                        <th>
+                                            Customer
+                                            <button class="column-filter-btn"
+                                                onclick="toggleColumnFilter(event, 'customer')">▼</button>
+                                            <div class="column-filter-dropdown" id="filter-customer"
+                                                style="display: none;">
+                                                <select id="filter-customer-select" class="filter-input"
+                                                    onchange="applyOutwardFilter()"
+                                                    style="width: 100%; padding: 0.5rem; cursor: pointer;">
+                                                    <option value="">All Customers</option>
+                                                </select>
+                                            </div>
+                                        </th>
+                                        <th>GSTIN</th>
+                                        <th>Taxable Value</th>
+                                        <th>Total (with GST)</th>
+                                        <th>
+                                            Payment Status
+                                            <button class="column-filter-btn"
+                                                onclick="toggleColumnFilter(event, 'paymentStatus')">▼</button>
+                                            <div class="column-filter-dropdown" id="filter-paymentStatus"
+                                                style="display: none;">
+                                                <div class="filter-options">
+                                                    <label class="filter-option"><input type="checkbox" value="All"
+                                                            checked onchange="applyOutwardFilter()"> All</label>
+                                                    <label class="filter-option"><input type="checkbox" value="Paid"
+                                                            onchange="applyOutwardFilter()"> Paid</label>
+                                                    <label class="filter-option"><input type="checkbox" value="Pending"
+                                                            onchange="applyOutwardFilter()"> Pending</label>
+                                                    <label class="filter-option"><input type="checkbox" value="Partial"
+                                                            onchange="applyOutwardFilter()"> Partial</label>
+                                                </div>
+                                            </div>
+                                        </th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="outwardTableBody">
+                                    <tr>
+                                        <td colspan="8" class="text-center" style="color: var(--text-secondary);">
+                                            No outward invoices yet. Click "New Tax Invoice" to create one.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
+                <!-- End All Invoices Content -->
+
+                <!-- Product Sales Details Content -->
+                <div id="productDetailsContent" style="display: none;">
+                    <!-- Product Sales Summary Card -->
+                    <div class="card" style="margin-bottom: 2rem;">
+                        <div class="card-header">
+                            <h3 class="card-title">📊 Product Sales Summary</h3>
+                        </div>
+                        <div style="max-height: 400px; overflow-y: auto;">
+                            <table class="data-table" style="margin: 0;">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 5%;">#</th>
+                                        <th style="width: 35%;">Product Description</th>
+                                        <th style="width: 35%;">Customers</th>
+                                        <th style="width: 15%;">Total Qty</th>
+                                        <th style="width: 20%;">Total Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="productSummaryTableBody">
+                                    <tr>
+                                        <td colspan="5" class="text-center" style="color: var(--text-secondary);">
+                                            No product sales data yet.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+
+
+                    <!-- Product Sales Table -->
+                    <div class="card">
+                        <div class="table-container">
+                            <table class="data-table" id="productSalesTable">
+                                <thead>
+                                    <tr>
+                                        <th>
+                                            Invoice No.
+                                            <button class="column-filter-btn"
+                                                onclick="toggleProductColumnFilter(event, 'invoiceNo')">▼</button>
+                                            <div class="column-filter-dropdown" id="product-filter-invoiceNo"
+                                                style="display: none;">
+                                                <input type="text" class="filter-input" placeholder="Search invoice..."
+                                                    onkeyup="applyProductSalesFilter()">
+                                                <div class="filter-options" id="product-filter-options-invoiceNo"></div>
+                                            </div>
+                                        </th>
+                                        <th>
+                                            Date
+                                            <button class="column-filter-btn"
+                                                onclick="toggleProductColumnFilter(event, 'date')">▼</button>
+                                            <div class="column-filter-dropdown" id="product-filter-date"
+                                                style="display: none;">
+                                                <div style="display: flex; gap: 0.5rem; flex-direction: column;">
+                                                    <small style="color: var(--text-secondary);">From:</small>
+                                                    <input type="date" id="product-filter-date-from"
+                                                        class="filter-input" onchange="applyProductSalesFilter()"
+                                                        placeholder="From">
+                                                    <small style="color: var(--text-secondary);">To:</small>
+                                                    <input type="date" id="product-filter-date-to" class="filter-input"
+                                                        onchange="applyProductSalesFilter()" placeholder="To">
+                                                </div>
+                                            </div>
+                                        </th>
+                                        <th>
+                                            Customer Name
+                                            <button class="column-filter-btn"
+                                                onclick="toggleProductColumnFilter(event, 'customer')">▼</button>
+                                            <div class="column-filter-dropdown" id="product-filter-customer"
+                                                style="display: none;">
+                                                <select id="product-filter-customer-select" class="filter-input"
+                                                    onchange="applyProductSalesFilter()"
+                                                    style="width: 100%; padding: 0.5rem; cursor: pointer;">
+                                                    <option value="">All Customers</option>
+                                                </select>
+                                            </div>
+                                        </th>
+                                        <th>
+                                            Product Description
+                                            <button class="column-filter-btn"
+                                                onclick="toggleProductColumnFilter(event, 'product')">▼</button>
+                                            <div class="column-filter-dropdown" id="product-filter-product"
+                                                style="display: none;">
+                                                <select id="product-filter-product-select" class="filter-input"
+                                                    onchange="applyProductSalesFilter()"
+                                                    style="width: 100%; padding: 0.5rem; cursor: pointer;">
+                                                    <option value="">All Products</option>
+                                                </select>
+                                            </div>
+                                        </th>
+                                        <th>
+                                            Quantity
+                                            <button class="column-filter-btn"
+                                                onclick="toggleProductColumnFilter(event, 'quantity')">▼</button>
+                                            <div class="column-filter-dropdown" id="product-filter-quantity"
+                                                style="display: none;">
+                                                <input type="number" class="filter-input" placeholder="Min quantity..."
+                                                    id="product-filter-quantity-min"
+                                                    onkeyup="applyProductSalesFilter()">
+                                                <input type="number" class="filter-input" placeholder="Max quantity..."
+                                                    id="product-filter-quantity-max" onkeyup="applyProductSalesFilter()"
+                                                    style="margin-top: 0.5rem;">
+                                            </div>
+                                        </th>
+                                        <th>
+                                            Unit Price
+                                            <button class="column-filter-btn"
+                                                onclick="toggleProductColumnFilter(event, 'price')">▼</button>
+                                            <div class="column-filter-dropdown" id="product-filter-price"
+                                                style="display: none;">
+                                                <input type="number" class="filter-input" placeholder="Min price..."
+                                                    id="product-filter-price-min" onkeyup="applyProductSalesFilter()">
+                                                <input type="number" class="filter-input" placeholder="Max price..."
+                                                    id="product-filter-price-max" onkeyup="applyProductSalesFilter()"
+                                                    style="margin-top: 0.5rem;">
+                                            </div>
+                                        </th>
+                                        <th>
+                                            Total Value
+                                            <button class="column-filter-btn"
+                                                onclick="toggleProductColumnFilter(event, 'total')">▼</button>
+                                            <div class="column-filter-dropdown" id="product-filter-total"
+                                                style="display: none;">
+                                                <input type="number" class="filter-input" placeholder="Min total..."
+                                                    id="product-filter-total-min" onkeyup="applyProductSalesFilter()">
+                                                <input type="number" class="filter-input" placeholder="Max total..."
+                                                    id="product-filter-total-max" onkeyup="applyProductSalesFilter()"
+                                                    style="margin-top: 0.5rem;">
+                                            </div>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="productSalesTableBody">
+                                    <tr>
+                                        <td colspan="7" class="text-center" style="color: var(--text-secondary);">
+                                            No product sales data yet.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <!-- End Product Sales Details Content -->
             </section>
 
             <!-- Customers Module -->
@@ -936,12 +1130,11 @@
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem;">
                         <div style="flex: 1; max-width: 400px;">
-                            <input type="text" id="incomeSearch" class="form-control"
-                                placeholder="🔍 Search income..." oninput="searchIncome(this.value)"
-                                style="margin: 0;">
+                            <input type="text" id="incomeSearch" class="form-control" placeholder="🔍 Search income..."
+                                oninput="searchIncome(this.value)" style="margin: 0;">
                         </div>
-                        <select id="incomeCategoryFilter" class="form-control" onchange="filterIncomeByCategory(this.value)"
-                            style="max-width: 200px; margin: 0;">
+                        <select id="incomeCategoryFilter" class="form-control"
+                            onchange="filterIncomeByCategory(this.value)" style="max-width: 200px; margin: 0;">
                             <option value="">All Categories</option>
                             <option value="Invoice Payment">Invoice Payment</option>
                             <option value="Cash Sales">Cash Sales</option>
@@ -952,7 +1145,8 @@
                             <option value="Other">Other</option>
                         </select>
                         <div style="display: flex; gap: 0.5rem;">
-                            <button class="btn btn-success btn-sm" onclick="exportIncomeToExcel()" title="Export to Excel">
+                            <button class="btn btn-success btn-sm" onclick="exportIncomeToExcel()"
+                                title="Export to Excel">
                                 📊 Excel
                             </button>
                             <button class="btn btn-primary" onclick="openIncomeModal()">
@@ -1655,7 +1849,8 @@
                         <div class="form-group">
                             <label class="form-label required">DC No. / Date</label>
                             <div style="display: flex; gap: 8px;">
-                                <input type="text" id="outwardDCNo" class="form-control" placeholder="e.g., DC001" required style="flex: 1;">
+                                <input type="text" id="outwardDCNo" class="form-control" placeholder="e.g., DC001"
+                                    required style="flex: 1;">
                                 <input type="date" id="outwardDCDate" class="form-control" required style="flex: 1;">
                             </div>
                         </div>
@@ -1705,14 +1900,17 @@
                     <div class="form-group">
                         <label class="form-label required">Buyer Address</label>
                         <textarea id="outwardBuyerAddress" class="form-control"
-                            placeholder="Full address with city and pincode" required oninput="syncShippingAddress()"></textarea>
+                            placeholder="Full address with city and pincode" required
+                            oninput="syncShippingAddress()"></textarea>
                     </div>
 
                     <div class="form-group">
                         <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
                             <label class="form-label" style="margin: 0; margin-right: 1rem;">Shipping Address</label>
-                            <label style="display: flex; align-items: center; cursor: pointer; font-size: 0.875rem; color: var(--text-secondary);">
-                                <input type="checkbox" id="sameAsBuyerAddress" onchange="toggleShippingAddress()" style="margin-right: 0.5rem;">
+                            <label
+                                style="display: flex; align-items: center; cursor: pointer; font-size: 0.875rem; color: var(--text-secondary);">
+                                <input type="checkbox" id="sameAsBuyerAddress" onchange="toggleShippingAddress()"
+                                    style="margin-right: 0.5rem;">
                                 Same as Buyer Address
                             </label>
                         </div>
@@ -2315,7 +2513,8 @@
                         </div>
                         <div class="form-group">
                             <label class="form-label">Received From</label>
-                            <input type="text" id="incomeReceivedFrom" class="form-control" placeholder="Customer/Company name">
+                            <input type="text" id="incomeReceivedFrom" class="form-control"
+                                placeholder="Customer/Company name">
                         </div>
                     </div>
 
@@ -2352,7 +2551,8 @@
 
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" onclick="closeIncomeModal()">Cancel</button>
-                        <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">Save Income</button>
+                        <button type="submit" class="btn btn-primary"
+                            style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">Save Income</button>
                     </div>
                 </form>
             </div>
@@ -2894,6 +3094,155 @@
         </div>
     </div>
 
+    <!-- Diary Modal - Book Design -->
+    <div id="diaryModal" class="modal">
+        <div class="diary-book-container">
+            <!-- Close Button -->
+            <button class="diary-close-btn" onclick="closeDiaryModal()" title="Close Diary">✕</button>
+
+            <!-- Diary Book -->
+            <div class="diary-book">
+                <!-- Left Page -->
+                <div class="diary-page diary-page-left">
+                    <div class="page-header">
+                        <div class="page-date" id="leftPageDate">Select a date</div>
+                        <button class="page-btn-today" onclick="goToToday()" title="Jump to today">📅 Today</button>
+                    </div>
+
+                    <!-- Activities List -->
+                    <div class="activities-container" id="activitiesContainer">
+                        <p style="text-align: center; color: #b8a898; padding: 2rem; font-style: italic;">
+                            No activities for this day yet.<br>Click "Add Activity" to start.
+                        </p>
+                    </div>
+
+                    <!-- Add New Activity Button -->
+                    <div style="margin-top: auto; padding-top: 1rem; border-top: 1px dashed #d4c5b0;">
+                        <button class="page-action-btn add-activity-btn" onclick="toggleActivityForm()"
+                            id="addActivityBtn">
+                            ➕ Add Activity
+                        </button>
+                    </div>
+
+                    <!-- New Activity Form (Hidden by default) -->
+                    <div class="new-activity-form" id="newActivityForm" style="display: none;">
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+                            <select id="newActivityCategory" class="diary-category-select" style="flex: 1;">
+                                <option value="">-- Category --</option>
+                                <option value="Production">🏭 Production</option>
+                                <option value="Sales">📈 Sales</option>
+                                <option value="Meeting">👥 Meeting</option>
+                                <option value="Issue">⚠️ Issue</option>
+                                <option value="Achievement">🎯 Achievement</option>
+                                <option value="Maintenance">🔧 Maintenance</option>
+                                <option value="Finance">💰 Finance</option>
+                                <option value="Other">📝 Other</option>
+                            </select>
+                            <select id="newActivityPriority" class="diary-priority-select" style="flex: 0 0 100px;">
+                                <option value="Low">🟢 Low</option>
+                                <option value="Medium">🟡 Medium</option>
+                                <option value="High">🔴 High</option>
+                            </select>
+                        </div>
+                        <textarea id="newActivityContent" class="activity-textarea"
+                            placeholder="Describe this activity..." rows="4"></textarea>
+
+                        <!-- Alert/Reminder Checkbox -->
+                        <div
+                            style="margin-top: 0.75rem; padding: 0.5rem; background: #fff8dc; border-radius: 6px; border: 1px solid #ffd700;">
+                            <label
+                                style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.875rem;">
+                                <input type="checkbox" id="newActivityAlert"
+                                    style="width: 18px; height: 18px; cursor: pointer;">
+                                <span>
+                                    🔔 <strong>Set Alert/Reminder</strong>
+                                    <span style="color: #666; font-size: 0.75rem;">
+                                        (Show popup on dashboard until this date)
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
+
+                        <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
+                            <button class="page-action-btn save-btn" onclick="saveNewActivity()" style="flex: 1;">
+                                💾 Save Activity
+                            </button>
+                            <button class="page-action-btn" onclick="cancelActivityForm()"
+                                style="flex: 1; background: #6c757d; color: white;">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Diary Spine/Binding -->
+                <div class="diary-spine"></div>
+
+                <!-- Right Page - Calendar & Navigation -->
+                <div class="diary-page diary-page-right">
+                    <div class="page-header">
+                        <h3 style="margin: 0; color: #8b5a3c; font-family: 'Georgia', serif;">📖 My Activity Diary</h3>
+                    </div>
+
+                    <!-- Calendar Navigation -->
+                    <div class="diary-calendar-section">
+                        <div class="calendar-header">
+                            <button class="calendar-nav-btn" onclick="previousMonth()">◀</button>
+                            <div class="calendar-month-year" id="calendarMonthYear">January 2026</div>
+                            <button class="calendar-nav-btn" onclick="nextMonth()">▶</button>
+                        </div>
+                        <div class="calendar-grid" id="calendarGrid">
+                            <!-- Calendar will be generated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="diary-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">Total Entries</div>
+                            <div class="stat-value" id="totalEntriesCount">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">This Month</div>
+                            <div class="stat-value" id="monthEntriesCount">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">This Week</div>
+                            <div class="stat-value" id="weekEntriesCount">0</div>
+                        </div>
+                    </div>
+
+                    <!-- Search Box -->
+                    <div class="diary-search-box">
+                        <input type="text" id="diarySearchBox" class="diary-search-input"
+                            placeholder="🔍 Search entries..." oninput="searchDiaryByText(this.value)" />
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="diary-legend">
+                        <div class="legend-item">
+                            <span class="legend-dot" style="background: #10b981;"></span>
+                            <span>Has entry</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-dot" style="background: #667eea;"></span>
+                            <span>Selected</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page Navigation Arrows -->
+            <button class="diary-nav-arrow diary-nav-left" onclick="previousDay()" title="Previous Day">
+                ‹
+            </button>
+            <button class="diary-nav-arrow diary-nav-right" onclick="nextDay()" title="Next Day">
+                ›
+            </button>
+        </div>
+    </div>
+
+
     <!-- Toggle First Row Script & Styles -->
     <style>
         /* Toggle Switch Slider Animation */
@@ -2917,9 +3266,789 @@
         input:checked+.toggle-slider:before {
             transform: translateX(24px);
         }
+    </style>
 
-        .toggle-slider:hover {
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1), 0 0 8px rgba(102, 126, 234, 0.3);
+    <!-- Diary Book Styles -->
+    <style>
+        /* Diary Book Container */
+        .diary-book-container {
+            position: relative;
+            max-width: 1200px;
+            width: 95vw;
+            height: 85vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        /* Close Button */
+        .diary-close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1000;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .diary-close-btn:hover {
+            background: rgba(0, 0, 0, 0.8);
+            transform: rotate(90deg);
+        }
+
+        /* Diary Book */
+        .diary-book {
+            display: flex;
+            width: 100%;
+            max-width: 1100px;
+            height: 100%;
+            background: linear-gradient(135deg, #8b5a3c 0%, #6b4423 100%);
+            border-radius: 12px;
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, 0.4),
+                inset 0 0 20px rgba(0, 0, 0, 0.2);
+            position: relative;
+            padding: 1.5rem;
+        }
+
+        /* Individual Pages */
+        .diary-page {
+            flex: 1;
+            background: #fffef7;
+            background-image:
+                repeating-linear-gradient(transparent,
+                    transparent 29px,
+                    #e0d8c8 29px,
+                    #e0d8c8 30px);
+            margin: 0.5rem;
+            padding: 2rem;
+            box-shadow:
+                inset 0 0 30px rgba(139, 90, 60, 0.1),
+                2px 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .diary-page-left {
+            border-right: 1px dashed #ccc;
+        }
+
+        .diary-page-right {
+            border-left: 1px dashed #ccc;
+        }
+
+        /* Diary Spine */
+        .diary-spine {
+            width: 30px;
+            background: linear-gradient(90deg, #5a3820 0%, #8b5a3c 50%, #5a3820 100%);
+            box-shadow:
+                inset 0 0 10px rgba(0, 0, 0, 0.5),
+                2px 0 5px rgba(0, 0, 0, 0.3),
+                -2px 0 5px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .diary-spine::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Page Header */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #8b5a3c;
+        }
+
+        .page-date {
+            font-family: 'Georgia', serif;
+            font-size: 1.1rem;
+            color: #8b5a3c;
+            font-weight: 600;
+        }
+
+        .page-btn-today {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+        }
+
+        .page-btn-today:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Category Section */
+        .page-category-section {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            align-items: center;
+        }
+
+        .page-category-section label {
+            font-size: 0.875rem;
+            color: #5a3820;
+            font-weight: 500;
+        }
+
+        .diary-category-select,
+        .diary-priority-select {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid #d4c5b0;
+            border-radius: 6px;
+            background: white;
+            font-size: 0.875rem;
+            cursor: pointer;
+        }
+
+        /* Content Area */
+        .page-content-area {
+            flex: 1;
+            margin-bottom: 1.5rem;
+        }
+
+        .diary-writing-area {
+            width: 100%;
+            height: calc(100% - 80px);
+            min-height: 300px;
+            border: none;
+            background: transparent;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95rem;
+            line-height: 30px;
+            color: #2c1810;
+            resize: none;
+            outline: none;
+            padding: 0;
+        }
+
+        .diary-writing-area::placeholder {
+            color: #b8a898;
+            font-style: italic;
+        }
+
+        /* Page Footer */
+        .page-footer {
+            display: flex;
+            gap: 0.75rem;
+            padding-top: 1rem;
+            border-top: 1px dashed #d4c5b0;
+        }
+
+        .page-action-btn {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .save-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        .delete-btn {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .delete-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+        }
+
+        /* Calendar Section */
+        .diary-calendar-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .calendar-month-year {
+            font-family: 'Georgia', serif;
+            font-size: 1rem;
+            color: #8b5a3c;
+            font-weight: 600;
+        }
+
+        .calendar-nav-btn {
+            background: none;
+            border: 1px solid #d4c5b0;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            color: #8b5a3c;
+            transition: all 0.2s ease;
+        }
+
+        .calendar-nav-btn:hover {
+            background: #8b5a3c;
+            color: white;
+        }
+
+        .calendar-grid {
+            font-size: 0.75rem;
+        }
+
+        .calendar-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            margin-bottom: 0.5rem;
+        }
+
+        .weekday {
+            text-align: center;
+            font-weight: 600;
+            color: #8b5a3c;
+            padding: 0.25rem;
+        }
+
+        .calendar-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 3px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: white;
+            color: #5a3820;
+            font-size: 0.8rem;
+        }
+
+        .calendar-day.empty {
+            background: transparent;
+            cursor: default;
+        }
+
+        .calendar-day:not(.empty):hover {
+            background: #f0e8d8;
+        }
+
+        .calendar-day.has-entry {
+            background: #10b981;
+            color: white;
+            font-weight: 600;
+        }
+
+        .calendar-day.selected {
+            background: #667eea;
+            color: white;
+            font-weight: 700;
+            transform: scale(1.1);
+        }
+
+        .calendar-day.today {
+            border: 2px solid #f59e0b;
+        }
+
+        .calendar-day.search-match {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
+        }
+
+        /* Diary Stats */
+        .diary-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-item {
+            background: white;
+            border-radius: 6px;
+            padding: 0.75rem;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: #888;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        /* Search Box */
+        .diary-search-box {
+            margin-bottom: 1.5rem;
+        }
+
+        .diary-search-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d4c5b0;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            outline: none;
+        }
+
+        .diary-search-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Legend */
+        .diary-legend {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.75rem;
+            color: #666;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* Navigation Arrows */
+        .diary-nav-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(139, 90, 60, 0.8);
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .diary-nav-arrow:hover {
+            background: rgba(139, 90, 60, 1);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .diary-nav-left {
+            left: 1rem;
+        }
+
+        .diary-nav-right {
+            right: 1rem;
+        }
+
+        /* Scrollbar Styling for Pages */
+        .diary-page::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .diary-page::-webkit-scrollbar-track {
+            background: rgba(212, 197, 176, 0.2);
+            border-radius: 10px;
+        }
+
+        .diary-page::-webkit-scrollbar-thumb {
+            background: rgba(139, 90, 60, 0.5);
+            border-radius: 10px;
+        }
+
+        .diary-page::-webkit-scrollbar-thumb:hover {
+            background: rgba(139, 90, 60, 0.7);
+        }
+
+        /* Activities Container */
+        .activities-container {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* Activity Card */
+        .activity-card {
+            background: white;
+            border-left: 4px solid #10b981;
+            border-radius: 6px;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .activity-card:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .activity-card.priority-medium {
+            border-left-color: #f59e0b;
+        }
+
+        .activity-card.priority-high {
+            border-left-color: #ef4444;
+        }
+
+        .activity-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .activity-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .activity-category {
+            background: var(--bg-tertiary, #f5f5f5);
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #5a3820;
+        }
+
+        .activity-priority {
+            font-size: 0.875rem;
+        }
+
+        .activity-alert-badge {
+            font-size: 0.875rem;
+            animation: bellRing 2s ease-in-out infinite;
+        }
+
+        @keyframes bellRing {
+
+            0%,
+            100% {
+                transform: rotate(0deg);
+            }
+
+            10%,
+            30% {
+                transform: rotate(-10deg);
+            }
+
+            20%,
+            40% {
+                transform: rotate(10deg);
+            }
+        }
+
+        .activity-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .activity-action-btn {
+            background: none;
+            border: 1px solid #d4c5b0;
+            border-radius: 4px;
+            padding: 0.25rem 0.5rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .activity-action-btn:hover {
+            background: #f0e8d8;
+        }
+
+        .activity-content {
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            line-height: 1.6;
+            color: #2c1810;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .activity-timestamp {
+            font-size: 0.7rem;
+            color: #888;
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+
+        /* Add Activity Button */
+        .add-activity-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .add-activity-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        /* New Activity Form */
+        .new-activity-form {
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .activity-textarea {
+            width: 100%;
+            border: 1px solid #d4c5b0;
+            border-radius: 6px;
+            padding: 0.75rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            line-height: 1.6;
+            resize: vertical;
+            outline: none;
+        }
+
+        .activity-textarea:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Edit Mode Styles */
+        .activity-card.editing {
+            background: #fffef7;
+            border-color: #667eea;
+        }
+
+        .activity-card.editing .activity-content {
+            display: none;
+        }
+
+        .activity-edit-form {
+            display: none;
+        }
+
+        .activity-card.editing .activity-edit-form {
+            display: block;
+        }
+
+        /* Dashboard Alert Popups */
+        .diary-alerts-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            max-width: 400px;
+            pointer-events: none;
+        }
+
+        .diary-alert-popup {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.25rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+            pointer-events: all;
+            position: relative;
+            animation: slideInRight 0.5s ease-out;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(450px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .diary-alert-popup.closing {
+            animation: slideOutRight 0.3s ease-out forwards;
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateX(450px);
+                opacity: 0;
+            }
+        }
+
+        .diary-alert-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+
+        .diary-alert-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .diary-alert-close-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            line-height: 1;
+            transition: all 0.2s ease;
+        }
+
+        .diary-alert-close-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .diary-alert-date {
+            font-size: 0.875rem;
+            opacity: 0.95;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .diary-alert-category {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .diary-alert-content {
+            font-size: 0.875rem;
+            line-height: 1.6;
+            opacity: 0.95;
+            max-height: 100px;
+            overflow-y: auto;
+            margin-top: 0.5rem;
+        }
+
+        .diary-alert-content::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .diary-alert-content::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 900px) {
+            .diary-book {
+                flex-direction: column;
+                height: auto;
+                max-height: 85vh;
+            }
+
+            .diary-spine {
+                width: 100%;
+                height: 20px;
+            }
+
+            .diary-page {
+                max-height: 400px;
+            }
+
+            .diary-nav-arrow {
+                display: none;
+            }
         }
     </style>
 
@@ -2960,6 +4089,17 @@
     </script>
 
 
+    <!-- Critical Improvements - Utility Scripts (loaded first) -->
+    <script src="migration-manager.js"></script>
+    <script src="theme-manager.js"></script>
+    <script src="security.js"></script>
+    <script src="error-handler.js"></script>
+    <script src="validation.js"></script>
+    <script src="pagination.js"></script>
+    <script src="storage-monitor.js"></script>
+    <script src="mobile-nav.js"></script>
+    <script src="advanced-reports.js"></script>
+
     <!-- Authentication System (loaded first) -->
     <script src="auth.js"></script>
 
@@ -2971,6 +4111,7 @@
     <script src="recurring-expenses.js"></script>
     <script src="expense-reports.js"></script>
     <script src="income.js"></script>
+    <script src="product-sales.js"></script>
     <script src="customers.js"></script>
     <script src="production.js"></script>
     <script src="advanced-features.js"></script>
@@ -2980,6 +4121,7 @@
     <script src="dashboard_popups.js"></script>
     <script src="pdf-generator.js"></script>
     <script src="enhanced-search.js"></script>
+    <script src="diary.js"></script>
     <script src="app.js"></script>
 </body>
 
