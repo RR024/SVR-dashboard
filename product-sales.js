@@ -218,6 +218,15 @@ function displayProductRows(rows) {
         return;
     }
 
+    // Calculate totals
+    let totalQuantity = 0;
+    let totalValue = 0;
+
+    rows.forEach(row => {
+        totalQuantity += row.quantity;
+        totalValue += row.totalValue;
+    });
+
     let html = '';
     rows.forEach(row => {
         html += `
@@ -232,6 +241,22 @@ function displayProductRows(rows) {
             </tr>
         `;
     });
+
+    // Add total row at the end
+    html += `
+        <tr style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-top: 2px solid var(--primary); font-weight: 600;">
+            <td colspan="4" style="text-align: right; padding-right: 1rem; font-size: 1.05rem; color: var(--primary);">
+                📊 Total:
+            </td>
+            <td style="font-size: 1.05rem; color: var(--primary);">
+                ${totalQuantity.toLocaleString('en-IN')}
+            </td>
+            <td></td>
+            <td style="font-size: 1.05rem; color: var(--success);">
+                ₹${totalValue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+            </td>
+        </tr>
+    `;
 
     tbody.innerHTML = html;
 }

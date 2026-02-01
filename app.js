@@ -15,11 +15,11 @@ function initializeApp() {
     // Seed default dummy invoices if not already seeded
     seedDefaultInvoices();
 
-    // Migrate old invoice number format to new format
+    // Migrateold invoice number format to new format
     migrateInvoiceNumberFormat();
 
-    // Remove banned customers (Cleanup)
-    removeBannedCustomers();
+    // Remove banned customers (Cleanup) - DISABLED to prevent accidental data loss
+    // removeBannedCustomers();
 
     // Set default date for attendance (if element exists)
     const attendanceDateEl = document.getElementById('attendanceDate');
@@ -2256,6 +2256,12 @@ function loadOutwardInvoices() {
     const invoices = getOutwardInvoices();
     const tbody = document.getElementById('outwardTableBody');
 
+    console.log('Loading Outward Invoices...', invoices);
+    console.log('Total count:', invoices.length);
+    if (invoices.length > 0) {
+        console.log('IDs:', invoices.map(i => i.invoiceNo).join(', '));
+    }
+
     if (invoices.length === 0) {
         tbody.innerHTML = `
             <tr>
@@ -2276,7 +2282,9 @@ function loadOutwardInvoices() {
         }
 
         // Tie-breaker: Invoice Number Descending
-        return b.invoiceNo.localeCompare(a.invoiceNo, undefined, { numeric: true });
+        const invA = a.invoiceNo || '';
+        const invB = b.invoiceNo || '';
+        return invB.localeCompare(invA, undefined, { numeric: true });
     });
 
     // Get current month for comparison
@@ -2355,6 +2363,7 @@ function loadOutwardInvoices() {
         `;
     });
 
+    console.log(`Rendered ${invoices.length} outward invoices to table.`);
     tbody.innerHTML = html;
 }
 
