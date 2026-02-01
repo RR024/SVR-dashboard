@@ -2240,6 +2240,25 @@ function saveOutwardInvoice() {
 
     saveToStorage('outwardInvoices', invoices);
     closeOutwardModal();
+
+    // Clear all filters to ensure the new/updated invoice is visible
+    outwardFilters.invoiceNo = '';
+    outwardFilters.customer = '';
+    outwardFilters.dateFrom = '';
+    outwardFilters.dateTo = '';
+    outwardFilters.paymentStatus = 'All';
+
+    // Reset filter inputs in DOM
+    const filterIds = ['filter-invoiceNo', 'filter-date-from', 'filter-date-to', 'filter-customer-select', 'outwardSearch'];
+    filterIds.forEach(id => {
+        const el = document.getElementById(id) || document.querySelector(`#${id} .filter-input`);
+        if (el) el.value = '';
+    });
+    // Reset payment status checkboxes
+    document.querySelectorAll('#filter-paymentStatus input[type="checkbox"]').forEach(cb => {
+        cb.checked = cb.value === 'All';
+    });
+
     loadOutwardInvoices();
     loadDashboard();
 
