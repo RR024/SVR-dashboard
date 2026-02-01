@@ -1476,6 +1476,13 @@ function openOutwardModal(id = null) {
     const form = document.getElementById('outwardForm');
     form.reset();
 
+    // Scroll to top
+    const modalContent = modal.querySelector('.modal-content');
+    if (modalContent) modalContent.scrollTop = 0;
+
+    // Clear hidden ID explicitly
+    document.getElementById('outwardId').value = '';
+
     // Clear product items
     document.getElementById('productItems').innerHTML = '';
 
