@@ -998,6 +998,23 @@ function addInwardProductRow(data = null) {
     const container = document.getElementById('inwardProductItems');
     if (!container) return;
 
+    // Get current selected customer products
+    const customerDropdown = document.getElementById('inwardCustomerDropdown');
+    const customerId = customerDropdown ? customerDropdown.value : null;
+    let customerProducts = [];
+
+    if (customerId && typeof getCustomerProducts === 'function') {
+        customerProducts = getCustomerProducts(customerId);
+    }
+
+    // Build product dropdown options
+    let productOptions = '<option value="">-- Select Product --</option>';
+    customerProducts.forEach(product => {
+        // Handle both product object or just material name string (legacy support)
+        const isSelected = (data && (data.material === product.description || data.material === product.id)) ? 'selected' : '';
+        productOptions += `<option value="${product.id}" ${isSelected}>${product.description}</option>`;
+    });
+
     // UOM options
     const uomOptions = ['Nos', 'Kgs', 'Ltrs', 'Mtrs', 'Pcs', 'Sets', 'Boxes', 'Pairs', 'Grams', 'Tonnes'];
     const uomOptionsHtml = uomOptions.map(uom =>
@@ -1010,7 +1027,9 @@ function addInwardProductRow(data = null) {
             <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 0.75rem;">
                 <div class="form-group" style="margin: 0;">
                     <label class="form-label">Material Description</label>
-                    <input type="text" class="form-control inward-product-material" placeholder="Enter material description" value="${data?.material || ''}" required>
+                    <select class="form-control inward-product-material" onchange="fillInwardProductDetails(this)" required>
+                        ${productOptions}
+                    </select>
                 </div>
                 <div class="form-group" style="margin: 0;">
                     <label class="form-label">Quantity</label>
@@ -3866,4 +3885,46 @@ function clearInwardFilters() {
     });
 
     showToast('Filters cleared', 'info');
+}
+
+// Fill product details when a product is selected in inward invoice
+function fillInwardProductDetails(selectElement) {
+    const productId = selectElement.value;
+    if (!productId) return;
+
+    const customerDropdown = document.getElementById('inwardCustomerDropdown');
+    const customerId = customerDropdown ? customerDropdown.value : null;
+
+    if (!customerId) return;
+
+    if (typeof getCustomerProducts === 'function') {
+        const products = getCustomerProducts(customerId);
+        const product = products.find(p => p.id === productId);
+
+        if (product) {
+            const row = selectElement.closest('.inward-product-item');
+
+            // Auto-fill Rate
+            const rateInput = row.querySelector('.inward-product-rate');
+            if (rateInput && product.price) {
+                rateInput.value = product.price;
+            }
+
+            // Auto-fill UOM
+            const uomSelect = row.querySelector('.inward-product-unit');
+            if (uomSelect && (product.unit || product.uom)) {
+                // Try to match unit/uom
+                const uomVal = product.unit || product.uom;
+                // Check if the option exists, if not maybe just set value or warn? 
+                // HTML select will just ignore invalid value setting usually or select empty.
+                // We assume standard UOMs match.
+                uomSelect.value = uomVal;
+            }
+
+            // Trigger calculation
+            if (rateInput) {
+                calculateInwardProductValue(rateInput);
+            }
+        }
+    }
 }
