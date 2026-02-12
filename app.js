@@ -1007,11 +1007,22 @@ function addInwardProductRow(data = null) {
         customerProducts = getCustomerProducts(customerId);
     }
 
+    // Check if data.material is a custom entry (not matching any product id or description)
+    let isCustomMaterial = false;
+    let customMaterialValue = '';
+    if (data && data.material) {
+        const matchesProduct = customerProducts.some(p => p.id === data.material || p.description === data.material);
+        if (!matchesProduct) {
+            isCustomMaterial = true;
+            customMaterialValue = data.material;
+        }
+    }
+
     // Build product dropdown options
     let productOptions = '<option value="">-- Select Product --</option>';
     customerProducts.forEach(product => {
         // Handle both product object or just material name string (legacy support)
-        const isSelected = (data && (data.material === product.description || data.material === product.id)) ? 'selected' : '';
+        const isSelected = (data && !isCustomMaterial && (data.material === product.description || data.material === product.id)) ? 'selected' : '';
         productOptions += `<option value="${product.id}" ${isSelected}>${product.description}</option>`;
     });
 
@@ -1021,15 +1032,26 @@ function addInwardProductRow(data = null) {
         `<option value="${uom}" ${data?.unit === uom ? 'selected' : ''}>${uom}</option>`
     ).join('');
 
+    // Determine initial visibility
+    const selectDisplay = isCustomMaterial ? 'none' : 'block';
+    const customDisplay = isCustomMaterial ? 'block' : 'none';
+    const toggleBtnText = isCustomMaterial ? '📋 Select Existing' : '✏️ Custom';
+
     const rowHtml = `
         <div class="inward-product-item" style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1rem; position: relative;">
             <button type="button" class="icon-btn delete" onclick="removeInwardProductRow(this)" style="position: absolute; top: 0.5rem; right: 0.5rem;" title="Remove">×</button>
             <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 0.75rem;">
                 <div class="form-group" style="margin: 0;">
                     <label class="form-label">Material Description</label>
-                    <select class="form-control inward-product-material" onchange="fillInwardProductDetails(this)" required>
-                        ${productOptions}
-                    </select>
+                    <div class="material-input-container">
+                        <select class="form-control inward-product-material-select" onchange="fillInwardProductDetails(this)" style="display: ${selectDisplay};">
+                            ${productOptions}
+                        </select>
+                        <input type="text" class="form-control inward-product-material-custom" placeholder="Enter custom material" value="${customMaterialValue}" style="display: ${customDisplay};">
+                        <button type="button" class="btn btn-sm btn-outline toggle-material-btn" onclick="toggleInwardMaterialInput(this)" style="margin-top: 0.5rem; font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+                            ${toggleBtnText}
+                        </button>
+                    </div>
                 </div>
                 <div class="form-group" style="margin: 0;">
                     <label class="form-label">Quantity</label>
@@ -1055,6 +1077,31 @@ function addInwardProductRow(data = null) {
     `;
 
     container.insertAdjacentHTML('beforeend', rowHtml);
+}
+
+// Toggle between select dropdown and custom text input for inward material
+function toggleInwardMaterialInput(button) {
+    const container = button.closest('.material-input-container');
+    if (!container) return;
+
+    const selectEl = container.querySelector('.inward-product-material-select');
+    const customEl = container.querySelector('.inward-product-material-custom');
+
+    if (selectEl.style.display !== 'none') {
+        // Switch to custom input
+        selectEl.style.display = 'none';
+        customEl.style.display = 'block';
+        button.textContent = '📋 Select Existing';
+        // Clear select value
+        selectEl.value = '';
+    } else {
+        // Switch to select dropdown
+        selectEl.style.display = 'block';
+        customEl.style.display = 'none';
+        button.textContent = '✏️ Custom';
+        // Clear custom input
+        customEl.value = '';
+    }
 }
 
 
@@ -1206,8 +1253,20 @@ function saveInwardInvoice() {
     let totalAmount = 0;
 
     productRows.forEach(row => {
-        // Get material from text input
-        const material = row.querySelector('.inward-product-material')?.value?.trim();
+        // Get material from either select dropdown or custom input (whichever is visible)
+        const selectEl = row.querySelector('.inward-product-material-select');
+        const customEl = row.querySelector('.inward-product-material-custom');
+        let material = '';
+
+        if (customEl && customEl.style.display !== 'none' && customEl.value.trim()) {
+            // Custom material entered
+            material = customEl.value.trim();
+        } else if (selectEl && selectEl.value) {
+            // Product selected from dropdown - get the display text (description)
+            const selectedOption = selectEl.options[selectEl.selectedIndex];
+            material = selectedOption ? selectedOption.textContent : selectEl.value;
+        }
+
         const quantity = parseFloat(row.querySelector('.inward-product-qty')?.value) || 0;
         const unit = row.querySelector('.inward-product-unit')?.value?.trim();
         const rate = parseFloat(row.querySelector('.inward-product-rate')?.value) || 0;
@@ -2574,7 +2633,7 @@ function generatePrintableInvoice(invoice) {
                     font-weight: bold; 
                     margin-bottom: 6px;
                     text-align: center;
-                    margin-left: -20px;
+                    margin-left: -40px;
                 }
                 .company-details { 
                     font-size: 12px; 
@@ -2582,14 +2641,14 @@ function generatePrintableInvoice(invoice) {
                     margin-bottom: 6px; 
                     line-height: 1.5;
                     text-align: center;
-                    margin-left: -20px;
+                    margin-left: -40px;
                 }
                 .gst-details { 
                     font-size: 13px; 
                     font-weight: bold;
                     margin-top: 6px;
                     text-align: center;
-                    margin-left: -20px;
+                    margin-left: -40px;
                 }
                 
                 /* Title */

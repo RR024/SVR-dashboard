@@ -5,7 +5,7 @@
 // Get customers from storage (with deduplication)
 function getCustomers() {
     const customers = loadFromStorage('customers') || [];
-    
+
     // Remove duplicates based on customer ID and company name, clean up storage if duplicates found
     const seenIds = new Set();
     const seenNames = new Set();
@@ -13,20 +13,20 @@ function getCustomers() {
         // Check for duplicate IDs
         if (seenIds.has(customer.id)) return false;
         seenIds.add(customer.id);
-        
+
         // Check for duplicate company names (case-insensitive)
         const normalizedName = (customer.companyName || '').toLowerCase().trim();
         if (seenNames.has(normalizedName)) return false;
         seenNames.add(normalizedName);
-        
+
         return true;
     });
-    
+
     // If duplicates were found, clean up the storage
     if (uniqueCustomers.length < customers.length) {
         saveToStorage('customers', uniqueCustomers);
     }
-    
+
     return uniqueCustomers;
 }
 
@@ -87,6 +87,12 @@ function openCustomerModal(customerId = null) {
         productsList.innerHTML = '';
     }
 
+    // Clear monthly PO list
+    const monthlyPOList = document.getElementById('customerMonthlyPOList');
+    if (monthlyPOList) {
+        monthlyPOList.innerHTML = '';
+    }
+
     if (customerId) {
         const customers = getCustomers();
         const customer = customers.find(c => c.id === customerId);
@@ -105,6 +111,8 @@ function openCustomerModal(customerId = null) {
 
             // Load customer products
             loadCustomerProducts(customerId);
+            // Load monthly PO numbers
+            loadMonthlyPONumbers(customerId);
         }
     } else {
         title.textContent = 'Add Customer';
@@ -170,6 +178,7 @@ function saveCustomer() {
         city,
         notes,
         products: products, // Add products array
+        monthlyPONumbers: getMonthlyPONumbersFromForm(), // Add monthly PO numbers array
         createdAt: id ? undefined : new Date().toISOString(),
         updatedAt: new Date().toISOString()
     };
@@ -382,14 +391,14 @@ function loadCustomerDropdown() {
     if (!dropdown) return;
 
     const customers = getCustomers();
-    
+
     // Remove duplicates based on customer ID and company name
     const seenNames = new Set();
     const uniqueCustomers = customers.filter((customer, index, self) => {
         // First check for duplicate IDs
         const isUniqueId = index === self.findIndex(c => c.id === customer.id);
         if (!isUniqueId) return false;
-        
+
         // Then check for duplicate company names (case-insensitive)
         const normalizedName = (customer.companyName || '').toLowerCase().trim();
         if (seenNames.has(normalizedName)) return false;
@@ -418,6 +427,7 @@ function fillCustomerDetails() {
         document.getElementById('outwardBuyerAddress').value = '';
         document.getElementById('outwardGSTIN').value = '';
         document.getElementById('outwardContact').value = '';
+        document.getElementById('outwardPONo').value = '';
 
         // Clear existing product rows when customer is deselected
         document.getElementById('productItems').innerHTML = '';
@@ -432,6 +442,10 @@ function fillCustomerDetails() {
         document.getElementById('outwardBuyerAddress').value = customer.address;
         document.getElementById('outwardGSTIN').value = customer.gstin;
         document.getElementById('outwardContact').value = customer.phone;
+
+        // Auto-populate monthly PO number for current month
+        const currentMonthPO = getCurrentMonthPONumber(customerId);
+        document.getElementById('outwardPONo').value = currentMonthPO;
 
         // Reload existing product dropdowns with new customer's products
         updateProductDropdowns(customerId);
@@ -511,14 +525,14 @@ function loadInwardCustomerDropdown() {
     if (!dropdown) return;
 
     const customers = getCustomers();
-    
+
     // Remove duplicates based on customer ID and company name
     const seenNames = new Set();
     const uniqueCustomers = customers.filter((customer, index, self) => {
         // First check for duplicate IDs
         const isUniqueId = index === self.findIndex(c => c.id === customer.id);
         if (!isUniqueId) return false;
-        
+
         // Then check for duplicate company names (case-insensitive)
         const normalizedName = (customer.companyName || '').toLowerCase().trim();
         if (seenNames.has(normalizedName)) return false;
@@ -568,7 +582,7 @@ function fillInwardCustomerDetails() {
 // Update all material dropdowns in inward invoice with customer products
 function updateInwardMaterialDropdowns(customerId) {
     const customerProducts = getCustomerProducts(customerId);
-    const materialSelects = document.querySelectorAll('.inward-product-material');
+    const materialSelects = document.querySelectorAll('.inward-product-material-select');
 
     materialSelects.forEach(select => {
         const currentValue = select.value;
@@ -582,6 +596,110 @@ function updateInwardMaterialDropdowns(customerId) {
 
         select.innerHTML = options;
     });
+}
+
+// =========================================
+// MONTHLY PO NUMBER MANAGEMENT
+// =========================================
+
+// Add monthly PO number row to customer modal
+function addMonthlyPONumber(poData = null) {
+    const container = document.getElementById('customerMonthlyPOList');
+    if (!container) return;
+
+    const poId = poData?.id || 'po_' + Date.now();
+    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
+
+    const poHtml = `
+        <div class="monthly-po-item" data-po-id="${poId}" style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1rem; position: relative;">
+            <button type="button" class="icon-btn delete" onclick="removeMonthlyPONumber('${poId}')" 
+                    style="position: absolute; top: 0.5rem; right: 0.5rem;" title="Remove PO Number">×</button>
+            
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 0.75rem;">
+                <div class="form-group" style="margin: 0;">
+                    <label class="form-label" style="font-size: 0.875rem;">Month</label>
+                    <input type="month" class="form-control monthly-po-month" 
+                           value="${poData?.month || currentMonth}" required>
+                </div>
+                
+                <div class="form-group" style="margin: 0;">
+                    <label class="form-label" style="font-size: 0.875rem;">PO Number</label>
+                    <input type="text" class="form-control monthly-po-number" 
+                           placeholder="e.g., PO/FEB/2026/001" value="${poData?.poNumber || ''}" required>
+                </div>
+            </div>
+        </div>
+    `;
+
+    container.insertAdjacentHTML('beforeend', poHtml);
+}
+
+// Remove monthly PO number from customer modal
+function removeMonthlyPONumber(poId) {
+    const poItem = document.querySelector(`.monthly-po-item[data-po-id="${poId}"]`);
+    if (poItem) {
+        poItem.remove();
+    }
+}
+
+// Load monthly PO numbers into the modal
+function loadMonthlyPONumbers(customerId) {
+    const container = document.getElementById('customerMonthlyPOList');
+    if (!container) return;
+
+    // Clear existing PO numbers
+    container.innerHTML = '';
+
+    if (!customerId) return;
+
+    const customers = getCustomers();
+    const customer = customers.find(c => c.id === customerId);
+
+    if (customer && customer.monthlyPONumbers && customer.monthlyPONumbers.length > 0) {
+        customer.monthlyPONumbers.forEach(po => {
+            addMonthlyPONumber(po);
+        });
+    }
+}
+
+// Get monthly PO numbers from customer form
+function getMonthlyPONumbersFromForm() {
+    const poItems = document.querySelectorAll('.monthly-po-item');
+    const poNumbers = [];
+
+    poItems.forEach(item => {
+        const poId = item.getAttribute('data-po-id');
+        const month = item.querySelector('.monthly-po-month').value;
+        const poNumber = item.querySelector('.monthly-po-number').value.trim();
+
+        // Only add if both month and PO number are filled
+        if (month && poNumber) {
+            poNumbers.push({
+                id: poId,
+                month: month,
+                poNumber: poNumber
+            });
+        }
+    });
+
+    return poNumbers;
+}
+
+// Get PO number for current month for a specific customer
+function getCurrentMonthPONumber(customerId) {
+    if (!customerId) return '';
+
+    const customers = getCustomers();
+    const customer = customers.find(c => c.id === customerId);
+
+    if (!customer || !customer.monthlyPONumbers || customer.monthlyPONumbers.length === 0) {
+        return '';
+    }
+
+    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
+    const currentPO = customer.monthlyPONumbers.find(po => po.month === currentMonth);
+
+    return currentPO ? currentPO.poNumber : '';
 }
 
 // Export customer functions to global scope
@@ -607,3 +725,10 @@ window.getCustomerProducts = getCustomerProducts;
 window.getCustomerProductsFromForm = getCustomerProductsFromForm;
 window.updateProductDropdowns = updateProductDropdowns;
 window.updateInwardMaterialDropdowns = updateInwardMaterialDropdowns;
+
+// Export monthly PO number functions
+window.addMonthlyPONumber = addMonthlyPONumber;
+window.removeMonthlyPONumber = removeMonthlyPONumber;
+window.loadMonthlyPONumbers = loadMonthlyPONumbers;
+window.getMonthlyPONumbersFromForm = getMonthlyPONumbersFromForm;
+window.getCurrentMonthPONumber = getCurrentMonthPONumber;
