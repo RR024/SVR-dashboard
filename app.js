@@ -1576,7 +1576,8 @@ function openOutwardModal(id = null) {
         // New mode - add 5 default product rows
         document.getElementById('outwardModalTitle').textContent = 'New Tax Invoice';
         document.getElementById('outwardDate').valueAsDate = new Date();
-        document.getElementById('outwardDCDate').valueAsDate = new Date();
+        // DC Date should be empty by default as per requirement
+        document.getElementById('outwardDCDate').value = '';
         generateOutwardInvoiceNumber();
 
         // Add 5 default product rows
