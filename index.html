@@ -191,12 +191,7 @@
                             <span>Production</span>
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a href="#materials" class="nav-link" data-module="materials">
-                            <span class="nav-icon">🧱</span>
-                            <span>Materials & BOM</span>
-                        </a>
-                    </li>
+
                     <li class="nav-item">
                         <a href="#hr-management" class="nav-link" data-module="hr-management">
                             <span class="nav-icon">👥</span>
@@ -849,100 +844,6 @@
                 </div>
             </section>
 
-            <!-- Materials Module -->
-            <section id="materials" class="module">
-                <div class="page-header">
-                    <h2>Materials & Stock</h2>
-                    <p>Manage Raw Materials, Bill of Materials (BOM), and Stock Levels</p>
-                </div>
-
-                <div class="grid-container" style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
-
-                    <!-- Left Column: Stock Overview -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">📦 Raw Material Stock</h3>
-                        </div>
-                        <div class="table-container">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Material</th>
-                                        <th>Inward (Purchased)</th>
-                                        <th>Consumed (Production)</th>
-                                        <th>Current Balance</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="materialStockTableBody">
-                                    <tr>
-                                        <td colspan="5" class="text-center">Loading stock data...</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Right Column: Tools -->
-                    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-
-                        <!-- BOM Configuration -->
-                        <div class="card">
-                            <div class="card-header">
-                                <h3 class="card-title">🔧 Bill of Materials (BOM)</h3>
-                            </div>
-                            <div class="card-body">
-                                <div class="form-group">
-                                    <label class="form-label">Select Product</label>
-                                    <select id="bomProductSelect" class="form-control"
-                                        onchange="loadBOMForProduct(this.value)">
-                                        <option value="">-- Select Product --</option>
-                                    </select>
-                                </div>
-
-                                <div class="form-group">
-                                    <label class="form-label">Materials Required (per unit)</label>
-                                    <div id="bomItemsContainer"
-                                        style="max-height: 200px; overflow-y: auto; margin-bottom: 10px; border: 1px solid #eee; padding: 10px; border-radius: 4px;">
-                                        <!-- Dynamic ROM rows -->
-                                    </div>
-                                    <button class="btn btn-sm btn-secondary" onclick="addBOMRow()">+ Add
-                                        Material</button>
-                                </div>
-
-                                <button class="btn btn-primary" style="width: 100%; margin-top: 10px;"
-                                    onclick="saveCurrentBOM()">Save BOM Configuration</button>
-                            </div>
-                        </div>
-
-                        <!-- Material Calculator -->
-                        <div class="card">
-                            <div class="card-header">
-                                <h3 class="card-title">🧮 Material Calculator</h3>
-                            </div>
-                            <div class="card-body">
-                                <div class="form-group">
-                                    <label class="form-label">Product</label>
-                                    <select id="calcProductSelect" class="form-control">
-                                        <option value="">-- Select Product --</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Target Quantity</label>
-                                    <input type="number" id="calcTargetQty" class="form-control"
-                                        placeholder="Enter quantity to produce">
-                                </div>
-                                <button class="btn btn-primary" style="width: 100%;"
-                                    onclick="calculateRequirement()">Calculate Requirements</button>
-
-                                <div id="calcResults"
-                                    style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;"></div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            </section>
 
             <!-- HR Management Module (Combined Employees, Salary & Attendance) -->
             <section id="hr-management" class="module">
@@ -4528,7 +4429,7 @@
     <script src="auth.js"></script>
 
     <!-- Custom Modules -->
-    <script src="materials.js"></script>
+
     <script src="search.js"></script>
     <script src="backup-system.js"></script>
     <script src="expenses.js"></script>
