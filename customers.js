@@ -93,6 +93,12 @@ function openCustomerModal(customerId = null) {
         monthlyPOList.innerHTML = '';
     }
 
+    // Clear vehicle list
+    const vehiclesList = document.getElementById('customerVehiclesList');
+    if (vehiclesList) {
+        vehiclesList.innerHTML = '';
+    }
+
     if (customerId) {
         const customers = getCustomers();
         const customer = customers.find(c => c.id === customerId);
@@ -113,6 +119,8 @@ function openCustomerModal(customerId = null) {
             loadCustomerProducts(customerId);
             // Load monthly PO numbers
             loadMonthlyPONumbers(customerId);
+            // Load customer vehicles
+            loadCustomerVehicles(customerId);
         }
     } else {
         title.textContent = 'Add Customer';
@@ -179,6 +187,7 @@ function saveCustomer() {
         notes,
         products: products, // Add products array
         monthlyPONumbers: getMonthlyPONumbersFromForm(), // Add monthly PO numbers array
+        vehicles: getCustomerVehiclesFromForm(), // Add vehicles array
         createdAt: id ? undefined : new Date().toISOString(),
         updatedAt: new Date().toISOString()
     };
@@ -449,6 +458,9 @@ function fillCustomerDetails() {
 
         // Reload existing product dropdowns with new customer's products
         updateProductDropdowns(customerId);
+
+        // Reload vehicle dropdown with new customer's vehicles
+        updateVehicleDropdown(customerId);
     }
 }
 
@@ -702,6 +714,184 @@ function getCurrentMonthPONumber(customerId) {
     return currentPO ? currentPO.poNumber : '';
 }
 
+// =========================================
+// CUSTOMER VEHICLE MANAGEMENT
+// =========================================
+
+// Add vehicle row to customer modal
+function addCustomerVehicle(vehicleData = null) {
+    const container = document.getElementById('customerVehiclesList');
+    if (!container) return;
+
+    const vehicleId = vehicleData?.id || 'veh_' + Date.now();
+    const vehicleNumber = vehicleData?.number || '';
+
+    const vehicleHtml = `
+        <div class="customer-vehicle-item" data-vehicle-id="${vehicleId}" style="background: var(--bg-tertiary); padding: 0.75rem; border-radius: var(--radius-md); margin-bottom: 0.75rem; position: relative; display: flex; align-items: center; gap: 1rem;">
+            <div style="flex: 1;">
+                <input type="text" class="form-control customer-vehicle-number" 
+                       placeholder="e.g., TN-01-AB-1234" value="${vehicleNumber}" required 
+                       style="margin: 0; text-transform: uppercase;">
+            </div>
+            <button type="button" class="icon-btn delete" onclick="removeCustomerVehicle('${vehicleId}')" 
+                    title="Remove Vehicle">×</button>
+        </div>
+    `;
+
+    container.insertAdjacentHTML('beforeend', vehicleHtml);
+}
+
+// Remove vehicle from customer modal
+function removeCustomerVehicle(vehicleId) {
+    const item = document.querySelector(`.customer-vehicle-item[data-vehicle-id="${vehicleId}"]`);
+    if (item) {
+        item.remove();
+    }
+}
+
+// Load customer vehicles into the modal
+function loadCustomerVehicles(customerId) {
+    const container = document.getElementById('customerVehiclesList');
+    if (!container) return;
+
+    // Clear existing vehicles
+    container.innerHTML = '';
+
+    if (!customerId) return;
+
+    const customers = getCustomers();
+    const customer = customers.find(c => c.id === customerId);
+
+    if (customer && customer.vehicles && customer.vehicles.length > 0) {
+        customer.vehicles.forEach(vehicle => {
+            addCustomerVehicle(vehicle);
+        });
+    }
+}
+
+// Get vehicles from customer form
+function getCustomerVehiclesFromForm() {
+    const items = document.querySelectorAll('.customer-vehicle-item');
+    const vehicles = [];
+
+    items.forEach(item => {
+        const id = item.getAttribute('data-vehicle-id');
+        const number = item.querySelector('.customer-vehicle-number').value.trim().toUpperCase();
+
+        if (number) {
+            vehicles.push({
+                id: id,
+                number: number
+            });
+        }
+    });
+
+    return vehicles;
+}
+
+// Get customer vehicles by customer ID
+function getCustomerVehicles(customerId) {
+    if (!customerId) return [];
+
+    const customers = getCustomers();
+    const customer = customers.find(c => c.id === customerId);
+
+    return customer && customer.vehicles ? customer.vehicles : [];
+}
+
+// Update vehicle dropdown in outward invoice
+function updateVehicleDropdown(customerId) {
+    const dropdown = document.getElementById('outwardVehicle');
+    if (!dropdown) return;
+
+    if (!customerId) {
+        dropdown.innerHTML = '<option value="">-- Select Vehicle --</option>';
+        return;
+    }
+
+    const vehicles = getCustomerVehicles(customerId);
+
+    let html = '<option value="">-- Select Vehicle --</option>';
+    vehicles.forEach(vehicle => {
+        html += `<option value="${vehicle.number}">${vehicle.number}</option>`;
+    });
+
+    // Add option to create new vehicle
+    html += '<option value="__ADD_NEW__">➕ Add New Vehicle</option>';
+
+    dropdown.innerHTML = html;
+}
+
+// Handle vehicle selection in outward invoice
+function handleVehicleSelection(selectElement) {
+    if (selectElement.value === '__ADD_NEW__') {
+        const newVehicle = prompt("Enter new vehicle number (e.g., TN-01-AB-1234):");
+        if (newVehicle && newVehicle.trim() !== "") {
+            const formattedVehicle = newVehicle.trim().toUpperCase();
+
+            // Get current customer
+            const customerId = document.getElementById('customerDropdown').value;
+            if (!customerId) {
+                alert("Please select a customer first.");
+                selectElement.value = "";
+                return;
+            }
+
+            const customers = getCustomers();
+            const customerIndex = customers.findIndex(c => c.id === customerId);
+
+            if (customerIndex !== -1) {
+                // Add to customer's vehicle list
+                if (!customers[customerIndex].vehicles) {
+                    customers[customerIndex].vehicles = [];
+                }
+
+                // Check for duplicate
+                if (customers[customerIndex].vehicles.some(v => v.number === formattedVehicle)) {
+                    alert("This vehicle number already exists for this customer.");
+                    // Select existing vehicle
+                    selectElement.value = formattedVehicle;
+                    // If not in dropdown (edge case), might need to re-render but duplicate check implies it exists
+                    return;
+                }
+
+                customers[customerIndex].vehicles.push({
+                    id: 'veh_' + Date.now(),
+                    number: formattedVehicle
+                });
+
+                // Save updated customer
+                // We need to save to local storage. 
+                // Since this function is in customers.js, we should probably use saveToStorage if available or just update valid customers list.
+                // But customers.js usually uses saveCustomer. Here we are doing a partial update.
+                // We can use the global saveToStorage if available, or just update the variable and save.
+                // Assuming saveToStorage is available globally (it is in app.js).
+                // Wait, saveToStorage is in app.js. customers.js might not have access if not exported or global.
+                // Typically app.js functions are global.
+
+                if (typeof saveToStorage === 'function') {
+                    saveToStorage('customers', customers);
+                } else {
+                    console.error("saveToStorage not found");
+                    localStorage.setItem('customers', JSON.stringify(customers));
+                }
+
+                // Reload vehicles and select the new one
+                updateVehicleDropdown(customerId);
+                selectElement.value = formattedVehicle;
+
+                // Show toast (assuming showToast is available globally)
+                if (typeof showToast === 'function') {
+                    showToast('New vehicle added to customer record', 'success');
+                }
+            }
+        } else {
+            // User cancelled or entered empty string
+            selectElement.value = "";
+        }
+    }
+}
+
 // Export customer functions to global scope
 window.getCustomers = getCustomers;
 window.loadCustomers = loadCustomers;
@@ -732,3 +922,12 @@ window.removeMonthlyPONumber = removeMonthlyPONumber;
 window.loadMonthlyPONumbers = loadMonthlyPONumbers;
 window.getMonthlyPONumbersFromForm = getMonthlyPONumbersFromForm;
 window.getCurrentMonthPONumber = getCurrentMonthPONumber;
+
+// Export vehicle functions
+window.addCustomerVehicle = addCustomerVehicle;
+window.removeCustomerVehicle = removeCustomerVehicle;
+window.loadCustomerVehicles = loadCustomerVehicles;
+window.getCustomerVehicles = getCustomerVehicles;
+window.getCustomerVehiclesFromForm = getCustomerVehiclesFromForm;
+window.updateVehicleDropdown = updateVehicleDropdown;
+window.getCustomers = getCustomers;

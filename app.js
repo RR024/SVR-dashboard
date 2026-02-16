@@ -343,6 +343,11 @@ function loadModuleData(moduleId) {
                 loadReportsModule();
             }
             break;
+        case 'materials':
+            if (typeof loadMaterialsModule === 'function') {
+                loadMaterialsModule();
+            }
+            break;
         case 'settings':
             if (typeof loadSettingsModule === 'function') {
                 loadSettingsModule();
@@ -679,7 +684,14 @@ function loadDashboard() {
     }
 
     // Update today's summary cards (expenses, production, attendance)
+    // Update today's summary cards (expenses, production, attendance)
     updateDashboardCards();
+
+    // Initialize Dashboard Widgets (Charts, Recent, System)
+    if (typeof initializeDashboardCharts === 'function') initializeDashboardCharts();
+    if (typeof populateRecentInvoices === 'function') populateRecentInvoices();
+    if (typeof updateSystemStatus === 'function') updateSystemStatus();
+    if (typeof updateExpenseDashboard === 'function') updateExpenseDashboard();
 }
 
 // Update dashboard cards for Today's Summary (Expenses, Production, Attendance)
@@ -1580,6 +1592,11 @@ function openOutwardModal(id = null) {
         document.getElementById('outwardDCDate').value = '';
         generateOutwardInvoiceNumber();
 
+        // Reset vehicle dropdown
+        if (typeof updateVehicleDropdown === 'function') {
+            updateVehicleDropdown(null);
+        }
+
         // Add 5 default product rows
         for (let i = 0; i < 5; i++) {
             addProductRow();
@@ -1614,7 +1631,51 @@ function populateOutwardForm(invoice) {
     document.getElementById('outwardState').value = invoice.state;
     document.getElementById('outwardStateCode').value = invoice.stateCode;
     document.getElementById('outwardPaymentTerms').value = invoice.paymentTerms || '';
-    document.getElementById('outwardVehicle').value = invoice.vehicle || '';
+
+    // Set customer dropdown and update vehicle list
+    const customers = getCustomers();
+    const customer = customers.find(c => c.companyName === invoice.buyerName);
+    if (customer) {
+        const customerDropdown = document.getElementById('customerDropdown');
+        if (customerDropdown) {
+            customerDropdown.value = customer.id;
+        }
+        if (typeof updateVehicleDropdown === 'function') {
+            updateVehicleDropdown(customer.id);
+        }
+    } else {
+        if (typeof updateVehicleDropdown === 'function') {
+            updateVehicleDropdown(null);
+        }
+    }
+
+    // Set vehicle value (handle legacy values that might not be in the list)
+    const vehicleSelect = document.getElementById('outwardVehicle');
+    if (invoice.vehicle) {
+        // Check if option exists
+        let optionExists = false;
+        for (let i = 0; i < vehicleSelect.options.length; i++) {
+            if (vehicleSelect.options[i].value === invoice.vehicle) {
+                optionExists = true;
+                break;
+            }
+        }
+
+        if (!optionExists) {
+            // Add it as an option
+            const option = document.createElement('option');
+            option.value = invoice.vehicle;
+            option.text = invoice.vehicle;
+            // Insert after default option
+            if (vehicleSelect.options.length > 0) {
+                vehicleSelect.add(option, vehicleSelect.options[1]);
+            } else {
+                vehicleSelect.add(option);
+            }
+        }
+        vehicleSelect.value = invoice.vehicle;
+    }
+
     document.getElementById('outwardBuyerName').value = invoice.buyerName;
     document.getElementById('outwardBuyerAddress').value = invoice.buyerAddress;
     document.getElementById('outwardShippingAddress').value = invoice.shippingAddress || invoice.buyerAddress;
@@ -3988,3 +4049,204 @@ function fillInwardProductDetails(selectElement) {
         }
     }
 }
+
+// ===================================
+// GLOBAL DATA ACCESSORS
+// ===================================
+
+function getInwardInvoices() {
+    if (typeof loadFromStorage === 'function') {
+        return loadFromStorage('inwardInvoices') || [];
+    }
+    return JSON.parse(localStorage.getItem('inwardInvoices')) || [];
+}
+
+function getOutwardInvoices() {
+    if (typeof loadFromStorage === 'function') {
+        return loadFromStorage('outwardInvoices') || [];
+    }
+    return JSON.parse(localStorage.getItem('outwardInvoices')) || [];
+}
+
+window.getInwardInvoices = getInwardInvoices;
+window.getOutwardInvoices = getOutwardInvoices;
+
+// ===================================
+// DASHBOARD WIDGETS LOGIC
+// ===================================
+
+let dashboardChartInstance = null;
+let topProductsChartInstance = null;
+
+function initializeDashboardCharts() {
+    if (typeof Chart === 'undefined') return;
+
+    // 1. Sales vs Purchase Chart
+    const ctx = document.getElementById('salesPurchaseChart');
+    if (ctx) {
+        const inward = getInwardInvoices();
+        const outward = getOutwardInvoices();
+
+        // Last 6 months
+        const months = [];
+        const salesData = [];
+        const purchaseData = [];
+
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date();
+            d.setMonth(d.getMonth() - i);
+            const monthKey = d.toISOString().slice(0, 7); // YYYY-MM
+            const monthLabel = d.toLocaleString('default', { month: 'short' });
+            months.push(monthLabel);
+
+            // Sum sales
+            const monthSales = outward
+                .filter(inv => inv.date && inv.date.startsWith(monthKey))
+                .reduce((sum, inv) => sum + (parseFloat(inv.total) || parseFloat(inv.grandTotal) || 0), 0);
+            salesData.push(monthSales);
+
+            // Sum purchase
+            const monthPurchase = inward
+                .filter(inv => inv.date && inv.date.startsWith(monthKey))
+                .reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
+            purchaseData.push(monthPurchase);
+        }
+
+        if (dashboardChartInstance) dashboardChartInstance.destroy();
+
+        dashboardChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: months,
+                datasets: [
+                    {
+                        label: 'Sales (₹)',
+                        data: salesData,
+                        backgroundColor: '#667eea',
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Purchase (₹)',
+                        data: purchaseData,
+                        backgroundColor: '#ef4444',
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function (value) {
+                                if (value >= 100000) return '₹' + (value / 100000).toFixed(1) + 'L';
+                                if (value >= 1000) return '₹' + (value / 1000).toFixed(1) + 'k';
+                                return '₹' + value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 2. Top Products Chart
+    const ctxProduct = document.getElementById('topProductsChart');
+    if (ctxProduct) {
+        const outward = getOutwardInvoices();
+        const productMap = {};
+
+        outward.forEach(inv => {
+            if (inv.products && Array.isArray(inv.products)) {
+                inv.products.forEach(p => {
+                    const name = p.description || 'Unknown';
+                    const value = parseFloat(p.value) || 0;
+                    productMap[name] = (productMap[name] || 0) + value;
+                });
+            }
+        });
+
+        // Sort by value and take top 5
+        const sortedProducts = Object.entries(productMap)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5);
+
+        if (topProductsChartInstance) topProductsChartInstance.destroy();
+
+        topProductsChartInstance = new Chart(ctxProduct, {
+            type: 'doughnut',
+            data: {
+                labels: sortedProducts.map(p => p[0]),
+                datasets: [{
+                    data: sortedProducts.map(p => p[1]),
+                    backgroundColor: [
+                        '#667eea', '#764ba2', '#f59e0b', '#10b981', '#ef4444'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } }
+                }
+            }
+        });
+    }
+}
+
+function populateRecentInvoices() {
+    const tbody = document.getElementById('recentInvoicesTableBody');
+    if (!tbody) return;
+
+    const outward = getOutwardInvoices();
+    // Sort by date desc
+    const recent = outward
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .slice(0, 5);
+
+    if (recent.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-secondary">No invoices found</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = recent.map(inv => `
+        <tr>
+            <td>${formatDate(inv.date)}</td>
+            <td>${inv.invoiceNo}</td>
+            <td>${inv.buyerName}</td>
+            <td>₹${(parseFloat(inv.total) || 0).toLocaleString('en-IN')}</td>
+            <td><span class="badge ${inv.paymentStatus === 'Paid' ? 'success' : 'warning'}">${inv.paymentStatus}</span></td>
+        </tr>
+    `).join('');
+}
+
+function updateSystemStatus() {
+    const backupStatus = document.getElementById('dashboardBackupStatus');
+    if (backupStatus) {
+        const lastBackup = localStorage.getItem('lastBackupDate');
+        if (lastBackup) {
+            backupStatus.textContent = 'Last: ' + new Date(lastBackup).toLocaleDateString();
+            backupStatus.className = 'badge success';
+        } else {
+            backupStatus.textContent = 'Never';
+            backupStatus.className = 'badge warning';
+        }
+    }
+
+    const storageUsage = document.getElementById('dashboardStorageUsage');
+    if (storageUsage) {
+        if (navigator.storage && navigator.storage.estimate) {
+            navigator.storage.estimate().then(estimate => {
+                const usedMB = (estimate.usage / (1024 * 1024)).toFixed(2);
+                storageUsage.textContent = `${usedMB} MB Used`;
+            });
+        }
+    }
+}
+

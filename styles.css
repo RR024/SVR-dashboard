@@ -790,6 +790,8 @@ select.form-control {
     border: 1px solid var(--border-color);
     background: var(--bg-card);
     backdrop-filter: blur(10px);
+    min-height: 400px;
+    /* Ensure space for dropdowns */
 }
 
 .data-table {
@@ -797,7 +799,7 @@ select.form-control {
     border-collapse: collapse;
     background: var(--bg-secondary);
     border-radius: var(--radius-lg);
-    overflow: hidden;
+    /* overflow: hidden; Removed to prevent clipping of dropdowns */
     box-shadow: var(--shadow-md);
     font-size: 1.02rem;
     /* Added font size */
