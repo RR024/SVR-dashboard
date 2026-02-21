@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="mobile-responsive.css">
     <link rel="stylesheet" href="mobile-fixes.css">
     <link rel="stylesheet" href="mobile-menu-override.css">
+    <link rel="stylesheet" href="diary.css">
 
     <!-- PWA Support -->
     <link rel="manifest" href="manifest.json">
@@ -189,6 +190,12 @@
                         <a href="#production" class="nav-link" data-module="production">
                             <span class="nav-icon">🏭</span>
                             <span>Production</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#materials" class="nav-link" data-module="materials">
+                            <span class="nav-icon">🧱</span>
+                            <span>Materials & BOM</span>
                         </a>
                     </li>
 
@@ -806,6 +813,17 @@
                     <h2>Customer Management</h2>
                     <p>Manage customer database for invoices</p>
                 </div>
+                <div
+                    style="display: flex; gap: 1rem; border-bottom: 2px solid var(--bg-tertiary); margin-bottom: 1.5rem;">
+                    <button id="customerTab" class="customer-tab active" onclick="switchCustomerTab('customer')"
+                        style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--text-secondary); border-bottom: 3px solid transparent; transition: all 0.3s;">
+                        🏢 Customers
+                    </button>
+                    <button id="supplierTab" class="customer-tab" onclick="switchCustomerTab('supplier')"
+                        style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--text-secondary); border-bottom: 3px solid transparent; transition: all 0.3s;">
+                        🏭 Suppliers
+                    </button>
+                </div>
 
                 <div
                     style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem;">
@@ -814,7 +832,7 @@
                             placeholder="🔍 Search by company, GST, contact..." oninput="searchCustomers(this.value)"
                             style="margin: 0;">
                     </div>
-                    <button class="btn btn-primary" onclick="openCustomerModal()">
+                    <button class="btn btn-primary" id="addEntityBtn" onclick="openCustomerModal()">
                         <span>➕</span> Add Customer
                     </button>
                 </div>
@@ -844,7 +862,266 @@
                 </div>
             </section>
 
+            <!-- Materials & Stock Module -->
+            <section id="materials" class="module">
+                <div class="page-header">
+                    <h2>📦 Materials & Stock Management</h2>
+                    <p>Manage raw materials, BOM configuration, and inventory tracking</p>
+                </div>
 
+                <!-- Action Buttons -->
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap;">
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-success btn-sm" onclick="openExcelImportModal()"
+                            title="Import from Excel">
+                            📁 Import Excel Data
+                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="exportMaterialsToExcel()"
+                            title="Export to Excel">
+                            📊 Export to Excel
+                        </button>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-primary" onclick="openMaterialModal()">
+                            <span>➕</span> Add Material
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="stats-grid-compact" style="margin-bottom: 2rem;">
+                    <div class="stat-card" style="border-top: 4px solid #3b82f6;">
+                        <div class="stat-label">Total Materials</div>
+                        <div class="stat-value" id="totalMaterialsCount">0</div>
+                        <div class="stat-change">Raw materials tracked</div>
+                    </div>
+                    <div class="stat-card" style="border-top: 4px solid #10b981;">
+                        <div class="stat-label">Total Stock Value</div>
+                        <div class="stat-value" id="totalStockValue">₹0</div>
+                        <div class="stat-change">Current inventory value</div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-label">Low Stock Items</div>
+                        <div class="stat-value" id="lowStockCount">0</div>
+                        <div class="stat-change">Below reorder level</div>
+                    </div>
+                    <div class="stat-card" style="border-top: 4px solid #8b5cf6;">
+                        <div class="stat-label">Products with BOM</div>
+                        <div class="stat-value" id="productsWithBOM">0</div>
+                        <div class="stat-change">Configured products</div>
+                    </div>
+                </div>
+
+                <!-- Tab Navigation -->
+                <div
+                    style="display: flex; gap: 1rem; border-bottom: 2px solid var(--bg-tertiary); margin-bottom: 1.5rem;">
+                    <button id="stockOverviewTab" class="material-tab active" onclick="switchMaterialTab('stock')"
+                        style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--text-secondary); border-bottom: 3px solid transparent; transition: all 0.3s;">
+                        📦 Stock Overview
+                    </button>
+                    <button id="bomManagementTab" class="material-tab" onclick="switchMaterialTab('bom')"
+                        style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--text-secondary); border-bottom: 3px solid transparent; transition: all 0.3s;">
+                        🔧 BOM Management
+                    </button>
+                    <button id="materialCalcTab" class="material-tab" onclick="switchMaterialTab('calculator')"
+                        style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--text-secondary); border-bottom: 3px solid transparent; transition: all 0.3s;">
+                        🧮 Material Calculator
+                    </button>
+                    <button id="costingTab" class="material-tab" onclick="switchMaterialTab('costing')"
+                        style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--text-secondary); border-bottom: 3px solid transparent; transition: all 0.3s;">
+                        💰 Material Costing
+                    </button>
+                </div>
+
+                <!-- Stock Overview Tab -->
+                <div id="stockOverviewContent">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">📦 Material Stock Levels</h3>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Material Code</th>
+                                        <th>Material Name</th>
+                                        <th>Category</th>
+                                        <th>Unit</th>
+                                        <th>Opening Stock</th>
+                                        <th>Inward</th>
+                                        <th>Consumption</th>
+                                        <th>Closing Stock</th>
+                                        <th>Rate</th>
+                                        <th>Value</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="materialStockTableBody">
+                                    <tr>
+                                        <td colspan="12" class="text-center" style="color: var(--text-secondary);">
+                                            No materials yet. Click "Import Excel Data" or "Add Material" to get
+                                            started.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BOM Management Tab -->
+                <div id="bomManagementContent" style="display: none;">
+                    <div class="grid-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+
+                        <!-- Left: BOM Configuration -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">🔧 Configure Bill of Materials</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group">
+                                    <label class="form-label">Select Product</label>
+                                    <select id="bomProductSelect" class="form-control"
+                                        onchange="loadBOMForProduct(this.value)">
+                                        <option value="">-- Select Product --</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Materials Required (per unit)</label>
+                                    <div id="bomItemsContainer"
+                                        style="max-height: 300px; overflow-y: auto; margin-bottom: 10px; border: 1px solid var(--bg-tertiary); padding: 10px; border-radius: 4px;">
+                                        <!-- Dynamic BOM rows -->
+                                    </div>
+                                    <button class="btn btn-sm btn-secondary" onclick="addBOMRow()">+ Add
+                                        Material</button>
+                                </div>
+
+                                <button class="btn btn-primary" style="width: 100%; margin-top: 10px;"
+                                    onclick="saveCurrentBOM()">
+                                    💾 Save BOM Configuration
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Right: BOM List -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">📋 Configured BOMs</h3>
+                            </div>
+                            <div style="max-height: 500px; overflow-y: auto; padding: var(--space-lg);">
+                                <div id="bomListContainer">
+                                    <p style="color: var(--text-secondary); text-align: center; padding: 2rem;">
+                                        No BOMs configured yet.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Material Calculator Tab -->
+                <div id="materialCalcContent" style="display: none;">
+                    <div class="grid-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+
+                        <!-- Left: Calculator Input -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">🧮 Calculate Material Requirements</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group">
+                                    <label class="form-label">Select Product</label>
+                                    <select id="calcProductSelect" class="form-control"
+                                        onchange="updateCalcProductInfo()">
+                                        <option value="">-- Select Product --</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Target Production Quantity</label>
+                                    <input type="number" id="calcTargetQty" class="form-control"
+                                        placeholder="Enter quantity to produce" min="1">
+                                </div>
+
+                                <button class="btn btn-primary" style="width: 100%;"
+                                    onclick="calculateMaterialRequirement()">
+                                    🔍 Calculate Requirements
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Right: Calculation Results -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">📊 Material Requirements</h3>
+                            </div>
+                            <div style="padding: var(--space-lg);">
+                                <div id="calcResultsContainer">
+                                    <p style="color: var(--text-secondary); text-align: center; padding: 2rem;">
+                                        Select a product and enter quantity to calculate requirements.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Add Material Modal -->
+                <div id="materialStockModal" class="modal">
+                    <div class="modal-content" style="max-width: 600px;">
+                        <div class="modal-header">
+                            <h3 id="materialStockModalTitle">Add New Material</h3>
+                            <span class="close" onclick="closeMaterialModal()">&times;</span>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label class="form-label">Material Code</label>
+                                <input type="text" id="materialCode" class="form-control" placeholder="e.g., MAT001">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label required">Material Name</label>
+                                <input type="text" id="materialName" class="form-control"
+                                    placeholder="Enter material name" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Category</label>
+                                <input type="text" id="materialCategory" class="form-control"
+                                    placeholder="e.g., Raw Material, Component">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Unit of Measurement</label>
+                                <select id="materialUnit" class="form-control">
+                                    <option value="Nos">Nos (Numbers)</option>
+                                    <option value="Kg">Kg (Kilograms)</option>
+                                    <option value="Ltr">Ltr (Liters)</option>
+                                    <option value="Mtr">Mtr (Meters)</option>
+                                    <option value="Pcs">Pcs (Pieces)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Opening Stock</label>
+                                <input type="number" id="materialOpening" class="form-control" value="0" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Rate (per unit)</label>
+                                <input type="number" id="materialRate" class="form-control" value="0" step="0.01"
+                                    placeholder="0.00">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Reorder Level</label>
+                                <input type="number" id="materialReorder" class="form-control" value="10" step="1">
+                            </div>
+                        </div>
+                        <div class="modal-footer" style="margin-top: 1.5rem; text-align: right;">
+                            <button class="btn btn-secondary" onclick="closeMaterialModal()">Cancel</button>
+                            <button class="btn btn-primary" id="saveMaterialStockBtn">Save Material</button>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
             <!-- HR Management Module (Combined Employees, Salary & Attendance) -->
             <section id="hr-management" class="module">
                 <div class="page-header">
@@ -1927,12 +2204,24 @@
 
                         <div class="form-group">
                             <label class="form-label">PO No.</label>
-                            <input type="text" id="outwardPONo" class="form-control" placeholder="e.g., PO12345">
+                            <select id="outwardPONo" class="form-control" onchange="handlePOSelection(this)">
+                                <option value="">-- Select PO --</option>
+                            </select>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">PO Date</label>
                             <input type="date" id="outwardPODate" class="form-control">
+                        </div>
+
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label class="form-label">Select Existing Customer</label>
+                            <select id="customerDropdown" class="form-control" onchange="fillCustomerDetails()">
+                                <option value="">-- Select Customer --</option>
+                            </select>
+                            <small style="color: var(--text-secondary); display: block; margin-top: 0.5rem;">
+                                Or manually enter details below
+                            </small>
                         </div>
 
                         <div class="form-group">
@@ -1972,7 +2261,7 @@
 
                     <h4 style="color: var(--text-primary); margin: 1.5rem 0 1rem;">Customer Details</h4>
 
-                    <div class="form-group">
+                    <!-- <div class="form-group">
                         <label class="form-label">Select Existing Customer</label>
                         <select id="customerDropdown" class="form-control" onchange="fillCustomerDetails()">
                             <option value="">-- Select Customer --</option>
@@ -1980,7 +2269,7 @@
                         <small style="color: var(--text-secondary); display: block; margin-top: 0.5rem;">
                             Or manually enter details below
                         </small>
-                    </div>
+                    </div> -->
 
                     <div class="form-group">
                         <label class="form-label required">Buyer Name</label>
@@ -2100,6 +2389,7 @@
             <div class="modal-body">
                 <form id="customerForm">
                     <input type="hidden" id="customerId">
+                    <input type="hidden" id="customerType" value="customer">
 
                     <div class="form-group">
                         <label class="form-label required">Company Name</label>
@@ -2379,32 +2669,38 @@
         </div>
     </div>
 
+
     <!-- Salary Modal -->
     <div id="salaryModal" class="modal">
-        <h3 class="modal-title" id="salaryModalTitle">Add/Update Salary</h3>
-        <button class="modal-close" onclick="closeSalaryModal()">×</button>
-    </div>
-    <div class="modal-body">
-        <form id="salaryForm">
-            <input type="hidden" id="salaryId">
-
-            <div class="form-group">
-                <label class="form-label required">Select Employee</label>
-                <select id="salaryEmployee" class="form-control" required onchange="loadEmployeeSalaryDetails()">
-                    <option value="">-- Select Employee --</option>
-                </select>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="salaryModalTitle">Add/Update Salary</h3>
+                <button class="modal-close" onclick="closeSalaryModal()">×</button>
             </div>
+            <div class="modal-body">
+                <form id="salaryForm">
+                    <input type="hidden" id="salaryId">
 
-            <div class="form-group">
-                <label class="form-label required">Month</label>
-                <input type="month" id="salaryForMonth" class="form-control" required>
+                    <div class="form-group">
+                        <label class="form-label required">Select Employee</label>
+                        <select id="salaryEmployee" class="form-control" required
+                            onchange="loadEmployeeSalaryDetails()">
+                            <option value="">-- Select Employee --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Month</label>
+                        <input type="month" id="salaryForMonth" class="form-control" required>
+                    </div>
+
+                    <h4
+                        style="color: var(--text-primary); margin: 1.5rem 0 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                        💵 Earnings
+                    </h4>
+                </form>
             </div>
-
-            <h4
-                style="color: var(--text-primary); margin: 1.5rem 0 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
-                💵 Earnings
-            </h4>
-    </div>
+        </div>
     </div>
 
     <!-- Backup Reminder Modal -->
@@ -3568,851 +3864,184 @@
     </div>
 
 
-    <!-- Toggle First Row Script & Styles -->
-    <style>
-        /* Toggle Switch Slider Animation */
-        .toggle-slider:before {
-            position: absolute;
-            content: "";
-            height: 20px;
-            width: 20px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: 0.3s;
-            border-radius: 50%;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        input:checked+.toggle-slider {
-            background-color: var(--primary, #667eea);
-        }
-
-        input:checked+.toggle-slider:before {
-            transform: translateX(24px);
-        }
-    </style>
-
-    <!-- Diary Book Styles -->
-    <style>
-        /* Diary Book Container */
-        .diary-book-container {
-            position: relative;
-            max-width: 1200px;
-            width: 95vw;
-            height: 85vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
-        }
-
-        /* Close Button */
-        .diary-close-btn {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            z-index: 1000;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: none;
-            background: rgba(0, 0, 0, 0.6);
-            color: white;
-            font-size: 1.5rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-        }
-
-        .diary-close-btn:hover {
-            background: rgba(0, 0, 0, 0.8);
-            transform: rotate(90deg);
-        }
-
-        /* Diary Book */
-        .diary-book {
-            display: flex;
-            width: 100%;
-            max-width: 1100px;
-            height: 100%;
-            background: linear-gradient(135deg, #8b5a3c 0%, #6b4423 100%);
-            border-radius: 12px;
-            box-shadow:
-                0 20px 60px rgba(0, 0, 0, 0.4),
-                inset 0 0 20px rgba(0, 0, 0, 0.2);
-            position: relative;
-            padding: 1.5rem;
-        }
-
-        /* Individual Pages */
-        .diary-page {
-            flex: 1;
-            background: #fffef7;
-            background-image:
-                repeating-linear-gradient(transparent,
-                    transparent 29px,
-                    #e0d8c8 29px,
-                    #e0d8c8 30px);
-            margin: 0.5rem;
-            padding: 2rem;
-            box-shadow:
-                inset 0 0 30px rgba(139, 90, 60, 0.1),
-                2px 0 10px rgba(0, 0, 0, 0.1);
-            border-radius: 4px;
-            overflow-y: auto;
-            position: relative;
-        }
-
-        .diary-page-left {
-            border-right: 1px dashed #ccc;
-        }
-
-        .diary-page-right {
-            border-left: 1px dashed #ccc;
-        }
-
-        /* Diary Spine */
-        .diary-spine {
-            width: 30px;
-            background: linear-gradient(90deg, #5a3820 0%, #8b5a3c 50%, #5a3820 100%);
-            box-shadow:
-                inset 0 0 10px rgba(0, 0, 0, 0.5),
-                2px 0 5px rgba(0, 0, 0, 0.3),
-                -2px 0 5px rgba(0, 0, 0, 0.3);
-            position: relative;
-        }
-
-        .diary-spine::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 2px;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        /* Page Header */
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 2px solid #8b5a3c;
-        }
-
-        .page-date {
-            font-family: 'Georgia', serif;
-            font-size: 1.1rem;
-            color: #8b5a3c;
-            font-weight: 600;
-        }
-
-        .page-btn-today {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 0.875rem;
-            transition: all 0.3s ease;
-        }
-
-        .page-btn-today:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
-        }
-
-        /* Category Section */
-        .page-category-section {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-            align-items: center;
-        }
-
-        .page-category-section label {
-            font-size: 0.875rem;
-            color: #5a3820;
-            font-weight: 500;
-        }
-
-        .diary-category-select,
-        .diary-priority-select {
-            flex: 1;
-            padding: 0.5rem;
-            border: 1px solid #d4c5b0;
-            border-radius: 6px;
-            background: white;
-            font-size: 0.875rem;
-            cursor: pointer;
-        }
-
-        /* Content Area */
-        .page-content-area {
-            flex: 1;
-            margin-bottom: 1.5rem;
-        }
-
-        .diary-writing-area {
-            width: 100%;
-            height: calc(100% - 80px);
-            min-height: 300px;
-            border: none;
-            background: transparent;
-            font-family: 'Courier New', monospace;
-            font-size: 0.95rem;
-            line-height: 30px;
-            color: #2c1810;
-            resize: none;
-            outline: none;
-            padding: 0;
-        }
-
-        .diary-writing-area::placeholder {
-            color: #b8a898;
-            font-style: italic;
-        }
-
-        /* Page Footer */
-        .page-footer {
-            display: flex;
-            gap: 0.75rem;
-            padding-top: 1rem;
-            border-top: 1px dashed #d4c5b0;
-        }
-
-        .page-action-btn {
-            padding: 0.6rem 1.2rem;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-
-        .save-btn {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-        }
-
-        .save-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
-        }
-
-        .delete-btn {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            color: white;
-        }
-
-        .delete-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
-        }
-
-        /* Calendar Section */
-        .diary-calendar-section {
-            margin-bottom: 1.5rem;
-        }
-
-        .calendar-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-
-        .calendar-month-year {
-            font-family: 'Georgia', serif;
-            font-size: 1rem;
-            color: #8b5a3c;
-            font-weight: 600;
-        }
-
-        .calendar-nav-btn {
-            background: none;
-            border: 1px solid #d4c5b0;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            cursor: pointer;
-            color: #8b5a3c;
-            transition: all 0.2s ease;
-        }
-
-        .calendar-nav-btn:hover {
-            background: #8b5a3c;
-            color: white;
-        }
-
-        .calendar-grid {
-            font-size: 0.75rem;
-        }
-
-        .calendar-weekdays {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 2px;
-            margin-bottom: 0.5rem;
-        }
-
-        .weekday {
-            text-align: center;
-            font-weight: 600;
-            color: #8b5a3c;
-            padding: 0.25rem;
-        }
-
-        .calendar-days {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 3px;
-        }
-
-        .calendar-day {
-            aspect-ratio: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            background: white;
-            color: #5a3820;
-            font-size: 0.8rem;
-        }
-
-        .calendar-day.empty {
-            background: transparent;
-            cursor: default;
-        }
-
-        .calendar-day:not(.empty):hover {
-            background: #f0e8d8;
-        }
-
-        .calendar-day.has-entry {
-            background: #10b981;
-            color: white;
-            font-weight: 600;
-        }
-
-        .calendar-day.selected {
-            background: #667eea;
-            color: white;
-            font-weight: 700;
-            transform: scale(1.1);
-        }
-
-        .calendar-day.today {
-            border: 2px solid #f59e0b;
-        }
-
-        .calendar-day.search-match {
-            animation: pulse 1s infinite;
-        }
-
-        @keyframes pulse {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.6;
-            }
-        }
-
-        /* Diary Stats */
-        .diary-stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .stat-item {
-            background: white;
-            border-radius: 6px;
-            padding: 0.75rem;
-            text-align: center;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .stat-label {
-            font-size: 0.7rem;
-            color: #888;
-            margin-bottom: 0.25rem;
-        }
-
-        .stat-value {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: #667eea;
-        }
-
-        /* Search Box */
-        .diary-search-box {
-            margin-bottom: 1.5rem;
-        }
-
-        .diary-search-input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #d4c5b0;
-            border-radius: 6px;
-            font-size: 0.875rem;
-            outline: none;
-        }
-
-        .diary-search-input:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        /* Legend */
-        .diary-legend {
-            display: flex;
-            gap: 1rem;
-            font-size: 0.75rem;
-            color: #666;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-        }
-
-        .legend-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            display: inline-block;
-        }
-
-        /* Navigation Arrows */
-        .diary-nav-arrow {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            border: none;
-            background: rgba(139, 90, 60, 0.8);
-            color: white;
-            font-size: 2rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            z-index: 100;
-        }
-
-        .diary-nav-arrow:hover {
-            background: rgba(139, 90, 60, 1);
-            transform: translateY(-50%) scale(1.1);
-        }
-
-        .diary-nav-left {
-            left: 1rem;
-        }
-
-        .diary-nav-right {
-            right: 1rem;
-        }
-
-        /* Scrollbar Styling for Pages */
-        .diary-page::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .diary-page::-webkit-scrollbar-track {
-            background: rgba(212, 197, 176, 0.2);
-            border-radius: 10px;
-        }
-
-        .diary-page::-webkit-scrollbar-thumb {
-            background: rgba(139, 90, 60, 0.5);
-            border-radius: 10px;
-        }
-
-        .diary-page::-webkit-scrollbar-thumb:hover {
-            background: rgba(139, 90, 60, 0.7);
-        }
-
-        /* Activities Container */
-        .activities-container {
-            flex: 1;
-            overflow-y: auto;
-            margin-bottom: 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        /* Activity Card */
-        .activity-card {
-            background: white;
-            border-left: 4px solid #10b981;
-            border-radius: 6px;
-            padding: 1rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-        }
-
-        .activity-card:hover {
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-            transform: translateY(-2px);
-        }
-
-        .activity-card.priority-medium {
-            border-left-color: #f59e0b;
-        }
-
-        .activity-card.priority-high {
-            border-left-color: #ef4444;
-        }
-
-        .activity-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.75rem;
-        }
-
-        .activity-meta {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        .activity-category {
-            background: var(--bg-tertiary, #f5f5f5);
-            padding: 0.25rem 0.75rem;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            color: #5a3820;
-        }
-
-        .activity-priority {
-            font-size: 0.875rem;
-        }
-
-        .activity-alert-badge {
-            font-size: 0.875rem;
-            animation: bellRing 2s ease-in-out infinite;
-        }
-
-        @keyframes bellRing {
-
-            0%,
-            100% {
-                transform: rotate(0deg);
-            }
-
-            10%,
-            30% {
-                transform: rotate(-10deg);
-            }
-
-            20%,
-            40% {
-                transform: rotate(10deg);
-            }
-        }
-
-        .activity-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .activity-action-btn {
-            background: none;
-            border: 1px solid #d4c5b0;
-            border-radius: 4px;
-            padding: 0.25rem 0.5rem;
-            cursor: pointer;
-            font-size: 0.75rem;
-            transition: all 0.2s ease;
-        }
-
-        .activity-action-btn:hover {
-            background: #f0e8d8;
-        }
-
-        .activity-content {
-            font-family: 'Courier New', monospace;
-            font-size: 0.875rem;
-            line-height: 1.6;
-            color: #2c1810;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-
-        .activity-timestamp {
-            font-size: 0.7rem;
-            color: #888;
-            margin-top: 0.5rem;
-            font-style: italic;
-        }
-
-        /* Add Activity Button */
-        .add-activity-btn {
-            width: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 0.75rem;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-
-        .add-activity-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
-        }
-
-        /* New Activity Form */
-        .new-activity-form {
-            background: rgba(255, 255, 255, 0.95);
-            border: 2px solid #667eea;
-            border-radius: 8px;
-            padding: 1rem;
-            margin-top: 1rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .activity-textarea {
-            width: 100%;
-            border: 1px solid #d4c5b0;
-            border-radius: 6px;
-            padding: 0.75rem;
-            font-family: 'Courier New', monospace;
-            font-size: 0.875rem;
-            line-height: 1.6;
-            resize: vertical;
-            outline: none;
-        }
-
-        .activity-textarea:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        /* Edit Mode Styles */
-        .activity-card.editing {
-            background: #fffef7;
-            border-color: #667eea;
-        }
-
-        .activity-card.editing .activity-content {
-            display: none;
-        }
-
-        .activity-edit-form {
-            display: none;
-        }
-
-        .activity-card.editing .activity-edit-form {
-            display: block;
-        }
-
-        /* Dashboard Alert Popups */
-        .diary-alerts-container {
-            position: fixed;
-            top: 80px;
-            right: 20px;
-            z-index: 999;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            max-width: 400px;
-            pointer-events: none;
-        }
-
-        .diary-alert-popup {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 1.25rem;
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
-            pointer-events: all;
-            position: relative;
-            animation: slideInRight 0.5s ease-out;
-        }
-
-        @keyframes slideInRight {
-            from {
-                transform: translateX(450px);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        .diary-alert-popup.closing {
-            animation: slideOutRight 0.3s ease-out forwards;
-        }
-
-        @keyframes slideOutRight {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-
-            to {
-                transform: translateX(450px);
-                opacity: 0;
-            }
-        }
-
-        .diary-alert-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 0.75rem;
-        }
-
-        .diary-alert-title {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-weight: 600;
-            font-size: 1rem;
-        }
-
-        .diary-alert-close-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: white;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-            line-height: 1;
-            transition: all 0.2s ease;
-        }
-
-        .diary-alert-close-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: scale(1.1);
-        }
-
-        .diary-alert-date {
-            font-size: 0.875rem;
-            opacity: 0.95;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-        }
-
-        .diary-alert-category {
-            display: inline-block;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 0.25rem 0.75rem;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .diary-alert-content {
-            font-size: 0.875rem;
-            line-height: 1.6;
-            opacity: 0.95;
-            max-height: 100px;
-            overflow-y: auto;
-            margin-top: 0.5rem;
-        }
-
-        .diary-alert-content::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        .diary-alert-content::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 2px;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 900px) {
-            .diary-book {
-                flex-direction: column;
-                height: auto;
-                max-height: 85vh;
-            }
-
-            .diary-spine {
-                width: 100%;
-                height: 20px;
-            }
-
-            .diary-page {
-                max-height: 400px;
-            }
-
-            .diary-nav-arrow {
-                display: none;
-            }
-        }
-    </style>
-
-    <script>
-        // Toggle function for first row visibility (displays as 3rd row when enabled)
-        function toggleFirstRow() {
-            const firstRow = document.getElementById('firstStatsRow');
-            const toggleSwitch = document.getElementById('toggleFirstRowSwitch');
-
-            if (toggleSwitch.checked) {
-                // Show the row (as 3rd row)
-                firstRow.style.display = 'grid';
-                localStorage.setItem('firstRowVisible', 'true');
-            } else {
-                // Hide the row
-                firstRow.style.display = 'none';
-                localStorage.setItem('firstRowVisible', 'false');
-            }
-        }
-
-        // Restore the state on page load
-        document.addEventListener('DOMContentLoaded', function () {
-            const firstRow = document.getElementById('firstStatsRow');
-            const toggleSwitch = document.getElementById('toggleFirstRowSwitch');
-            const isVisible = localStorage.getItem('firstRowVisible');
-
-            // Default to hidden (false), unless explicitly set to true
-            if (isVisible === 'true') {
-                firstRow.style.display = 'grid';
-                toggleSwitch.checked = true;
-            } else {
-                // Default state: hidden
-                firstRow.style.display = 'none';
-                toggleSwitch.checked = false;
-                localStorage.setItem('firstRowVisible', 'false');
-            }
-        });
-    </script>
-
+    <!-- Material Calculation Module (Tab Content) -->
+    <div id="costingContent" style="display: none;">
+        <div class="card-header" style="margin-bottom: 1rem;">
+            <h3>💰 Material Costing & Calculation</h3>
+            <p style="color: var(--text-secondary); margin-top: 5px;">Calculate material costs, production requirements,
+                and profit/loss analysis</p>
+        </div>
+
+        <!-- Summary Cards -->
+        <div id="materialSummary" class="stats-grid-compact" style="margin-bottom: 2rem;">
+            <!-- Populated by JS -->
+        </div>
+
+        <!-- Action Bar -->
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem;">
+            <div style="flex: 1; max-width: 400px;">
+                <input type="text" id="materialSearch" class="form-control" placeholder="🔍 Search by customer, part..."
+                    oninput="searchMaterials(this.value)" style="margin: 0;">
+            </div>
+            <div style="display: flex; gap: 1rem;">
+                <button class="btn btn-primary" id="addMaterialBtn">
+                    <span>➕</span> New Calculation
+                </button>
+                <button class="btn btn-outline" id="exportMaterialExcel">
+                    <span>📊</span> Export Excel
+                </button>
+                <button class="btn btn-outline" id="exportMaterialPdf">
+                    <span>📄</span> Export PDF
+                </button>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="card">
+            <div class="table-container">
+                <table class="data-table" id="materialTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Customer</th>
+                            <th>Part Name</th>
+                            <th>Part No</th>
+                            <th>In. Wt</th>
+                            <th>Rate</th>
+                            <th>Cust Inv Cost</th>
+                            <th>Wt/Strip</th>
+                            <th>As Per Wt</th>
+                            <th>Act Wt SVR</th>
+                            <th>Given Wt</th>
+                            <th>Strokes</th>
+                            <th>Cavity</th>
+                            <th>Prod Qty</th>
+                            <th>Inv Qty</th>
+                            <th>Norms</th>
+                            <th>Need</th>
+                            <th>Diff</th>
+                            <th>Proc Cost</th>
+                            <th>Stroke Cost</th>
+                            <th>Cust PO</th>
+                            <th>SVR Inv Cost</th>
+                            <th>SVR Invested</th>
+                            <th>Cust/SVR Diff</th>
+                            <th>Scrap Wt</th>
+                            <th>TTL Scrap</th>
+                            <th>Scrap Rate</th>
+                            <th>Scrap Sale</th>
+                            <th>Act Recv</th>
+                            <th>P/L</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="materialCostingTableBody">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Material Modal -->
+        <div id="materialModal" class="modal">
+            <div class="modal-content" style="max-width: 1000px;">
+                <div class="modal-header">
+                    <h3 id="materialFormTitle">Add Material Calculation</h3>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="materialForm">
+                        <input type="hidden" id="materialId">
+
+                        <div
+                            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                            <!-- Basic Info -->
+                            <div class="form-group">
+                                <label class="form-label">Invoice Date</label>
+                                <input type="date" id="invoiceDate" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Customer Name</label>
+                                <input type="text" id="customerName" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Part Name</label>
+                                <input type="text" id="partName" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Part Number</label>
+                                <input type="text" id="partNum" class="form-control">
+                            </div>
+
+                            <!-- Weights & Rates -->
+                            <div class="form-group">
+                                <label class="form-label">Incoming Weight (Kg)</label>
+                                <input type="number" id="incomingWeight" class="form-control" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Rate Per Kg (₹)</label>
+                                <input type="number" id="ratePerKg" class="form-control" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Actual Weight SVR (Kg)</label>
+                                <input type="number" id="actualWeightSVR" class="form-control" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Given Weight Customer (Kg)</label>
+                                <input type="number" id="givenWeightCustomer" class="form-control" step="0.01">
+                            </div>
+
+                            <!-- Production Specs -->
+                            <div class="form-group">
+                                <label class="form-label">Strokes Per Strip</label>
+                                <input type="number" id="strokesPerStrip" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Cavity Per Stroke</label>
+                                <input type="number" id="cavityPerStroke" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Qty As Per Invoice</label>
+                                <input type="number" id="quantityAsPerInvoice" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Actual Norms</label>
+                                <input type="number" id="actualNorms" class="form-control" step="0.01">
+                            </div>
+
+                            <!-- Costs -->
+                            <div class="form-group">
+                                <label class="form-label">Process Cost (₹)</label>
+                                <input type="number" id="processCost" class="form-control" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Customer PO Cost (₹)</label>
+                                <input type="number" id="customerPOCost" class="form-control" step="0.01">
+                            </div>
+
+                            <!-- Scrap Details -->
+                            <div class="form-group">
+                                <label class="form-label">Strip Scrap Weight (Kg)</label>
+                                <input type="number" id="stripScrapWeight" class="form-control" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Scrap Cost (₹/Kg)</label>
+                                <input type="number" id="scrapCost" class="form-control" step="0.01">
+                            </div>
+                        </div>
+
+                        <div class="modal-footer" style="margin-top: 1.5rem; text-align: right;">
+                            <button type="button" class="btn btn-secondary close-modal"
+                                onclick="document.getElementById('materialModal').style.display='none'">Cancel</button>
+                            <button type="button" class="btn btn-primary" id="saveMaterialBtn">Save Calculation</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Critical Improvements - Utility Scripts (loaded first) -->
     <script src="migration-manager.js"></script>
@@ -4429,7 +4058,7 @@
     <script src="auth.js"></script>
 
     <!-- Custom Modules -->
-
+    <script src="materials.js"></script>
     <script src="search.js"></script>
     <script src="backup-system.js"></script>
     <script src="expenses.js"></script>
@@ -4449,6 +4078,8 @@
     <script src="pdf-generator.js"></script>
     <script src="enhanced-search.js"></script>
     <script src="diary.js"></script>
+    <script src="diary-inline.js"></script>
+    <script src="material-calculation.js"></script>
     <script src="app.js"></script>
 </body>
 

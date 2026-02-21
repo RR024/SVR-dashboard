@@ -152,14 +152,16 @@ const searchCustomers = debounce(function (query) {
     }
 
     const customers = getCustomers();
-    const filtered = customers.filter(cust =>
-        cust.companyName.toLowerCase().includes(searchTerm) ||
-        cust.gstin.toLowerCase().includes(searchTerm) ||
-        (cust.contactPerson && cust.contactPerson.toLowerCase().includes(searchTerm)) ||
-        (cust.phone && cust.phone.includes(searchTerm)) ||
-        (cust.city && cust.city.toLowerCase().includes(searchTerm)) ||
-        (cust.email && cust.email.toLowerCase().includes(searchTerm))
-    );
+    const filtered = customers.filter(cust => {
+        const typeMatch = (cust.type || 'customer') === (window.currentCustomerTab || 'customer');
+        const searchMatch = cust.companyName.toLowerCase().includes(searchTerm) ||
+            cust.gstin.toLowerCase().includes(searchTerm) ||
+            (cust.contactPerson && cust.contactPerson.toLowerCase().includes(searchTerm)) ||
+            (cust.phone && cust.phone.includes(searchTerm)) ||
+            (cust.city && cust.city.toLowerCase().includes(searchTerm)) ||
+            (cust.email && cust.email.toLowerCase().includes(searchTerm));
+        return typeMatch && searchMatch;
+    });
 
     displayFilteredCustomers(filtered);
 }, 300);
@@ -169,10 +171,11 @@ function displayFilteredCustomers(customers) {
     const tbody = document.getElementById('customersTableBody');
 
     if (customers.length === 0) {
+        const entityName = (window.currentCustomerTab === 'supplier') ? 'suppliers' : 'customers';
         tbody.innerHTML = `
             <tr>
                 <td colspan="6" class="text-center" style="color: var(--text-secondary);">
-                    No customers found matching your search.
+                    No ${entityName} found matching your search.
                 </td>
             </tr>
         `;

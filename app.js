@@ -348,6 +348,11 @@ function loadModuleData(moduleId) {
                 loadMaterialsModule();
             }
             break;
+        case 'material-calculation':
+            if (typeof initMaterialCalculationModule === 'function') {
+                initMaterialCalculationModule();
+            }
+            break;
         case 'settings':
             if (typeof loadSettingsModule === 'function') {
                 loadSettingsModule();
@@ -383,8 +388,65 @@ function loadHRModule() {
     }
 }
 
+
+// Get employees from localStorage
+function getEmployees() {
+    return loadFromStorage('employees') || [];
+}
+
+// Set employees to localStorage
+function setEmployees(employees) {
+    saveToStorage('employees', employees);
+}
+
+// Load employees table
+function loadEmployees() {
+    const employees = getEmployees();
+    const tableBody = document.getElementById('employeeTableBody');
+
+    if (!tableBody) {
+        console.warn('Employee table body not found');
+        return;
+    }
+
+    if (employees.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center" style="padding: 2rem; color: var(--text-secondary);">
+                    No employees yet. Click "Add Employee" to create one.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tableBody.innerHTML = employees.map(emp => `
+        <tr>
+            <td>${emp.empId || '-'}</td>
+            <td>${emp.name || '-'}</td>
+            <td>${emp.designation || '-'}</td>
+            <td>${emp.department || '-'}</td>
+            <td>${emp.phone || '-'}</td>
+            <td>
+                <span class="badge ${emp.status === 'Active' ? 'success' : 'secondary'}">
+                    ${emp.status || 'Active'}
+                </span>
+            </td>
+            <td>
+                <button class="btn btn-sm btn-secondary" onclick="editEmployee('${emp.id}')" title="Edit">
+                    ✏️
+                </button>
+                <button class="btn btn-sm btn-danger" onclick="deleteEmployee('${emp.id}')" title="Delete">
+                    🗑️
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
 // Update HR summary cards
 function updateHRSummary() {
+
     const employees = getEmployees();
 
     // Update total employees count
@@ -909,15 +971,9 @@ function openInwardModal(id = null) {
         productContainer.innerHTML = '';
     }
 
-    // Load customer dropdown
+    // Load customer dropdown FIRST (before populating products)
     if (typeof loadInwardCustomerDropdown === 'function') {
         loadInwardCustomerDropdown();
-    }
-
-    // Reset customer dropdown selection
-    const customerDropdown = document.getElementById('inwardCustomerDropdown');
-    if (customerDropdown) {
-        customerDropdown.value = '';
     }
 
     if (id) {
@@ -940,7 +996,19 @@ function openInwardModal(id = null) {
                 toggleInwardAmountPaid();
             }
 
+            // Try to pre-select customer in dropdown if it matches
+            // IMPORTANT: Do this BEFORE loading products
+            const customerDropdown = document.getElementById('inwardCustomerDropdown');
+            if (customerDropdown && invoice.customer) {
+                const customers = getCustomers();
+                const matchingCustomer = customers.find(c => c.companyName === invoice.customer);
+                if (matchingCustomer) {
+                    customerDropdown.value = matchingCustomer.id;
+                }
+            }
+
             // Load products - handle both old single-product and new multi-product format
+            // Products are loaded AFTER customer dropdown is set for proper matching
             if (invoice.products && Array.isArray(invoice.products)) {
                 // New multi-product format
                 invoice.products.forEach(product => {
@@ -955,15 +1023,6 @@ function openInwardModal(id = null) {
                     rate: invoice.rate,
                     amount: invoice.amount
                 });
-            }
-
-            // Try to pre-select customer in dropdown if it matches
-            if (customerDropdown && invoice.customer) {
-                const customers = getCustomers();
-                const matchingCustomer = customers.find(c => c.companyName === invoice.customer);
-                if (matchingCustomer) {
-                    customerDropdown.value = matchingCustomer.id;
-                }
             }
 
             // Invoice number should be editable even for saved invoices
@@ -987,6 +1046,12 @@ function openInwardModal(id = null) {
 
         // Clear GST field
         document.getElementById('inwardGSTNo').value = '';
+
+        // Reset customer dropdown selection
+        const customerDropdown = document.getElementById('inwardCustomerDropdown');
+        if (customerDropdown) {
+            customerDropdown.value = '';
+        }
 
         // Add one default product row
         addInwardProductRow();
@@ -1576,6 +1641,11 @@ function openOutwardModal(id = null) {
     // Clear product items
     document.getElementById('productItems').innerHTML = '';
 
+    // Load customer dropdown FIRST (before populating form or adding products)
+    if (typeof loadCustomerDropdown === 'function') {
+        loadCustomerDropdown();
+    }
+
     if (id) {
         // Edit mode - load existing invoice
         const invoices = getOutwardInvoices();
@@ -1609,11 +1679,6 @@ function openOutwardModal(id = null) {
         invoiceNoField.title = '';
     }
 
-    // Load customer dropdown
-    if (typeof loadCustomerDropdown === 'function') {
-        loadCustomerDropdown();
-    }
-
     // Setup product calculations
     setupProductCalculations();
 
@@ -1632,7 +1697,8 @@ function populateOutwardForm(invoice) {
     document.getElementById('outwardStateCode').value = invoice.stateCode;
     document.getElementById('outwardPaymentTerms').value = invoice.paymentTerms || '';
 
-    // Set customer dropdown and update vehicle list
+    // IMPORTANT: Set customer dropdown FIRST (before loading products)
+    // This ensures addProductRow() can match products against the customer's product list
     const customers = getCustomers();
     const customer = customers.find(c => c.companyName === invoice.buyerName);
     if (customer) {
@@ -1691,7 +1757,8 @@ function populateOutwardForm(invoice) {
         toggleOutwardAmountPaid();
     }
 
-    // Populate products
+    // Populate products AFTER customer dropdown is set
+    // This allows addProductRow() to properly match and select products from customer's catalog
     if (invoice.products && invoice.products.length > 0) {
         const container = document.getElementById('productItems');
         container.innerHTML = '';

@@ -2,6 +2,33 @@
 // CUSTOMER MANAGEMENT MODULE
 // =========================================
 
+let currentCustomerTab = 'customer';
+
+// Switch between Customer and Supplier tabs
+function switchCustomerTab(tabName) {
+    currentCustomerTab = tabName;
+
+    // Update tab styling
+    document.querySelectorAll('.customer-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    document.getElementById(tabName + 'Tab').classList.add('active');
+
+    // Update Add Button text and search placeholder
+    const addBtn = document.getElementById('addEntityBtn');
+    const searchInput = document.getElementById('customerSearch');
+    if (tabName === 'supplier') {
+        addBtn.innerHTML = '<span>➕</span> Add Supplier';
+        searchInput.placeholder = '🔍 Search suppliers...';
+    } else {
+        addBtn.innerHTML = '<span>➕</span> Add Customer';
+        searchInput.placeholder = '🔍 Search by company, GST, contact...';
+    }
+
+    // Reload the table
+    loadCustomers();
+}
+
 // Get customers from storage (with deduplication)
 function getCustomers() {
     const customers = loadFromStorage('customers') || [];
@@ -32,16 +59,25 @@ function getCustomers() {
 
 // Load customers into table
 function loadCustomers() {
-    const customers = getCustomers();
+    let customers = getCustomers();
+
+    // Filter by type
+    customers = customers.filter(c => {
+        const type = c.type || 'customer';
+        return type === currentCustomerTab;
+    });
+
     const tbody = document.getElementById('customersTableBody');
 
     if (!tbody) return;
 
     if (customers.length === 0) {
+        const entityName = currentCustomerTab === 'supplier' ? 'suppliers' : 'customers';
+        const addText = currentCustomerTab === 'supplier' ? 'Add Supplier' : 'Add Customer';
         tbody.innerHTML = `
             <tr>
                 <td colspan="6" class="text-center" style="color: var(--text-secondary);">
-                    No customers yet. Click "Add Customer" to create one.
+                    No ${entityName} yet. Click "${addText}" to create one.
                 </td>
             </tr>
         `;
@@ -81,6 +117,9 @@ function openCustomerModal(customerId = null) {
     form.reset();
     document.getElementById('customerId').value = '';
 
+    // Set default type to the current active tab
+    document.getElementById('customerType').value = currentCustomerTab;
+
     // Clear product list
     const productsList = document.getElementById('customerProductsList');
     if (productsList) {
@@ -104,8 +143,10 @@ function openCustomerModal(customerId = null) {
         const customer = customers.find(c => c.id === customerId);
 
         if (customer) {
-            title.textContent = 'Edit Customer';
+            const entityName = customer.type === 'supplier' ? 'Supplier' : 'Customer';
+            title.textContent = `Edit ${entityName}`;
             document.getElementById('customerId').value = customer.id;
+            document.getElementById('customerType').value = customer.type || 'customer';
             document.getElementById('customerCompanyName').value = customer.companyName;
             document.getElementById('customerGSTIN').value = customer.gstin;
             document.getElementById('customerAddress').value = customer.address;
@@ -123,7 +164,8 @@ function openCustomerModal(customerId = null) {
             loadCustomerVehicles(customerId);
         }
     } else {
-        title.textContent = 'Add Customer';
+        const entityName = currentCustomerTab === 'supplier' ? 'Supplier' : 'Customer';
+        title.textContent = `Add ${entityName}`;
     }
 
     modal.classList.add('active');
@@ -140,6 +182,7 @@ function closeCustomerModal() {
 // Save customer
 function saveCustomer() {
     const id = document.getElementById('customerId').value;
+    const type = document.getElementById('customerType').value || 'customer';
     const companyName = document.getElementById('customerCompanyName').value.trim();
     const gstin = document.getElementById('customerGSTIN').value.trim();
     const address = document.getElementById('customerAddress').value.trim();
@@ -177,6 +220,7 @@ function saveCustomer() {
 
     const customer = {
         id: id || Date.now().toString(),
+        type,
         companyName,
         gstin,
         address,
@@ -217,7 +261,7 @@ function editCustomer(customerId) {
 
 // Delete customer
 function deleteCustomer(customerId) {
-    if (!confirm('Are you sure you want to delete this customer?')) {
+    if (!confirm('Are you sure you want to delete this record?')) {
         return;
     }
 
@@ -226,7 +270,7 @@ function deleteCustomer(customerId) {
 
     saveToStorage('customers', customers);
     loadCustomers();
-    showToast('Customer deleted successfully', 'success');
+    showToast('Record deleted successfully', 'success');
 
     // Reload customer dropdown if on outward invoice page
     loadCustomerDropdown();
@@ -243,21 +287,16 @@ function addCustomerProduct(productData = null) {
 
     const productId = productData?.id || 'prod_' + Date.now();
 
-    // Check if product is outdated (from previous month)
-    const currentMonth = new Date().toISOString().slice(0, 7);
     const lastUpdated = productData?.lastUpdated || '';
-    const isOutdated = lastUpdated && lastUpdated < currentMonth;
 
     // Format last updated display
     let lastUpdatedBadge = '';
     if (lastUpdated) {
-        const badgeColor = isOutdated ? 'var(--warning)' : 'var(--success)';
-        const badgeText = isOutdated ? `⚠️ Last updated: ${formatProductMonth(lastUpdated)}` : `✓ Current (${formatProductMonth(lastUpdated)})`;
-        lastUpdatedBadge = `<div style="font-size: 0.75rem; color: ${badgeColor}; margin-top: 0.25rem;">${badgeText}</div>`;
+        lastUpdatedBadge = `<div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">Last recorded: ${formatProductMonth(lastUpdated)}</div>`;
     }
 
     const productHtml = `
-        <div class="customer-product-item" data-product-id="${productId}" style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1rem; position: relative;${isOutdated ? ' border-left: 3px solid var(--warning);' : ''}">
+        <div class="customer-product-item" data-product-id="${productId}" style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1rem; position: relative;">
             <button type="button" class="icon-btn delete" onclick="removeCustomerProduct('${productId}')" 
                     style="position: absolute; top: 0.5rem; right: 0.5rem;" title="Remove Product">×</button>
             
@@ -399,7 +438,9 @@ function loadCustomerDropdown() {
     const dropdown = document.getElementById('customerDropdown');
     if (!dropdown) return;
 
-    const customers = getCustomers();
+    let customers = getCustomers();
+    // Only load entities of type 'customer' for Outward Invoice
+    customers = customers.filter(c => (c.type || 'customer') === 'customer');
 
     // Remove duplicates based on customer ID and company name
     const seenNames = new Set();
@@ -436,7 +477,7 @@ function fillCustomerDetails() {
         document.getElementById('outwardBuyerAddress').value = '';
         document.getElementById('outwardGSTIN').value = '';
         document.getElementById('outwardContact').value = '';
-        document.getElementById('outwardPONo').value = '';
+        document.getElementById('outwardPONo').innerHTML = '<option value="">-- Select PO --</option>';
 
         // Clear existing product rows when customer is deselected
         document.getElementById('productItems').innerHTML = '';
@@ -452,9 +493,8 @@ function fillCustomerDetails() {
         document.getElementById('outwardGSTIN').value = customer.gstin;
         document.getElementById('outwardContact').value = customer.phone;
 
-        // Auto-populate monthly PO number for current month
-        const currentMonthPO = getCurrentMonthPONumber(customerId);
-        document.getElementById('outwardPONo').value = currentMonthPO;
+        // Auto-populate monthly PO numbers for current month into dropdown
+        updatePONumberDropdown(customerId);
 
         // Reload existing product dropdowns with new customer's products
         updateProductDropdowns(customerId);
@@ -536,7 +576,9 @@ function loadInwardCustomerDropdown() {
     const dropdown = document.getElementById('inwardCustomerDropdown');
     if (!dropdown) return;
 
-    const customers = getCustomers();
+    let customers = getCustomers();
+    // Only load entities of type 'supplier' for Inward Invoice
+    customers = customers.filter(c => (c.type || 'customer') === 'supplier');
 
     // Remove duplicates based on customer ID and company name
     const seenNames = new Set();
@@ -712,6 +754,108 @@ function getCurrentMonthPONumber(customerId) {
     const currentPO = customer.monthlyPONumbers.find(po => po.month === currentMonth);
 
     return currentPO ? currentPO.poNumber : '';
+}
+
+// Get all PO numbers for current month for a specific customer
+function getCurrentMonthPONumbers(customerId) {
+    if (!customerId) return [];
+
+    const customers = getCustomers();
+    const customer = customers.find(c => c.id === customerId);
+
+    if (!customer || !customer.monthlyPONumbers || customer.monthlyPONumbers.length === 0) {
+        return [];
+    }
+
+    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
+    return customer.monthlyPONumbers
+        .filter(po => po.month === currentMonth)
+        .map(po => po.poNumber);
+}
+
+// Update PO number dropdown in outward invoice
+function updatePONumberDropdown(customerId) {
+    const dropdown = document.getElementById('outwardPONo');
+    if (!dropdown) return;
+
+    if (!customerId) {
+        dropdown.innerHTML = '<option value="">-- Select PO --</option>';
+        return;
+    }
+
+    const poNumbers = getCurrentMonthPONumbers(customerId);
+
+    let html = '<option value="">-- Select PO --</option>';
+    poNumbers.forEach(po => {
+        html += `<option value="${po}">${po}</option>`;
+    });
+
+    // Add option to create new PO
+    html += '<option value="__ADD_NEW__" style="color: var(--primary); font-weight: 600;">➕ Add New PO Number</option>';
+
+    dropdown.innerHTML = html;
+}
+
+// Handle PO selection in outward invoice
+function handlePOSelection(selectElement) {
+    if (selectElement.value === '__ADD_NEW__') {
+        const newPO = prompt("Enter new PO Number (e.g., PO/MAR/2026/01):");
+        if (newPO && newPO.trim() !== "") {
+            const formattedPO = newPO.trim();
+
+            // Get current customer
+            const customerId = document.getElementById('customerDropdown').value;
+            if (!customerId) {
+                alert("Please select a customer first.");
+                selectElement.value = "";
+                return;
+            }
+
+            const customers = getCustomers();
+            const customerIndex = customers.findIndex(c => c.id === customerId);
+
+            if (customerIndex !== -1) {
+                // Add to customer's monthly PO list
+                if (!customers[customerIndex].monthlyPONumbers) {
+                    customers[customerIndex].monthlyPONumbers = [];
+                }
+
+                const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+
+                // Check for duplicate in current month
+                if (customers[customerIndex].monthlyPONumbers.some(po => po.month === currentMonth && po.poNumber === formattedPO)) {
+                    alert("This PO number already exists for this month.");
+                    selectElement.value = formattedPO;
+                    return;
+                }
+
+                customers[customerIndex].monthlyPONumbers.push({
+                    id: 'po_' + Date.now(),
+                    month: currentMonth,
+                    poNumber: formattedPO
+                });
+
+                // Save updated customer
+                if (typeof saveToStorage === 'function') {
+                    saveToStorage('customers', customers);
+                } else {
+                    localStorage.setItem('customers', JSON.stringify(customers));
+                }
+
+                // Reload PO dropdown and select the new one
+                updatePONumberDropdown(customerId);
+                selectElement.value = formattedPO;
+
+                // Show toast 
+                if (typeof showToast === 'function') {
+                    showToast('New PO number added for current month', 'success');
+                }
+            }
+        } else {
+            // User cancelled or entered empty string
+            selectElement.value = "";
+        }
+    }
 }
 
 // =========================================
@@ -922,6 +1066,9 @@ window.removeMonthlyPONumber = removeMonthlyPONumber;
 window.loadMonthlyPONumbers = loadMonthlyPONumbers;
 window.getMonthlyPONumbersFromForm = getMonthlyPONumbersFromForm;
 window.getCurrentMonthPONumber = getCurrentMonthPONumber;
+window.getCurrentMonthPONumbers = getCurrentMonthPONumbers;
+window.updatePONumberDropdown = updatePONumberDropdown;
+window.handlePOSelection = handlePOSelection;
 
 // Export vehicle functions
 window.addCustomerVehicle = addCustomerVehicle;
@@ -931,3 +1078,4 @@ window.getCustomerVehicles = getCustomerVehicles;
 window.getCustomerVehiclesFromForm = getCustomerVehiclesFromForm;
 window.updateVehicleDropdown = updateVehicleDropdown;
 window.getCustomers = getCustomers;
+window.switchCustomerTab = switchCustomerTab;
