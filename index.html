@@ -2202,6 +2202,16 @@
                             <input type="date" id="outwardDate" class="form-control" required>
                         </div>
 
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label class="form-label">Select Existing Customer</label>
+                            <select id="customerDropdown" class="form-control" onchange="fillCustomerDetails()">
+                                <option value="">-- Select Customer --</option>
+                            </select>
+                            <small style="color: var(--text-secondary); display: block; margin-top: 0.5rem;">
+                                Or manually enter details below
+                            </small>
+                        </div>
+
                         <div class="form-group">
                             <label class="form-label">PO No.</label>
                             <select id="outwardPONo" class="form-control" onchange="handlePOSelection(this)">
@@ -2212,16 +2222,6 @@
                         <div class="form-group">
                             <label class="form-label">PO Date</label>
                             <input type="date" id="outwardPODate" class="form-control">
-                        </div>
-
-                        <div class="form-group" style="grid-column: 1 / -1;">
-                            <label class="form-label">Select Existing Customer</label>
-                            <select id="customerDropdown" class="form-control" onchange="fillCustomerDetails()">
-                                <option value="">-- Select Customer --</option>
-                            </select>
-                            <small style="color: var(--text-secondary); display: block; margin-top: 0.5rem;">
-                                Or manually enter details below
-                            </small>
                         </div>
 
                         <div class="form-group">
