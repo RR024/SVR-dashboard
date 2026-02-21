@@ -770,7 +770,7 @@ function getCurrentMonthPONumbers(customerId) {
     const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
     return customer.monthlyPONumbers
         .filter(po => po.month === currentMonth)
-        .map(po => po.poNumber);
+        .map(po => ({ poNumber: po.poNumber, poDate: po.poDate || '' }));
 }
 
 // Update PO number dropdown in outward invoice
@@ -787,7 +787,7 @@ function updatePONumberDropdown(customerId) {
 
     let html = '<option value="">-- Select PO --</option>';
     poNumbers.forEach(po => {
-        html += `<option value="${po}">${po}</option>`;
+        html += `<option value="${po.poNumber}" data-po-date="${po.poDate || ''}">${po.poNumber}</option>`;
     });
 
     // Add option to create new PO
@@ -798,10 +798,20 @@ function updatePONumberDropdown(customerId) {
 
 // Handle PO selection in outward invoice
 function handlePOSelection(selectElement) {
+    const poDateField = document.getElementById('outwardPODate');
+    
     if (selectElement.value === '__ADD_NEW__') {
         const newPO = prompt("Enter new PO Number (e.g., PO/MAR/2026/01):");
         if (newPO && newPO.trim() !== "") {
             const formattedPO = newPO.trim();
+
+            // Ask for PO Date
+            const today = new Date().toISOString().split('T')[0];
+            const poDate = prompt("Enter PO Date (YYYY-MM-DD):", today);
+            if (!poDate) {
+                selectElement.value = "";
+                return;
+            }
 
             // Get current customer
             const customerId = document.getElementById('customerDropdown').value;
@@ -832,7 +842,8 @@ function handlePOSelection(selectElement) {
                 customers[customerIndex].monthlyPONumbers.push({
                     id: 'po_' + Date.now(),
                     month: currentMonth,
-                    poNumber: formattedPO
+                    poNumber: formattedPO,
+                    poDate: poDate
                 });
 
                 // Save updated customer
@@ -845,6 +856,11 @@ function handlePOSelection(selectElement) {
                 // Reload PO dropdown and select the new one
                 updatePONumberDropdown(customerId);
                 selectElement.value = formattedPO;
+                
+                // Auto-fill PO Date
+                if (poDateField) {
+                    poDateField.value = poDate;
+                }
 
                 // Show toast 
                 if (typeof showToast === 'function') {
@@ -854,6 +870,18 @@ function handlePOSelection(selectElement) {
         } else {
             // User cancelled or entered empty string
             selectElement.value = "";
+        }
+    } else if (selectElement.value) {
+        // Auto-fill PO Date from selected option
+        const selectedOption = selectElement.options[selectElement.selectedIndex];
+        const poDate = selectedOption.getAttribute('data-po-date');
+        if (poDateField && poDate) {
+            poDateField.value = poDate;
+        }
+    } else {
+        // Cleared selection - clear PO Date
+        if (poDateField) {
+            poDateField.value = '';
         }
     }
 }
