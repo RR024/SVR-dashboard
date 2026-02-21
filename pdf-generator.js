@@ -76,8 +76,14 @@ function downloadOutwardInvoicePDF(invoiceId) {
             doc.text(`DC Date: ${new Date(invoice.dcDate).toLocaleDateString('en-IN')}`, 70, yPos);
         }
     }
+    const poLineX = doc.internal.pageSize.getWidth() - 60;
     if (invoice.poNo) {
-        doc.text(`PO No: ${invoice.poNo}`, doc.internal.pageSize.getWidth() - 60, yPos);
+        doc.text(`PO No: ${invoice.poNo}`, poLineX, yPos);
+    }
+    if (invoice.poDate) {
+        const poDateFmt = new Date(invoice.poDate + 'T00:00:00').toLocaleDateString('en-IN');
+        yPos += 5;
+        doc.text(`PO Date: ${poDateFmt}`, poLineX, yPos);
     }
 
     // Buyer Details Box

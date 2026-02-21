@@ -2589,6 +2589,7 @@ function loadOutwardInvoices() {
                         <button class="icon-btn pdf" onclick="downloadOutwardInvoicePDF('${inv.id}')" title="Download PDF">📄</button>
                         <button class="icon-btn view" onclick="viewOutwardInvoice('${inv.id}')" title="View/Print">🖨️</button>
                         <button class="icon-btn edit" onclick="openOutwardModal('${inv.id}')" title="Edit">✏️</button>
+                        <button class="icon-btn view" onclick="openMarkPaidModal('${inv.id}')" title="Update Payment Status">💳</button>
                         <button class="icon-btn delete" onclick="deleteOutwardInvoice('${inv.id}')" title="Delete">🗑️</button>
                     </div>
                 </td>
@@ -2609,6 +2610,71 @@ function deleteOutwardInvoice(id) {
         loadDashboard();
         showToast('Tax invoice deleted', 'info');
     }
+}
+
+// =============================================
+// MARK AS PAID MODAL
+// =============================================
+
+let _markPaidInvoiceId = null;
+
+function openMarkPaidModal(id) {
+    const invoices = getOutwardInvoices();
+    const inv = invoices.find(i => i.id === id);
+    if (!inv) return;
+
+    _markPaidInvoiceId = id;
+
+    const label = document.getElementById('markPaidInvoiceLabel');
+    if (label) label.textContent = `Invoice: ${inv.invoiceNo}  |  Customer: ${inv.buyerName}`;
+
+    const statusSelect = document.getElementById('markPaidStatus');
+    if (statusSelect) statusSelect.value = inv.paymentStatus || 'Pending';
+
+    const partialGroup = document.getElementById('partialAmountGroup');
+    const partialInput = document.getElementById('markPaidPartialAmount');
+    if (partialGroup) partialGroup.style.display = (inv.paymentStatus === 'Partial') ? '' : 'none';
+    if (partialInput) partialInput.value = inv.amountPaid || '';
+
+    // Show/hide partial amount on status change
+    if (statusSelect) {
+        statusSelect.onchange = function () {
+            if (partialGroup) partialGroup.style.display = (this.value === 'Partial') ? '' : 'none';
+        };
+    }
+
+    const modal = document.getElementById('markPaidModal');
+    if (modal) modal.classList.add('active');
+}
+
+function closeMarkPaidModal() {
+    const modal = document.getElementById('markPaidModal');
+    if (modal) modal.classList.remove('active');
+    _markPaidInvoiceId = null;
+}
+
+function confirmMarkPaid() {
+    if (!_markPaidInvoiceId) return;
+
+    const status = document.getElementById('markPaidStatus').value;
+    const partialAmount = document.getElementById('markPaidPartialAmount').value;
+
+    const invoices = getOutwardInvoices();
+    const index = invoices.findIndex(i => i.id === _markPaidInvoiceId);
+    if (index === -1) return;
+
+    invoices[index].paymentStatus = status;
+    if (status === 'Partial') {
+        invoices[index].amountPaid = parseFloat(partialAmount) || 0;
+    } else {
+        delete invoices[index].amountPaid;
+    }
+
+    saveToStorage('outwardInvoices', invoices);
+    closeMarkPaidModal();
+    loadOutwardInvoices();
+    loadDashboard();
+    showToast(`Invoice marked as ${status}`, 'success');
 }
 
 function viewOutwardInvoice(id) {

@@ -808,78 +808,10 @@ function updatePONumberDropdown(customerId) {
 // Handle PO selection in outward invoice
 function handlePOSelection(selectElement) {
     const poDateField = document.getElementById('outwardPODate');
-    
+
     if (selectElement.value === '__ADD_NEW__') {
-        const newPO = prompt("Enter new PO Number (e.g., PO/MAR/2026/01):");
-        if (newPO && newPO.trim() !== "") {
-            const formattedPO = newPO.trim();
-
-            // Ask for PO Date
-            const today = new Date().toISOString().split('T')[0];
-            const poDate = prompt("Enter PO Date (YYYY-MM-DD):", today);
-            if (!poDate) {
-                selectElement.value = "";
-                return;
-            }
-
-            // Get current customer
-            const customerId = document.getElementById('customerDropdown').value;
-            if (!customerId) {
-                alert("Please select a customer first.");
-                selectElement.value = "";
-                return;
-            }
-
-            const customers = getCustomers();
-            const customerIndex = customers.findIndex(c => c.id === customerId);
-
-            if (customerIndex !== -1) {
-                // Add to customer's monthly PO list
-                if (!customers[customerIndex].monthlyPONumbers) {
-                    customers[customerIndex].monthlyPONumbers = [];
-                }
-
-                const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
-
-                // Check for duplicate in current month
-                if (customers[customerIndex].monthlyPONumbers.some(po => po.month === currentMonth && po.poNumber === formattedPO)) {
-                    alert("This PO number already exists for this month.");
-                    selectElement.value = formattedPO;
-                    return;
-                }
-
-                customers[customerIndex].monthlyPONumbers.push({
-                    id: 'po_' + Date.now(),
-                    month: currentMonth,
-                    poNumber: formattedPO,
-                    poDate: poDate
-                });
-
-                // Save updated customer
-                if (typeof saveToStorage === 'function') {
-                    saveToStorage('customers', customers);
-                } else {
-                    localStorage.setItem('customers', JSON.stringify(customers));
-                }
-
-                // Reload PO dropdown and select the new one
-                updatePONumberDropdown(customerId);
-                selectElement.value = formattedPO;
-                
-                // Auto-fill PO Date
-                if (poDateField) {
-                    poDateField.value = poDate;
-                }
-
-                // Show toast 
-                if (typeof showToast === 'function') {
-                    showToast('New PO number added for current month', 'success');
-                }
-            }
-        } else {
-            // User cancelled or entered empty string
-            selectElement.value = "";
-        }
+        selectElement.value = ''; // reset so it doesn't show __ADD_NEW__ while modal is open
+        openAddPOModal();
     } else if (selectElement.value) {
         // Auto-fill PO Date from selected option
         const selectedOption = selectElement.options[selectElement.selectedIndex];
@@ -892,6 +824,87 @@ function handlePOSelection(selectElement) {
         if (poDateField) {
             poDateField.value = '';
         }
+    }
+}
+
+// =============================================
+// ADD NEW PO MODAL FUNCTIONS
+// =============================================
+
+function openAddPOModal() {
+    const modal = document.getElementById('addPOModal');
+    if (!modal) return;
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('newPONumber').value = '';
+    document.getElementById('newPODate').value = today;
+    modal.classList.add('active');
+    setTimeout(() => document.getElementById('newPONumber').focus(), 100);
+}
+
+function closeAddPOModal() {
+    const modal = document.getElementById('addPOModal');
+    if (!modal) return;
+    modal.classList.remove('active');
+}
+
+function saveNewPOFromModal() {
+    const poNumber = document.getElementById('newPONumber').value.trim();
+    const poDate = document.getElementById('newPODate').value;
+
+    if (!poNumber) {
+        if (typeof showToast === 'function') showToast('Please enter a PO number', 'error');
+        else alert('Please enter a PO number');
+        return;
+    }
+
+    const customerId = document.getElementById('customerDropdown').value;
+    if (!customerId) {
+        if (typeof showToast === 'function') showToast('Please select a customer first', 'error');
+        else alert('Please select a customer first');
+        closeAddPOModal();
+        return;
+    }
+
+    const customers = getCustomers();
+    const customerIndex = customers.findIndex(c => c.id === customerId);
+
+    if (customerIndex !== -1) {
+        if (!customers[customerIndex].monthlyPONumbers) {
+            customers[customerIndex].monthlyPONumbers = [];
+        }
+
+        const currentMonth = new Date().toISOString().slice(0, 7);
+
+        if (customers[customerIndex].monthlyPONumbers.some(po => po.month === currentMonth && po.poNumber === poNumber)) {
+            if (typeof showToast === 'function') showToast('This PO number already exists for this month', 'error');
+            else alert('This PO number already exists for this month');
+            return;
+        }
+
+        customers[customerIndex].monthlyPONumbers.push({
+            id: 'po_' + Date.now(),
+            month: currentMonth,
+            poNumber: poNumber,
+            poDate: poDate
+        });
+
+        if (typeof saveToStorage === 'function') {
+            saveToStorage('customers', customers);
+        } else {
+            localStorage.setItem('customers', JSON.stringify(customers));
+        }
+
+        updatePONumberDropdown(customerId);
+
+        const dropdown = document.getElementById('outwardPONo');
+        if (dropdown) dropdown.value = poNumber;
+
+        const poDateField = document.getElementById('outwardPODate');
+        if (poDateField) poDateField.value = poDate;
+
+        closeAddPOModal();
+
+        if (typeof showToast === 'function') showToast('New PO number added', 'success');
     }
 }
 
@@ -1106,6 +1119,9 @@ window.getCurrentMonthPONumber = getCurrentMonthPONumber;
 window.getCurrentMonthPONumbers = getCurrentMonthPONumbers;
 window.updatePONumberDropdown = updatePONumberDropdown;
 window.handlePOSelection = handlePOSelection;
+window.openAddPOModal = openAddPOModal;
+window.closeAddPOModal = closeAddPOModal;
+window.saveNewPOFromModal = saveNewPOFromModal;
 
 // Export vehicle functions
 window.addCustomerVehicle = addCustomerVehicle;

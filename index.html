@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="mobile-responsive.css">
     <link rel="stylesheet" href="mobile-fixes.css">
     <link rel="stylesheet" href="mobile-menu-override.css">
-    <link rel="stylesheet" href="diary.css">
+    <!-- diary.css intentionally minimal — see diary.js for inline styles -->
 
     <!-- PWA Support -->
     <link rel="manifest" href="manifest.json">
@@ -4052,6 +4052,60 @@
     <script src="pagination.js"></script>
     <script src="storage-monitor.js"></script>
     <script src="mobile-nav.js"></script>
+    <!-- Add New PO Number Modal -->
+    <div id="addPOModal" class="modal" style="z-index: 3000;">
+        <div class="modal-content" style="max-width: 460px;">
+            <div class="modal-header">
+                <h3 class="modal-title">➕ Add New PO Number</h3>
+                <button class="modal-close" onclick="closeAddPOModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label required">PO Number</label>
+                    <input type="text" id="newPONumber" class="form-control"
+                        placeholder="e.g., PO/FEB/2026/001" autofocus>
+                </div>
+                <div class="form-group">
+                    <label class="form-label required">PO Date</label>
+                    <input type="date" id="newPODate" class="form-control">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeAddPOModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveNewPOFromModal()">Save PO</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mark Invoice Paid Modal -->
+    <div id="markPaidModal" class="modal" style="z-index: 3000;">
+        <div class="modal-content" style="max-width: 420px;">
+            <div class="modal-header">
+                <h3 class="modal-title">💳 Update Payment Status</h3>
+                <button class="modal-close" onclick="closeMarkPaidModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p id="markPaidInvoiceLabel" style="color: var(--text-secondary); margin-bottom: 1.25rem;"></p>
+                <div class="form-group">
+                    <label class="form-label">Payment Status</label>
+                    <select id="markPaidStatus" class="form-control">
+                        <option value="Pending">Pending</option>
+                        <option value="Partial">Partial</option>
+                        <option value="Paid">Paid</option>
+                    </select>
+                </div>
+                <div class="form-group" id="partialAmountGroup" style="display:none;">
+                    <label class="form-label">Amount Paid (₹)</label>
+                    <input type="number" id="markPaidPartialAmount" class="form-control" placeholder="Enter amount paid" min="0">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeMarkPaidModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="confirmMarkPaid()">Update</button>
+            </div>
+        </div>
+    </div>
+
     <script src="advanced-reports.js"></script>
 
     <!-- Authentication System (loaded first) -->
