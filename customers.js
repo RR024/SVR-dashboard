@@ -669,7 +669,7 @@ function addMonthlyPONumber(poData = null) {
             <button type="button" class="icon-btn delete" onclick="removeMonthlyPONumber('${poId}')" 
                     style="position: absolute; top: 0.5rem; right: 0.5rem;" title="Remove PO Number">×</button>
             
-            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 0.75rem;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
                 <div class="form-group" style="margin: 0;">
                     <label class="form-label" style="font-size: 0.875rem;">Month</label>
                     <input type="month" class="form-control monthly-po-month" 
@@ -680,6 +680,12 @@ function addMonthlyPONumber(poData = null) {
                     <label class="form-label" style="font-size: 0.875rem;">PO Number</label>
                     <input type="text" class="form-control monthly-po-number" 
                            placeholder="e.g., PO/FEB/2026/001" value="${poData?.poNumber || ''}" required>
+                </div>
+
+                <div class="form-group" style="margin: 0;">
+                    <label class="form-label" style="font-size: 0.875rem;">PO Date</label>
+                    <input type="date" class="form-control monthly-po-date" 
+                           value="${poData?.poDate || ''}">
                 </div>
             </div>
         </div>
@@ -725,13 +731,16 @@ function getMonthlyPONumbersFromForm() {
         const poId = item.getAttribute('data-po-id');
         const month = item.querySelector('.monthly-po-month').value;
         const poNumber = item.querySelector('.monthly-po-number').value.trim();
+        const poDateEl = item.querySelector('.monthly-po-date');
+        const poDate = poDateEl ? poDateEl.value : '';
 
         // Only add if both month and PO number are filled
         if (month && poNumber) {
             poNumbers.push({
                 id: poId,
                 month: month,
-                poNumber: poNumber
+                poNumber: poNumber,
+                poDate: poDate
             });
         }
     });
