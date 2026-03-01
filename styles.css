@@ -1752,3 +1752,24 @@ td {
     border-color: var(--danger);
     color: white;
 }
+/* ==================== MATERIAL COSTING MODULE ==================== */
+.profit-row { background: rgba(16, 185, 129, 0.05); }
+.loss-row { background: rgba(239, 68, 68, 0.05); }
+.profit-text { color: #10b981; font-weight: 600; }
+.loss-text { color: #ef4444; font-weight: 600; }
+.pl-badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: 700; }
+.profit-badge { background: #d1fae5; color: #065f46; }
+.loss-badge { background: #fee2e2; color: #991b1b; }
+
+/* Preview stats grid inside material modal */
+.preview-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0.4rem 0.6rem;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+}
+.preview-label { font-size: 0.72rem; color: var(--text-secondary); }
+.preview-value { font-size: 0.88rem; font-weight: 600; color: var(--text-primary); }
+.preview-pl { font-size: 1rem; }

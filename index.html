@@ -4052,88 +4052,137 @@
                 <div class="modal-body">
                     <form id="materialForm">
                         <input type="hidden" id="materialId">
+                        <input type="hidden" id="materialLinkedInvoiceId">
 
-                        <div
-                            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                            <!-- Basic Info -->
-                            <div class="form-group">
-                                <label class="form-label">Invoice Date</label>
-                                <input type="date" id="invoiceDate" class="form-control">
+                        <!-- Step 1: Invoice Selector (locked once linked) -->
+                        <div id="invoiceSelectorSection" style="margin-bottom: 1.5rem; padding: 1rem; background: var(--bg-secondary); border-radius: 8px; border-left: 4px solid var(--primary);">
+                            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 250px;">
+                                    <label class="form-label" style="margin-bottom: 0.25rem;">🔗 Link to Purchase Invoice</label>
+                                    <select id="linkedInvoiceSelect" class="form-control" onchange="onLinkedInvoiceChange(this.value)">
+                                        <option value="">-- Select Purchase Invoice (optional) --</option>
+                                    </select>
+                                </div>
+                                <div id="linkedInvoiceBadge" style="display:none; padding: 0.5rem 1rem; background: #10b981; color: white; border-radius: 6px; font-size: 0.85rem; font-weight: 600;">
+                                    ✅ Invoice Linked
+                                </div>
+                                <button type="button" class="btn btn-sm btn-secondary" id="unlinkInvoiceBtn" style="display:none;" onclick="unlinkInvoice()">🔓 Unlink</button>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Customer Name</label>
-                                <input type="text" id="customerName" class="form-control">
+                            <div id="linkedInvoiceDetails" style="display:none; margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-secondary);">
+                                <!-- Filled by JS -->
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Part Name</label>
-                                <input type="text" id="partName" class="form-control">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Part Number</label>
-                                <input type="text" id="partNum" class="form-control">
-                            </div>
+                        </div>
 
-                            <!-- Weights & Rates -->
-                            <div class="form-group">
-                                <label class="form-label">Incoming Weight (Kg)</label>
-                                <input type="number" id="incomingWeight" class="form-control" step="0.01">
+                        <!-- Section: Locked Invoice Fields -->
+                        <fieldset id="lockedInvoiceFields" style="border: 1px solid var(--bg-tertiary); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                            <legend style="padding: 0 0.5rem; font-weight: 600; font-size: 0.9rem; color: var(--primary);">📋 Invoice Details <span id="lockedFieldsNote" style="font-size:0.75rem; color:var(--text-secondary); font-weight:400;">(auto-filled from invoice)</span></legend>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                                <div class="form-group">
+                                    <label class="form-label">Invoice Date</label>
+                                    <input type="date" id="invoiceDate" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Customer Name</label>
+                                    <input type="text" id="customerName" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Part Name / Material</label>
+                                    <input type="text" id="partName" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Part Number</label>
+                                    <input type="text" id="partNum" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Incoming Weight (Kg)</label>
+                                    <input type="number" id="incomingWeight" class="form-control" step="0.01" oninput="triggerMaterialCalcPreview()">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Rate Per Kg (₹)</label>
+                                    <input type="number" id="ratePerKg" class="form-control" step="0.01" oninput="triggerMaterialCalcPreview()">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Qty As Per Invoice</label>
+                                    <input type="number" id="quantityAsPerInvoice" class="form-control" oninput="triggerMaterialCalcPreview()">
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Rate Per Kg (₹)</label>
-                                <input type="number" id="ratePerKg" class="form-control" step="0.01">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Actual Weight SVR (Kg)</label>
-                                <input type="number" id="actualWeightSVR" class="form-control" step="0.01">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Given Weight Customer (Kg)</label>
-                                <input type="number" id="givenWeightCustomer" class="form-control" step="0.01">
-                            </div>
+                        </fieldset>
 
-                            <!-- Production Specs -->
-                            <div class="form-group">
-                                <label class="form-label">Strokes Per Strip</label>
-                                <input type="number" id="strokesPerStrip" class="form-control">
+                        <!-- Section: Production Parameters -->
+                        <fieldset style="border: 1px solid var(--bg-tertiary); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                            <legend style="padding: 0 0.5rem; font-weight: 600; font-size: 0.9rem; color: #8b5cf6;">⚙️ Production Parameters</legend>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                                <div class="form-group">
+                                    <label class="form-label">Actual Weight SVR (Kg)</label>
+                                    <input type="number" id="actualWeightSVR" class="form-control" step="0.01" oninput="triggerMaterialCalcPreview()">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Given Weight to Customer (Kg)</label>
+                                    <input type="number" id="givenWeightCustomer" class="form-control" step="0.01" oninput="triggerMaterialCalcPreview()">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Strokes Per Strip</label>
+                                    <input type="number" id="strokesPerStrip" class="form-control" oninput="triggerMaterialCalcPreview()">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Cavity Per Stroke</label>
+                                    <input type="number" id="cavityPerStroke" class="form-control" oninput="triggerMaterialCalcPreview()">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Actual Norms</label>
+                                    <input type="number" id="actualNorms" class="form-control" step="0.01" oninput="triggerMaterialCalcPreview()">
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Cavity Per Stroke</label>
-                                <input type="number" id="cavityPerStroke" class="form-control">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Qty As Per Invoice</label>
-                                <input type="number" id="quantityAsPerInvoice" class="form-control">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Actual Norms</label>
-                                <input type="number" id="actualNorms" class="form-control" step="0.01">
-                            </div>
+                        </fieldset>
 
-                            <!-- Costs -->
-                            <div class="form-group">
-                                <label class="form-label">Process Cost (₹)</label>
-                                <input type="number" id="processCost" class="form-control" step="0.01">
+                        <!-- Section: Cost Parameters -->
+                        <fieldset style="border: 1px solid var(--bg-tertiary); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                            <legend style="padding: 0 0.5rem; font-weight: 600; font-size: 0.9rem; color: #f59e0b;">💰 Cost Parameters</legend>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                                <div class="form-group">
+                                    <label class="form-label">Process Cost (₹/pc)</label>
+                                    <input type="number" id="processCost" class="form-control" step="0.01" oninput="triggerMaterialCalcPreview()">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Customer PO Cost (₹/pc)</label>
+                                    <input type="number" id="customerPOCost" class="form-control" step="0.01" oninput="triggerMaterialCalcPreview()">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Strip Scrap Weight (Kg)</label>
+                                    <input type="number" id="stripScrapWeight" class="form-control" step="0.01" oninput="triggerMaterialCalcPreview()">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Scrap Sale Rate (₹/Kg)</label>
+                                    <input type="number" id="scrapCost" class="form-control" step="0.01" oninput="triggerMaterialCalcPreview()">
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Customer PO Cost (₹)</label>
-                                <input type="number" id="customerPOCost" class="form-control" step="0.01">
-                            </div>
+                        </fieldset>
 
-                            <!-- Scrap Details -->
-                            <div class="form-group">
-                                <label class="form-label">Strip Scrap Weight (Kg)</label>
-                                <input type="number" id="stripScrapWeight" class="form-control" step="0.01">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Scrap Cost (₹/Kg)</label>
-                                <input type="number" id="scrapCost" class="form-control" step="0.01">
+                        <!-- Real-time Preview -->
+                        <div id="materialCalcPreview" style="display:none; margin-bottom: 1rem; padding: 1rem; background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--bg-tertiary);">
+                            <h4 style="margin: 0 0 0.75rem; font-size: 0.9rem; color: var(--text-primary);">📊 Live Calculation Preview</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.5rem; font-size: 0.82rem;">
+                                <div class="preview-stat"><span class="preview-label">Cust. Invested Cost</span><span id="prev_customerInvestedCost" class="preview-value">—</span></div>
+                                <div class="preview-stat"><span class="preview-label">Wt/Strip (calc)</span><span id="prev_weightPerStrip" class="preview-value">—</span></div>
+                                <div class="preview-stat"><span class="preview-label">As Per Weight</span><span id="prev_asPerWeight" class="preview-value">—</span></div>
+                                <div class="preview-stat"><span class="preview-label">Product Qty</span><span id="prev_productQuantity" class="preview-value">—</span></div>
+                                <div class="preview-stat"><span class="preview-label">Actual Need</span><span id="prev_actualNeed" class="preview-value">—</span></div>
+                                <div class="preview-stat"><span class="preview-label">Qty Difference</span><span id="prev_difference" class="preview-value">—</span></div>
+                                <div class="preview-stat"><span class="preview-label">Total Stroke Cost</span><span id="prev_ttlStrokeCost" class="preview-value">—</span></div>
+                                <div class="preview-stat"><span class="preview-label">SVR Invoice Cost</span><span id="prev_svrInvoiceCost" class="preview-value">—</span></div>
+                                <div class="preview-stat"><span class="preview-label">SVR Invested Cost</span><span id="prev_svrInvestedCost" class="preview-value">—</span></div>
+                                <div class="preview-stat"><span class="preview-label">Inv. Difference</span><span id="prev_invoiceDifference" class="preview-value">—</span></div>
+                                <div class="preview-stat"><span class="preview-label">Total Scrap Wt</span><span id="prev_ttlScrapWeight" class="preview-value">—</span></div>
+                                <div class="preview-stat"><span class="preview-label">Scrap Sale</span><span id="prev_scrapSaleCost" class="preview-value">—</span></div>
+                                <div class="preview-stat"><span class="preview-label">Actually Received</span><span id="prev_actuallyReceived" class="preview-value">—</span></div>
+                                <div class="preview-stat" id="prev_plContainer"><span class="preview-label">Profit / Loss</span><span id="prev_profitOrLoss" class="preview-value preview-pl">—</span></div>
                             </div>
                         </div>
 
                         <div class="modal-footer" style="margin-top: 1.5rem; text-align: right;">
-                            <button type="button" class="btn btn-secondary close-modal"
+                            <button type="button" class="btn btn-secondary"
                                 onclick="document.getElementById('materialModal').style.display='none'">Cancel</button>
-                            <button type="button" class="btn btn-primary" id="saveMaterialBtn">Save Calculation</button>
+                            <button type="button" class="btn btn-primary" id="saveMaterialBtn">💾 Save Calculation</button>
                         </div>
                     </form>
                 </div>
