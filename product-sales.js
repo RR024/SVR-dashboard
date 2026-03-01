@@ -180,6 +180,23 @@ function loadProductSalesDetails() {
     displayProductRows(productRows);
 }
 
+// Get active product names for a specific customer (or all customers if null)
+function getActiveProductNames(customerName) {
+    const allCustomers = getCustomers();
+    const activeNames = new Set();
+    allCustomers.forEach(c => {
+        if (customerName && c.companyName !== customerName) return;
+        if (c.products && Array.isArray(c.products)) {
+            c.products.forEach(p => {
+                if (p.description && p.description.trim()) {
+                    activeNames.add(p.description.trim());
+                }
+            });
+        }
+    });
+    return activeNames;
+}
+
 // Populate filter dropdowns with unique values
 function populateProductSalesFilters(productRows) {
     // Get unique customers
@@ -192,8 +209,12 @@ function populateProductSalesFilters(productRows) {
         });
     }
 
-    // Get unique products
-    const products = [...new Set(productRows.map(row => row.productName))].sort();
+    // Get unique products — only those still active in customer catalogs
+    const activeProducts = getActiveProductNames(null);
+    const products = [...new Set(productRows
+        .map(row => row.productName)
+        .filter(name => activeProducts.has(name))
+    )].sort();
     const productSelect = document.getElementById('product-filter-product-select');
     if (productSelect) {
         productSelect.innerHTML = '<option value="">All Products</option>';
@@ -328,6 +349,29 @@ function applyProductSalesFilter() {
         }
     });
 
+    // When a customer is selected, refresh product dropdown to show only that customer's active products
+    const productSelect = document.getElementById('product-filter-product-select');
+    if (productSelect) {
+        const activeForCustomer = getActiveProductNames(customerFilter || null);
+        const relevantRows = customerFilter
+            ? productRows.filter(r => r.customerName === customerFilter)
+            : productRows;
+        const products = [...new Set(relevantRows
+            .map(r => r.productName)
+            .filter(name => activeForCustomer.has(name))
+        )].sort();
+        const currentProductVal = productSelect.value;
+        productSelect.innerHTML = '<option value="">All Products</option>';
+        products.forEach(product => {
+            productSelect.innerHTML += `<option value="${product}"${product === currentProductVal ? ' selected' : ''}>${product}</option>`;
+        });
+        // Reset product filter if it no longer applies to the selected customer
+        if (currentProductVal && !products.includes(currentProductVal)) {
+            productSelect.value = '';
+        }
+    }
+    const productFilterFinal = document.getElementById('product-filter-product-select')?.value || '';
+
     // Apply filters
     let filteredRows = productRows.filter(row => {
         // Invoice number filter
@@ -341,8 +385,8 @@ function applyProductSalesFilter() {
         // Customer filter
         const matchesCustomer = customerFilter === '' || row.customerName === customerFilter;
 
-        // Product filter
-        const matchesProduct = productFilter === '' || row.productName === productFilter;
+        // Product filter (use the potentially-reset value)
+        const matchesProduct = productFilterFinal === '' || row.productName === productFilterFinal;
 
         // Quantity range filter
         let matchesQuantity = true;
@@ -359,8 +403,12 @@ function applyProductSalesFilter() {
         if (totalMin !== null && row.totalValue < totalMin) matchesTotal = false;
         if (totalMax !== null && row.totalValue > totalMax) matchesTotal = false;
 
+        // Only show rows whose product is still active in the relevant customer catalog
+        const activeNames = getActiveProductNames(customerFilter || null);
+        const matchesActive = activeNames.size === 0 || activeNames.has(row.productName);
+
         return matchesInvoice && matchesDate && matchesCustomer && matchesProduct &&
-            matchesQuantity && matchesPrice && matchesTotal;
+            matchesQuantity && matchesPrice && matchesTotal && matchesActive;
     });
 
     // Sort by date descending
