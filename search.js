@@ -46,7 +46,7 @@ function displayFilteredInward(invoices) {
     if (invoices.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="7" class="text-center" style="color: var(--text-secondary);">
+                <td colspan="10" class="text-center" style="color: var(--text-secondary);">
                     No invoices found matching your search.
                 </td>
             </tr>
@@ -54,19 +54,53 @@ function displayFilteredInward(invoices) {
         return;
     }
 
+    // Compute FY and monthly serial numbers from ALL invoices (so numbers are consistent)
+    function getFYStartYear(dateStr) {
+        const d = new Date(dateStr);
+        const m = d.getMonth();
+        return m >= 3 ? d.getFullYear() : d.getFullYear() - 1;
+    }
+    const allInvoices = getInwardInvoices();
+    const allSorted = [...allInvoices].sort((a, b) => {
+        const da = a.date || '';
+        const db = b.date || '';
+        if (da !== db) return da.localeCompare(db);
+        return a.invoiceNo.localeCompare(b.invoiceNo, undefined, { numeric: true });
+    });
+    const fySerialMap = {};
+    const monthSerialMap = {};
+    const fyCounters = {};
+    const monthCounters = {};
+    allSorted.forEach(inv => {
+        const dateStr = inv.date || new Date().toISOString().slice(0, 10);
+        const fyStart = getFYStartYear(dateStr);
+        const fyKey = `${fyStart}-${fyStart + 1}`;
+        fyCounters[fyKey] = (fyCounters[fyKey] || 0) + 1;
+        fySerialMap[inv.id] = fyCounters[fyKey];
+        const monthKey = dateStr.slice(0, 7);
+        monthCounters[monthKey] = (monthCounters[monthKey] || 0) + 1;
+        monthSerialMap[inv.id] = monthCounters[monthKey];
+    });
+
     let html = '';
     invoices.forEach(inv => {
         const gstNo = inv.gstNo || '-';
+        const fySerial = fySerialMap[inv.id] || '-';
+        const monthSerial = monthSerialMap[inv.id] || '-';
         html += `
             <tr>
+                <td style="text-align:center; font-weight:600; color:var(--primary);">${fySerial}</td>
+                <td style="text-align:center; color:var(--text-secondary);">${monthSerial}</td>
                 <td>${inv.invoiceNo}</td>
                 <td>${formatDate(inv.date)}</td>
                 <td>${inv.customer}</td>
                 <td style="font-size: 0.85rem;">${gstNo}</td>
                 <td>${inv.material}</td>
                 <td>₹${parseFloat(inv.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                <td><span class="badge badge-${inv.paymentStatus === 'Paid' ? 'success' : inv.paymentStatus === 'Partial' ? 'warning' : 'danger'}">${inv.paymentStatus || 'Pending'}</span></td>
                 <td>
                     <div class="action-buttons">
+                        <button class="icon-btn pdf" onclick="downloadInwardInvoicePDF('${inv.id}')" title="Download PDF">📄</button>
                         <button class="icon-btn edit" onclick="openInwardModal('${inv.id}')" title="Edit">✏️</button>
                         <button class="icon-btn delete" onclick="deleteInwardInvoice('${inv.id}')" title="Delete">🗑️</button>
                     </div>

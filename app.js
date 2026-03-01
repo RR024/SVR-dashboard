@@ -1441,7 +1441,7 @@ function loadInwardInvoices() {
     if (invoices.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="8" class="text-center" style="color: var(--text-secondary);">
+                <td colspan="10" class="text-center" style="color: var(--text-secondary);">
                     No purchase invoices yet. Click "New Purchase Invoice" to create one.
                 </td>
             </tr>
@@ -1458,6 +1458,36 @@ function loadInwardInvoices() {
         }
         // Tie-breaker: Invoice Number Descending
         return b.invoiceNo.localeCompare(a.invoiceNo, undefined, { numeric: true });
+    });
+
+    // Helper: get financial year start year for a date (Apr-Mar, India)
+    function getFYStartYear(dateStr) {
+        const d = new Date(dateStr);
+        const m = d.getMonth(); // 0=Jan, 3=Apr
+        return m >= 3 ? d.getFullYear() : d.getFullYear() - 1;
+    }
+
+    // Compute FY serial numbers (ascending order by date within each FY)
+    const fySerialMap = {};
+    const monthSerialMap = {};
+    const allSorted = [...invoices].sort((a, b) => {
+        const da = a.date || '';
+        const db = b.date || '';
+        if (da !== db) return da.localeCompare(db);
+        return a.invoiceNo.localeCompare(b.invoiceNo, undefined, { numeric: true });
+    });
+    const fyCounters = {};
+    const monthCounters = {};
+    allSorted.forEach(inv => {
+        const dateStr = inv.date || new Date().toISOString().slice(0, 10);
+        const fyStart = getFYStartYear(dateStr);
+        const fyKey = `${fyStart}-${fyStart + 1}`;
+        fyCounters[fyKey] = (fyCounters[fyKey] || 0) + 1;
+        fySerialMap[inv.id] = fyCounters[fyKey];
+
+        const monthKey = dateStr.slice(0, 7);
+        monthCounters[monthKey] = (monthCounters[monthKey] || 0) + 1;
+        monthSerialMap[inv.id] = monthCounters[monthKey];
     });
 
     // Get current month for comparison
@@ -1496,7 +1526,7 @@ function loadInwardInvoices() {
 
             html += `
                 <tr class="month-separator">
-                    <td colspan="8" style="
+                    <td colspan="10" style="
                         background: ${monthColor};
                         color: white;
                         font-weight: 600;
@@ -1517,8 +1547,12 @@ function loadInwardInvoices() {
         const gstNo = inv.gstNo || '-';
         const paymentStatus = inv.paymentStatus || 'Pending';
         const statusClass = paymentStatus === 'Paid' ? 'success' : paymentStatus === 'Partial' ? 'warning' : 'danger';
+        const fySerial = fySerialMap[inv.id] || '-';
+        const monthSerial = monthSerialMap[inv.id] || '-';
         html += `
             <tr>
+                <td style="text-align:center; font-weight:600; color:var(--primary);">${fySerial}</td>
+                <td style="text-align:center; color:var(--text-secondary);">${monthSerial}</td>
                 <td>${inv.invoiceNo}</td>
                 <td>${formatDate(inv.date)}</td>
                 <td>${inv.customer}</td>
@@ -4347,12 +4381,12 @@ function applyInwardFilter() {
         if (row.querySelector('td[colspan]')) return;
 
         const cells = row.querySelectorAll('td');
-        if (cells.length < 7) return;
+        if (cells.length < 9) return;
 
-        const invoiceNo = cells[0].textContent.toLowerCase();
-        const date = cells[1].textContent;
-        const customer = cells[2].textContent.toLowerCase();
-        const paymentStatus = cells[6].textContent.trim();
+        const invoiceNo = cells[2].textContent.toLowerCase();
+        const date = cells[3].textContent;
+        const customer = cells[4].textContent.toLowerCase();
+        const paymentStatus = cells[8].textContent.trim();
 
         let show = true;
 
@@ -4368,7 +4402,7 @@ function applyInwardFilter() {
 
         // Apply date range filter
         if (inwardFilters.dateFrom || inwardFilters.dateTo) {
-            const dateCell = cells[1].getAttribute('data-date') || parseDisplayDate(date);
+            const dateCell = cells[3].getAttribute('data-date') || parseDisplayDate(date);
 
             if (inwardFilters.dateFrom && dateCell < inwardFilters.dateFrom) {
                 show = false;
