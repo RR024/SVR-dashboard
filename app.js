@@ -310,14 +310,10 @@ function loadModuleData(moduleId) {
         case 'hr-management':
             loadHRModule();
             break;
-        case 'employees':
-            // Legacy support - redirect to HR
-            loadEmployees();
-            break;
         case 'attendance':
-            // Legacy support
-            loadAttendanceUI();
-            loadAttendanceHistory();
+            // Attendance is now a tab inside hr-management
+            navigateToModule('hr-management');
+            setTimeout(() => switchHRTab('attendance'), 150);
             break;
         case 'expenses':
             if (typeof loadExpenses === 'function') {
@@ -481,8 +477,12 @@ function switchHRTab(tabName) {
 
     // Load tab-specific data
     if (tabName === 'attendance') {
+        // Set today's date if not already set
+        const dateEl = document.getElementById('attendanceDate');
+        if (dateEl && !dateEl.value) dateEl.valueAsDate = new Date();
         loadAttendanceUI();
         loadAttendanceHistory();
+        loadAttendanceSummaryCards();
     } else if (tabName === 'employees-salary') {
         loadEmployees();
         if (typeof loadSalaryTable === 'function') {
@@ -823,7 +823,13 @@ function updateDashboardCards() {
 
 // Navigate to a module when clicking dashboard cards
 function navigateToModule(moduleId) {
-    // Find the navigation link for this module
+    // Attendance is embedded inside HR Management as a tab
+    if (moduleId === 'attendance') {
+        const hrLink = document.querySelector('.nav-link[data-module="hr-management"]');
+        if (hrLink) hrLink.click();
+        setTimeout(() => switchHRTab('attendance'), 150);
+        return;
+    }
     const navLink = document.querySelector(`.nav-link[data-module="${moduleId}"]`);
     if (navLink) {
         navLink.click();
@@ -3308,7 +3314,7 @@ function loadAttendanceUI() {
         return;
     }
 
-    let html = '<table class="data-table"><thead><tr><th style="width: 15%;">Employee ID</th><th style="width: 25%;">Name</th><th style="width: 15%;">Status</th><th style="width: 15%;">Time In</th><th style="width: 15%;">Time Out</th><th style="width: 15%;">Remarks</th></tr></thead><tbody>';
+    let html = '<table class="data-table"><thead><tr><th style="width: 15%;">Employee ID</th><th style="width: 20%;">Name</th><th style="width: 15%;">Status</th><th style="width: 13%;">Time In</th><th style="width: 13%;">Time Out</th><th style="width: 10%;">Overtime (hrs)</th><th style="width: 14%;">Remarks</th></tr></thead><tbody>';
 
     employees.forEach(emp => {
         const now = new Date();
@@ -3328,6 +3334,7 @@ function loadAttendanceUI() {
                 </td>
                 <td><input type="time" class="form-control attendance-time-in" value="${timeString}"></td>
                 <td><input type="time" class="form-control attendance-time-out" value=""></td>
+                <td><input type="number" class="form-control attendance-overtime" min="0" step="0.5" placeholder="0"></td>
                 <td><input type="text" class="form-control attendance-remarks" placeholder="Optional"></td>
             </tr>
         `;
@@ -3343,6 +3350,7 @@ function handleAttendanceStatusChange(selectElement) {
     const status = selectElement.value;
     const timeInField = row.querySelector('.attendance-time-in');
     const timeOutField = row.querySelector('.attendance-time-out');
+    const overtimeField = row.querySelector('.attendance-overtime');
     const remarksField = row.querySelector('.attendance-remarks');
 
     // Clear any previous validation styling
@@ -3353,12 +3361,16 @@ function handleAttendanceStatusChange(selectElement) {
         // Disable time fields for Absent/Leave
         timeInField.disabled = true;
         timeOutField.disabled = true;
+        overtimeField.disabled = true;
         timeInField.value = '';
         timeOutField.value = '';
+        overtimeField.value = '';
         timeInField.style.opacity = '0.5';
         timeOutField.style.opacity = '0.5';
+        overtimeField.style.opacity = '0.5';
         timeInField.style.cursor = 'not-allowed';
         timeOutField.style.cursor = 'not-allowed';
+        overtimeField.style.cursor = 'not-allowed';
 
         // Make remarks mandatory
         remarksField.placeholder = 'Reason required';
@@ -3370,10 +3382,13 @@ function handleAttendanceStatusChange(selectElement) {
         // Enable time fields for Half-day (user needs to enter times)
         timeInField.disabled = false;
         timeOutField.disabled = false;
+        overtimeField.disabled = false;
         timeInField.style.opacity = '1';
         timeOutField.style.opacity = '1';
+        overtimeField.style.opacity = '1';
         timeInField.style.cursor = '';
         timeOutField.style.cursor = '';
+        overtimeField.style.cursor = '';
 
         // Make remarks mandatory for half-day
         remarksField.placeholder = 'Reason required';
@@ -3385,10 +3400,13 @@ function handleAttendanceStatusChange(selectElement) {
         // Present - enable time fields, remarks optional
         timeInField.disabled = false;
         timeOutField.disabled = false;
+        overtimeField.disabled = false;
         timeInField.style.opacity = '1';
         timeOutField.style.opacity = '1';
+        overtimeField.style.opacity = '1';
         timeInField.style.cursor = '';
         timeOutField.style.cursor = '';
+        overtimeField.style.cursor = '';
 
         // Set default time for Present
         if (!timeInField.value) {
@@ -3466,6 +3484,7 @@ function saveAttendance() {
             status: row.querySelector('.attendance-status').value,
             timeIn: row.querySelector('.attendance-time-in').value,
             timeOut: row.querySelector('.attendance-time-out').value,
+            overtime: row.querySelector('.attendance-overtime').value || 0,
             remarks: row.querySelector('.attendance-remarks').value
         });
     });
@@ -3479,7 +3498,20 @@ function saveAttendance() {
 
     saveToStorage('attendance', allRecords);
     showToast('Attendance saved successfully!', 'success');
+
+    // Reset filters so ALL saved records are visible after saving
+    const empFilter = document.getElementById('attendanceEmployeeFilter');
+    if (empFilter) empFilter.value = '';
+    const statusFilterEl = document.getElementById('attendanceStatusFilter');
+    if (statusFilterEl) statusFilterEl.value = '';
+    const monthInput = document.getElementById('attendanceHistoryMonth');
+    if (monthInput) {
+        const now = new Date();
+        monthInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    }
+
     loadAttendanceHistory();
+    loadAttendanceSummaryCards();
 }
 
 function loadAttendance() {
@@ -3508,9 +3540,10 @@ function loadAttendance() {
         if (record) {
             const statusSelect = row.querySelector('.attendance-status');
             statusSelect.value = record.status;
-            row.querySelector('.attendance-time-in').value = record.timeIn;
-            row.querySelector('.attendance-time-out').value = record.timeOut;
-            row.querySelector('.attendance-remarks').value = record.remarks;
+            row.querySelector('.attendance-time-in').value = record.timeIn || '';
+            row.querySelector('.attendance-time-out').value = record.timeOut || '';
+            row.querySelector('.attendance-overtime').value = record.overtime || '';
+            row.querySelector('.attendance-remarks').value = record.remarks || '';
 
             // Trigger status change handler to update field states
             handleAttendanceStatusChange(statusSelect);
@@ -3521,14 +3554,108 @@ function loadAttendance() {
 }
 
 function loadAttendanceHistory() {
-    const records = getAttendanceRecords();
+    let records = getAttendanceRecords();
     const tbody = document.getElementById('attendanceHistoryBody');
+    const filterSelect = document.getElementById('attendanceEmployeeFilter');
+    const monthInput = document.getElementById('attendanceHistoryMonth');
+    const statusFilter = document.getElementById('attendanceStatusFilter');
+    const statsContainer = document.getElementById('attendanceStatsContainer');
+    const countBadge = document.getElementById('attRecordCount');
+
+    // Initialize employee filter dropdown if empty
+    if (filterSelect && filterSelect.options.length <= 1) {
+        const employees = getEmployees();
+        employees.forEach(emp => {
+            const option = document.createElement('option');
+            option.value = emp.id;
+            option.textContent = `${emp.name} (${emp.empId})`;
+            filterSelect.appendChild(option);
+        });
+    }
+
+    // Initialize month if empty
+    if (monthInput && !monthInput.value) {
+        const now = new Date();
+        monthInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    }
 
     if (records.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="6" class="text-center" style="color: var(--text-secondary);">
+                <td colspan="9" class="text-center" style="color: var(--text-secondary);">
                     No attendance records yet.
+                </td>
+            </tr>
+        `;
+        if (statsContainer) statsContainer.style.display = 'none';
+        if (countBadge) countBadge.style.display = 'none';
+        return;
+    }
+
+    // Read active filter values
+    const selectedEmpId  = filterSelect   ? filterSelect.value   : '';
+    const selectedMonth  = monthInput     ? monthInput.value     : '';
+    const selectedStatus = statusFilter   ? statusFilter.value   : '';
+
+    // Apply filters
+    if (selectedEmpId)  records = records.filter(r => r.employeeId === selectedEmpId);
+    if (selectedMonth)  records = records.filter(r => r.date.startsWith(selectedMonth));
+    if (selectedStatus) records = records.filter(r => r.status === selectedStatus);
+
+    // Update record count badge
+    if (countBadge) {
+        countBadge.textContent = records.length;
+        countBadge.style.display = records.length > 0 ? 'inline-block' : 'none';
+    }
+
+    // Show summary stats when any filter is active
+    const anyFilterActive = selectedEmpId || selectedStatus || selectedMonth;
+    if (anyFilterActive && statsContainer && records.length > 0) {
+        let presents = 0, absents = 0, leaves = 0, halfDays = 0, totalOvertime = 0;
+        records.forEach(r => {
+            if (r.status === 'Present')       presents++;
+            else if (r.status === 'Absent')   absents++;
+            else if (r.status === 'Leave')    leaves++;
+            else if (r.status === 'Half-day') halfDays++;
+            totalOvertime += parseFloat(r.overtime || 0);
+        });
+
+        statsContainer.innerHTML = `
+            <div style="flex: 1; min-width: 110px;">
+                <div style="font-size: 0.78rem; color: var(--text-secondary);">Present</div>
+                <div style="font-size: 1.5rem; font-weight: bold; color: var(--success);">${presents}</div>
+            </div>
+            <div style="flex: 1; min-width: 110px;">
+                <div style="font-size: 0.78rem; color: var(--text-secondary);">Absent</div>
+                <div style="font-size: 1.5rem; font-weight: bold; color: var(--danger);">${absents}</div>
+            </div>
+            <div style="flex: 1; min-width: 110px;">
+                <div style="font-size: 0.78rem; color: var(--text-secondary);">Leave</div>
+                <div style="font-size: 1.5rem; font-weight: bold; color: var(--info);">${leaves}</div>
+            </div>
+            <div style="flex: 1; min-width: 110px;">
+                <div style="font-size: 0.78rem; color: var(--text-secondary);">Half-day</div>
+                <div style="font-size: 1.5rem; font-weight: bold; color: var(--warning);">${halfDays}</div>
+            </div>
+            <div style="flex: 1; min-width: 120px;">
+                <div style="font-size: 0.78rem; color: var(--text-secondary);">Total Overtime</div>
+                <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary);">${totalOvertime} hrs</div>
+            </div>
+            <div style="flex: 1; min-width: 110px;">
+                <div style="font-size: 0.78rem; color: var(--text-secondary);">Attendance %</div>
+                <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary);">${records.length > 0 ? Math.round((presents / records.length) * 100) : 0}%</div>
+            </div>
+        `;
+        statsContainer.style.display = 'flex';
+    } else if (statsContainer) {
+        statsContainer.style.display = 'none';
+    }
+
+    if (records.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" class="text-center" style="color: var(--text-secondary);">
+                    No attendance records found for the selected filters.
                 </td>
             </tr>
         `;
@@ -3538,32 +3665,27 @@ function loadAttendanceHistory() {
     // Sort by date descending
     records.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    // Take latest 100 records for better history view
-    const latestRecords = records.slice(0, 100);
-
     // Get today's date for comparison
     const today = new Date().toISOString().split('T')[0];
-    const currentMonth = new Date().toISOString().slice(0, 7);
 
-    // Group records by month and date
+    // Group records by date (if viewed across month, otherwise it's just a single list)
     let html = '';
-    let lastMonth = null;
     let lastDate = null;
-
-    // Month names for display
+    let lastMonth = null;
+    const currentMonthForDisplay = new Date().toISOString().slice(0, 7);
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
         'July', 'August', 'September', 'October', 'November', 'December'];
 
-    latestRecords.forEach(record => {
+    records.forEach(record => {
         const recordDate = record.date;
+        const isToday = recordDate === today;
         const recordMonth = recordDate.slice(0, 7); // YYYY-MM
         const [year, month] = recordMonth.split('-');
         const monthName = monthNames[parseInt(month) - 1];
-        const isCurrentMonth = recordMonth === currentMonth;
-        const isToday = recordDate === today;
+        const isCurrentMonth = recordMonth === currentMonthForDisplay;
 
-        // Add month separator if new month
-        if (recordMonth !== lastMonth) {
+        // Add month separator if no month filter is applied and new month
+        if (!selectedMonth && recordMonth !== lastMonth) {
             const monthLabel = `${monthName} ${year}`;
             const monthColor = isCurrentMonth ?
                 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' :
@@ -3572,7 +3694,7 @@ function loadAttendanceHistory() {
 
             html += `
                 <tr class="month-separator">
-                    <td colspan="6" style="
+                    <td colspan="9" style="
                         background: ${monthColor};
                         color: white;
                         font-weight: 600;
@@ -3590,26 +3712,20 @@ function loadAttendanceHistory() {
             lastDate = null; // Reset date when month changes
         }
 
-        // Add date separator if new date
-        if (recordDate !== lastDate) {
+        // Add date separator if new date and no employee selected (to group nicely)
+        if (!selectedEmpId && recordDate !== lastDate) {
             const dateObj = new Date(recordDate);
             const dayName = dateObj.toLocaleDateString('en-IN', { weekday: 'long' });
             const formattedDate = formatDate(recordDate);
 
-            const dateColor = isToday ?
-                'rgba(72, 187, 120, 0.15)' :
-                'rgba(99, 102, 241, 0.08)';
-            const dateBorderColor = isToday ?
-                'rgba(72, 187, 120, 0.4)' :
-                'rgba(99, 102, 241, 0.2)';
-            const dateTextColor = isToday ?
-                'var(--success)' :
-                'var(--primary)';
+            const dateColor = isToday ? 'rgba(72, 187, 120, 0.15)' : 'rgba(99, 102, 241, 0.08)';
+            const dateBorderColor = isToday ? 'rgba(72, 187, 120, 0.4)' : 'rgba(99, 102, 241, 0.2)';
+            const dateTextColor = isToday ? 'var(--success)' : 'var(--primary)';
             const dateIcon = isToday ? '🌟' : '📋';
 
             html += `
                 <tr class="date-separator">
-                    <td colspan="6" style="
+                    <td colspan="9" style="
                         background: ${dateColor};
                         border-left: 4px solid ${dateBorderColor};
                         padding: 0.5rem 1rem;
@@ -3631,19 +3747,184 @@ function loadAttendanceHistory() {
                 record.status === 'Leave' ? 'info' :
                     record.status === 'Half-day' ? 'warning' : 'danger';
 
+        let overtimeDisplay = '-';
+        if (record.overtime && parseFloat(record.overtime) > 0) {
+            overtimeDisplay = `<span style="color: var(--primary); font-weight: bold;">${record.overtime}</span>`;
+        }
+
         html += `
             <tr style="background: ${isToday ? 'rgba(72, 187, 120, 0.05)' : 'transparent'};">
-                <td style="padding-left: 2rem;">${record.employeeName}</td>
+                <td>${formatDate(record.date)}${isToday ? ' <span class="badge badge-success" style="font-size:0.65rem;">TODAY</span>' : ''}</td>
+                <td>${record.employeeName}</td>
                 <td>${record.employeeEmpId}</td>
                 <td><span class="badge badge-${badgeClass}">${record.status}</span></td>
                 <td>${record.timeIn || '-'}</td>
                 <td>${record.timeOut || '-'}</td>
+                <td>${overtimeDisplay}</td>
                 <td>${record.remarks || '-'}</td>
+                <td style="text-align:center; white-space:nowrap;">
+                    <button class="btn btn-secondary btn-sm" onclick="openEditAttendanceModal('${record.id}')" title="Edit" style="padding:0.2rem 0.5rem; margin-right:0.25rem;">✏️</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteAttendanceRecord('${record.id}')" title="Delete" style="padding:0.2rem 0.5rem;">🗑️</button>
+                </td>
             </tr>
         `;
     });
 
     tbody.innerHTML = html;
+}
+
+// ===================================
+// ATTENDANCE CRUD OPERATIONS
+// ===================================
+
+function loadAttendanceSummaryCards() {
+    const today = new Date().toISOString().split('T')[0];
+    const records = getAttendanceRecords().filter(r => r.date === today);
+    const employees = getEmployees();
+    const present = records.filter(r => r.status === 'Present').length;
+    const absent  = records.filter(r => r.status === 'Absent').length;
+    const leave   = records.filter(r => r.status === 'Leave').length;
+    const halfday = records.filter(r => r.status === 'Half-day').length;
+    const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    setEl('attCard_present', present);
+    setEl('attCard_absent',  absent);
+    setEl('attCard_leave',   leave);
+    setEl('attCard_halfday', halfday);
+    setEl('attCard_total',   employees.length);
+}
+
+function deleteAttendanceRecord(id) {
+    if (!confirm('Delete this attendance record? This action cannot be undone.')) return;
+    let records = getAttendanceRecords();
+    records = records.filter(r => r.id !== id);
+    saveToStorage('attendance', records);
+    showToast('Attendance record deleted.', 'success');
+    loadAttendanceHistory();
+    loadAttendanceSummaryCards();
+}
+
+function openEditAttendanceModal(id) {
+    const record = getAttendanceRecords().find(r => r.id === id);
+    if (!record) { showToast('Record not found.', 'error'); return; }
+    document.getElementById('editAttId').value       = record.id;
+    document.getElementById('editAttEmployee').value = `${record.employeeName} (${record.employeeEmpId})`;
+    document.getElementById('editAttDate').value     = record.date;
+    document.getElementById('editAttStatus').value   = record.status;
+    document.getElementById('editAttTimeIn').value   = record.timeIn   || '';
+    document.getElementById('editAttTimeOut').value  = record.timeOut  || '';
+    document.getElementById('editAttOvertime').value = record.overtime || '';
+    document.getElementById('editAttRemarks').value  = record.remarks  || '';
+    handleEditAttendanceStatusChange();
+    document.getElementById('editAttendanceModal').style.display = 'flex';
+}
+
+function closeEditAttendanceModal(e) {
+    if (e && e.target !== document.getElementById('editAttendanceModal')) return;
+    document.getElementById('editAttendanceModal').style.display = 'none';
+}
+
+function handleEditAttendanceStatusChange() {
+    const status   = document.getElementById('editAttStatus').value;
+    const timeIn   = document.getElementById('editAttTimeIn');
+    const timeOut  = document.getElementById('editAttTimeOut');
+    const overtime = document.getElementById('editAttOvertime');
+    const remarks  = document.getElementById('editAttRemarks');
+    const tag      = document.getElementById('editAttRemarksTag');
+    const disableTime = status === 'Absent' || status === 'Leave';
+    timeIn.disabled   = disableTime;
+    timeOut.disabled  = disableTime;
+    overtime.disabled = disableTime;
+    [timeIn, timeOut, overtime].forEach(el => {
+        el.style.opacity = disableTime ? '0.5' : '1';
+        if (disableTime) el.value = '';
+    });
+    const needsReason = disableTime || status === 'Half-day';
+    remarks.placeholder = needsReason ? 'Reason required' : 'Optional';
+    if (tag) tag.style.display = needsReason ? 'inline' : 'none';
+}
+
+function saveEditAttendance() {
+    const id       = document.getElementById('editAttId').value;
+    const date     = document.getElementById('editAttDate').value;
+    const status   = document.getElementById('editAttStatus').value;
+    const timeIn   = document.getElementById('editAttTimeIn').value;
+    const timeOut  = document.getElementById('editAttTimeOut').value;
+    const overtime = document.getElementById('editAttOvertime').value;
+    const remarks  = document.getElementById('editAttRemarks').value.trim();
+    const remarksEl = document.getElementById('editAttRemarks');
+
+    if (!date) { showToast('Please select a date.', 'error'); return; }
+    if ((status === 'Absent' || status === 'Leave' || status === 'Half-day') && !remarks) {
+        showToast('Remarks are required for ' + status, 'error');
+        remarksEl.style.borderColor = 'var(--danger)';
+        remarksEl.style.background  = 'rgba(220,53,69,0.08)';
+        return;
+    }
+    remarksEl.style.borderColor = '';
+    remarksEl.style.background  = '';
+
+    let records = getAttendanceRecords();
+    const idx = records.findIndex(r => r.id === id);
+    if (idx === -1) { showToast('Record not found.', 'error'); return; }
+    const noTime = status === 'Absent' || status === 'Leave';
+    records[idx] = {
+        ...records[idx],
+        date,
+        status,
+        timeIn:   noTime ? '' : timeIn,
+        timeOut:  noTime ? '' : timeOut,
+        overtime: noTime ? 0  : (parseFloat(overtime) || 0),
+        remarks
+    };
+    saveToStorage('attendance', records);
+    document.getElementById('editAttendanceModal').style.display = 'none';
+    showToast('Attendance record updated successfully!', 'success');
+    loadAttendanceHistory();
+    loadAttendanceSummaryCards();
+}
+
+function exportAttendanceCSV() {
+    let records = getAttendanceRecords();
+    const filterEmpId    = document.getElementById('attendanceEmployeeFilter')?.value;
+    const filterMonth    = document.getElementById('attendanceHistoryMonth')?.value;
+    const filterStatus   = document.getElementById('attendanceStatusFilter')?.value;
+    if (filterEmpId)   records = records.filter(r => r.employeeId === filterEmpId);
+    if (filterMonth)   records = records.filter(r => r.date.startsWith(filterMonth));
+    if (filterStatus)  records = records.filter(r => r.status === filterStatus);
+    if (records.length === 0) { showToast('No records to export for the current filters.', 'warning'); return; }
+    records.sort((a, b) => new Date(a.date) - new Date(b.date));
+    const headers = ['Date', 'Employee Name', 'Emp ID', 'Status', 'Time In', 'Time Out', 'Overtime (hrs)', 'Remarks'];
+    const rows = records.map(r => [
+        r.date,
+        `"${(r.employeeName || '').replace(/"/g, '""')}"`,
+        r.employeeEmpId,
+        r.status,
+        r.timeIn   || '',
+        r.timeOut  || '',
+        r.overtime || 0,
+        `"${(r.remarks || '').replace(/"/g, '""')}"`
+    ]);
+    const csv  = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `Attendance_${filterMonth || 'All'}_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Attendance exported successfully!', 'success');
+}
+
+function clearAttendanceFilters() {
+    const now = new Date();
+    const el = (id) => document.getElementById(id);
+    if (el('attendanceEmployeeFilter')) el('attendanceEmployeeFilter').value = '';
+    if (el('attendanceStatusFilter'))   el('attendanceStatusFilter').value   = '';
+    if (el('attendanceHistoryMonth'))   el('attendanceHistoryMonth').value   =
+        `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    loadAttendanceHistory();
 }
 
 // ===================================

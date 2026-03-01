@@ -272,9 +272,10 @@ function updateSalarySummary(records) {
     const employeesCount = records.length;
     const avgSalary = employeesCount > 0 ? totalPayroll / employeesCount : 0;
 
-    document.getElementById('totalMonthlyPayroll').textContent = `₹${totalPayroll.toLocaleString('en-IN')}`;
-    document.getElementById('employeesWithSalary').textContent = employeesCount;
-    document.getElementById('averageSalary').textContent = `₹${Math.round(avgSalary).toLocaleString('en-IN')}`;
+    const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    setEl('totalMonthlyPayroll', `₹${totalPayroll.toLocaleString('en-IN')}`);
+    setEl('employeesWithSalary', employeesCount);
+    setEl('averageSalary', `₹${Math.round(avgSalary).toLocaleString('en-IN')}`);
 }
 
 // Delete Salary Record
