@@ -713,9 +713,13 @@ function loadDashboard() {
         const invDate = new Date(inv.date);
         return invDate.getFullYear() === currentYear && invDate.getMonth() === currentMonth;
     });
+    // Sales: with tax (grand total) and without tax (taxable value)
     const currentMonthSalesTotal = currentMonthOutward.reduce((sum, inv) => {
         const amount = parseFloat(inv.total) || parseFloat(inv.totalAmount) || parseFloat(inv.grandTotal) || parseFloat(inv.amount) || 0;
         return sum + amount;
+    }, 0);
+    const currentMonthSalesTaxable = currentMonthOutward.reduce((sum, inv) => {
+        return sum + (parseFloat(inv.taxableValue) || 0);
     }, 0);
 
     // Filter inward invoices for current month
@@ -723,16 +727,26 @@ function loadDashboard() {
         const invDate = new Date(inv.date);
         return invDate.getFullYear() === currentYear && invDate.getMonth() === currentMonth;
     });
+    // Purchase: with tax (grand total) and without tax (taxable value)
     const currentMonthPurchaseTotal = currentMonthInward.reduce((sum, inv) => {
         const amount = parseFloat(inv.amount) || parseFloat(inv.total) || parseFloat(inv.totalAmount) || parseFloat(inv.grandTotal) || 0;
         return sum + amount;
     }, 0);
+    const currentMonthPurchaseTaxable = currentMonthInward.reduce((sum, inv) => {
+        return sum + (parseFloat(inv.taxableValue) || 0);
+    }, 0);
+
+    const _fmtINR = (n) => `₹${n.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
 
     // Update current month sales card
     const currentMonthSalesAmountEl = document.getElementById('currentMonthSalesAmount');
     if (currentMonthSalesAmountEl) {
-        currentMonthSalesAmountEl.textContent = `₹${currentMonthSalesTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+        currentMonthSalesAmountEl.textContent = _fmtINR(currentMonthSalesTotal);
     }
+    const elSalesWithTax = document.getElementById('currentMonthSalesWithTax');
+    if (elSalesWithTax) elSalesWithTax.textContent = _fmtINR(currentMonthSalesTotal);
+    const elSalesWithoutTax = document.getElementById('currentMonthSalesWithoutTax');
+    if (elSalesWithoutTax) elSalesWithoutTax.textContent = _fmtINR(currentMonthSalesTaxable);
     const currentMonthSalesCountEl = document.getElementById('currentMonthSalesCount');
     if (currentMonthSalesCountEl) {
         currentMonthSalesCountEl.textContent = `${currentMonthOutward.length} invoice${currentMonthOutward.length !== 1 ? 's' : ''} this month`;
@@ -741,8 +755,12 @@ function loadDashboard() {
     // Update current month purchase card
     const currentMonthPurchaseAmountEl = document.getElementById('currentMonthPurchaseAmount');
     if (currentMonthPurchaseAmountEl) {
-        currentMonthPurchaseAmountEl.textContent = `₹${currentMonthPurchaseTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+        currentMonthPurchaseAmountEl.textContent = _fmtINR(currentMonthPurchaseTotal);
     }
+    const elPurchaseWithTax = document.getElementById('currentMonthPurchaseWithTax');
+    if (elPurchaseWithTax) elPurchaseWithTax.textContent = _fmtINR(currentMonthPurchaseTotal);
+    const elPurchaseWithoutTax = document.getElementById('currentMonthPurchaseWithoutTax');
+    if (elPurchaseWithoutTax) elPurchaseWithoutTax.textContent = _fmtINR(currentMonthPurchaseTaxable);
     const currentMonthPurchaseCountEl = document.getElementById('currentMonthPurchaseCount');
     if (currentMonthPurchaseCountEl) {
         currentMonthPurchaseCountEl.textContent = `${currentMonthInward.length} invoice${currentMonthInward.length !== 1 ? 's' : ''} this month`;
