@@ -307,6 +307,9 @@ function loadModuleData(moduleId) {
         case 'customers':
             loadCustomers();
             break;
+        case 'suppliers':
+            if (typeof loadSuppliers === 'function') loadSuppliers();
+            break;
         case 'hr-management':
             loadHRModule();
             break;

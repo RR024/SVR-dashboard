@@ -181,6 +181,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a href="#suppliers" class="nav-link" data-module="suppliers">
+                            <span class="nav-icon">🏭</span>
+                            <span>Suppliers</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a href="#expenses" class="nav-link" data-module="expenses">
                             <span class="nav-icon">💰</span>
                             <span>Expenses</span>
@@ -810,19 +816,8 @@
             <!-- Customers Module -->
             <section id="customers" class="module">
                 <div class="page-header">
-                    <h2>Customer Management</h2>
+                    <h2>🏢 Customer Management</h2>
                     <p>Manage customer database for invoices</p>
-                </div>
-                <div
-                    style="display: flex; gap: 1rem; border-bottom: 2px solid var(--bg-tertiary); margin-bottom: 1.5rem;">
-                    <button id="customerTab" class="customer-tab active" onclick="switchCustomerTab('customer')"
-                        style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--text-secondary); border-bottom: 3px solid transparent; transition: all 0.3s;">
-                        🏢 Customers
-                    </button>
-                    <button id="supplierTab" class="customer-tab" onclick="switchCustomerTab('supplier')"
-                        style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--text-secondary); border-bottom: 3px solid transparent; transition: all 0.3s;">
-                        🏭 Suppliers
-                    </button>
                 </div>
 
                 <div
@@ -832,7 +827,7 @@
                             placeholder="🔍 Search by company, GST, contact..." oninput="searchCustomers(this.value)"
                             style="margin: 0;">
                     </div>
-                    <button class="btn btn-primary" id="addEntityBtn" onclick="openCustomerModal()">
+                    <button class="btn btn-primary" id="addCustomerBtn" onclick="openCustomerModal()">
                         <span>➕</span> Add Customer
                     </button>
                 </div>
@@ -854,6 +849,50 @@
                                 <tr>
                                     <td colspan="6" class="text-center" style="color: var(--text-secondary);">
                                         No customers yet. Click "Add Customer" to create one.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Suppliers Module -->
+            <section id="suppliers" class="module">
+                <div class="page-header">
+                    <h2>🏭 Supplier Management</h2>
+                    <p>Manage supplier database for purchase invoices</p>
+                </div>
+
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem;">
+                    <div style="flex: 1; max-width: 400px;">
+                        <input type="text" id="supplierSearch" class="form-control"
+                            placeholder="🔍 Search suppliers..." oninput="searchSuppliers(this.value)"
+                            style="margin: 0;">
+                    </div>
+                    <button class="btn btn-primary" id="addSupplierBtn" onclick="openSupplierModal()">
+                        <span>➕</span> Add Supplier
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Company Name</th>
+                                    <th>GST Number</th>
+                                    <th>Contact Person</th>
+                                    <th>Phone</th>
+                                    <th>City</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="suppliersTableBody">
+                                <tr>
+                                    <td colspan="6" class="text-center" style="color: var(--text-secondary);">
+                                        No suppliers yet. Click "Add Supplier" to create one.
                                     </td>
                                 </tr>
                             </tbody>

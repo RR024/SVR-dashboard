@@ -4,29 +4,9 @@
 
 let currentCustomerTab = 'customer';
 
-// Switch between Customer and Supplier tabs
+// Legacy: kept for backward compatibility
 function switchCustomerTab(tabName) {
     currentCustomerTab = tabName;
-
-    // Update tab styling
-    document.querySelectorAll('.customer-tab').forEach(tab => {
-        tab.classList.remove('active');
-    });
-    document.getElementById(tabName + 'Tab').classList.add('active');
-
-    // Update Add Button text and search placeholder
-    const addBtn = document.getElementById('addEntityBtn');
-    const searchInput = document.getElementById('customerSearch');
-    if (tabName === 'supplier') {
-        addBtn.innerHTML = '<span>➕</span> Add Supplier';
-        searchInput.placeholder = '🔍 Search suppliers...';
-    } else {
-        addBtn.innerHTML = '<span>➕</span> Add Customer';
-        searchInput.placeholder = '🔍 Search by company, GST, contact...';
-    }
-
-    // Reload the table
-    loadCustomers();
 }
 
 // Get customers from storage (with deduplication)
@@ -59,25 +39,15 @@ function getCustomers() {
 
 // Load customers into table
 function loadCustomers() {
-    let customers = getCustomers();
-
-    // Filter by type
-    customers = customers.filter(c => {
-        const type = c.type || 'customer';
-        return type === currentCustomerTab;
-    });
-
+    const customers = getCustomers().filter(c => (c.type || 'customer') === 'customer');
     const tbody = document.getElementById('customersTableBody');
-
     if (!tbody) return;
 
     if (customers.length === 0) {
-        const entityName = currentCustomerTab === 'supplier' ? 'suppliers' : 'customers';
-        const addText = currentCustomerTab === 'supplier' ? 'Add Supplier' : 'Add Customer';
         tbody.innerHTML = `
             <tr>
                 <td colspan="6" class="text-center" style="color: var(--text-secondary);">
-                    No ${entityName} yet. Click "${addText}" to create one.
+                    No customers yet. Click "Add Customer" to create one.
                 </td>
             </tr>
         `;
@@ -102,12 +72,62 @@ function loadCustomers() {
             </tr>
         `;
     });
+    tbody.innerHTML = html;
+}
 
+// Load suppliers into table
+function loadSuppliers() {
+    currentCustomerTab = 'supplier';
+    const suppliers = getCustomers().filter(c => (c.type || 'customer') === 'supplier');
+    const tbody = document.getElementById('suppliersTableBody');
+    if (!tbody) return;
+
+    if (suppliers.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center" style="color: var(--text-secondary);">
+                    No suppliers yet. Click "Add Supplier" to create one.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    let html = '';
+    suppliers.forEach(supplier => {
+        html += `
+            <tr>
+                <td><strong>${supplier.companyName}</strong></td>
+                <td>${supplier.gstin}</td>
+                <td>${supplier.contactPerson || '-'}</td>
+                <td>${supplier.phone}</td>
+                <td>${supplier.city || '-'}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="icon-btn edit" onclick="editCustomer('${supplier.id}')" title="Edit">✏️</button>
+                        <button class="icon-btn delete" onclick="deleteCustomer('${supplier.id}')" title="Delete">🗑️</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
     tbody.innerHTML = html;
 }
 
 // Open customer modal
 function openCustomerModal(customerId = null) {
+    currentCustomerTab = 'customer';
+    _openEntityModal(customerId, 'customer');
+}
+
+// Open supplier modal
+function openSupplierModal(supplierId = null) {
+    currentCustomerTab = 'supplier';
+    _openEntityModal(supplierId, 'supplier');
+}
+
+// Internal: open the shared customer/supplier modal
+function _openEntityModal(entityId, entityType) {
     const modal = document.getElementById('customerModal');
     const title = document.getElementById('customerModalTitle');
     const form = document.getElementById('customerForm');
@@ -116,35 +136,27 @@ function openCustomerModal(customerId = null) {
 
     form.reset();
     document.getElementById('customerId').value = '';
-
-    // Set default type to the current active tab
-    document.getElementById('customerType').value = currentCustomerTab;
+    document.getElementById('customerType').value = entityType;
 
     // Clear product list
     const productsList = document.getElementById('customerProductsList');
-    if (productsList) {
-        productsList.innerHTML = '';
-    }
+    if (productsList) productsList.innerHTML = '';
 
     // Clear monthly PO list
     const monthlyPOList = document.getElementById('customerMonthlyPOList');
-    if (monthlyPOList) {
-        monthlyPOList.innerHTML = '';
-    }
+    if (monthlyPOList) monthlyPOList.innerHTML = '';
 
     // Clear vehicle list
     const vehiclesList = document.getElementById('customerVehiclesList');
-    if (vehiclesList) {
-        vehiclesList.innerHTML = '';
-    }
+    if (vehiclesList) vehiclesList.innerHTML = '';
 
-    if (customerId) {
+    if (entityId) {
         const customers = getCustomers();
-        const customer = customers.find(c => c.id === customerId);
+        const customer = customers.find(c => c.id === entityId);
 
         if (customer) {
-            const entityName = customer.type === 'supplier' ? 'Supplier' : 'Customer';
-            title.textContent = `Edit ${entityName}`;
+            const label = customer.type === 'supplier' ? 'Supplier' : 'Customer';
+            title.textContent = `Edit ${label}`;
             document.getElementById('customerId').value = customer.id;
             document.getElementById('customerType').value = customer.type || 'customer';
             document.getElementById('customerCompanyName').value = customer.companyName;
@@ -156,16 +168,13 @@ function openCustomerModal(customerId = null) {
             document.getElementById('customerCity').value = customer.city || '';
             document.getElementById('customerNotes').value = customer.notes || '';
 
-            // Load customer products
-            loadCustomerProducts(customerId);
-            // Load monthly PO numbers
-            loadMonthlyPONumbers(customerId);
-            // Load customer vehicles
-            loadCustomerVehicles(customerId);
+            loadCustomerProducts(entityId);
+            loadMonthlyPONumbers(entityId);
+            loadCustomerVehicles(entityId);
         }
     } else {
-        const entityName = currentCustomerTab === 'supplier' ? 'Supplier' : 'Customer';
-        title.textContent = `Add ${entityName}`;
+        const label = entityType === 'supplier' ? 'Supplier' : 'Customer';
+        title.textContent = `Add ${label}`;
     }
 
     modal.classList.add('active');
@@ -239,15 +248,19 @@ function saveCustomer() {
     if (id) {
         // Update existing
         customers = customers.map(c => c.id === id ? { ...c, ...customer } : c);
-        showToast('Customer updated successfully', 'success');
+        showToast(`${type === 'supplier' ? 'Supplier' : 'Customer'} updated successfully`, 'success');
     } else {
         // Add new
         customers.push(customer);
-        showToast('Customer added successfully', 'success');
+        showToast(`${type === 'supplier' ? 'Supplier' : 'Customer'} added successfully`, 'success');
     }
 
     saveToStorage('customers', customers);
-    loadCustomers();
+    if (type === 'supplier') {
+        loadSuppliers();
+    } else {
+        loadCustomers();
+    }
     closeCustomerModal();
 
     // Reload customer dropdown if on outward invoice page
@@ -259,17 +272,23 @@ function editCustomer(customerId) {
     openCustomerModal(customerId);
 }
 
-// Delete customer
+// Delete customer / supplier
 function deleteCustomer(customerId) {
     if (!confirm('Are you sure you want to delete this record?')) {
         return;
     }
 
     let customers = getCustomers();
+    const record = customers.find(c => c.id === customerId);
+    const recordType = record ? (record.type || 'customer') : currentCustomerTab;
     customers = customers.filter(c => c.id !== customerId);
 
     saveToStorage('customers', customers);
-    loadCustomers();
+    if (recordType === 'supplier') {
+        loadSuppliers();
+    } else {
+        loadCustomers();
+    }
     showToast('Record deleted successfully', 'success');
 
     // Reload customer dropdown if on outward invoice page
@@ -1089,8 +1108,10 @@ function handleVehicleSelection(selectElement) {
 // Export customer functions to global scope
 window.getCustomers = getCustomers;
 window.loadCustomers = loadCustomers;
+window.loadSuppliers = loadSuppliers;
 window.openCustomerModal = openCustomerModal;
 window.closeCustomerModal = closeCustomerModal;
+window.openSupplierModal = openSupplierModal;
 window.saveCustomer = saveCustomer;
 window.editCustomer = editCustomer;
 window.deleteCustomer = deleteCustomer;

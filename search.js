@@ -153,7 +153,7 @@ const searchCustomers = debounce(function (query) {
 
     const customers = getCustomers();
     const filtered = customers.filter(cust => {
-        const typeMatch = (cust.type || 'customer') === (window.currentCustomerTab || 'customer');
+        const typeMatch = (cust.type || 'customer') === 'customer';
         const searchMatch = cust.companyName.toLowerCase().includes(searchTerm) ||
             cust.gstin.toLowerCase().includes(searchTerm) ||
             (cust.contactPerson && cust.contactPerson.toLowerCase().includes(searchTerm)) ||
@@ -169,13 +169,13 @@ const searchCustomers = debounce(function (query) {
 // Display filtered customers
 function displayFilteredCustomers(customers) {
     const tbody = document.getElementById('customersTableBody');
+    if (!tbody) return;
 
     if (customers.length === 0) {
-        const entityName = (window.currentCustomerTab === 'supplier') ? 'suppliers' : 'customers';
         tbody.innerHTML = `
             <tr>
                 <td colspan="6" class="text-center" style="color: var(--text-secondary);">
-                    No ${entityName} found matching your search.
+                    No customers found matching your search.
                 </td>
             </tr>
         `;
@@ -200,7 +200,67 @@ function displayFilteredCustomers(customers) {
             </tr>
         `;
     });
+    tbody.innerHTML = html;
+}
 
+// Search Suppliers
+const searchSuppliers = debounce(function (query) {
+    const searchTerm = query.toLowerCase().trim();
+
+    if (!searchTerm) {
+        loadSuppliers();
+        return;
+    }
+
+    const customers = getCustomers();
+    const filtered = customers.filter(cust => {
+        const typeMatch = (cust.type || 'customer') === 'supplier';
+        const searchMatch = cust.companyName.toLowerCase().includes(searchTerm) ||
+            cust.gstin.toLowerCase().includes(searchTerm) ||
+            (cust.contactPerson && cust.contactPerson.toLowerCase().includes(searchTerm)) ||
+            (cust.phone && cust.phone.includes(searchTerm)) ||
+            (cust.city && cust.city.toLowerCase().includes(searchTerm)) ||
+            (cust.email && cust.email.toLowerCase().includes(searchTerm));
+        return typeMatch && searchMatch;
+    });
+
+    displayFilteredSuppliers(filtered);
+}, 300);
+
+// Display filtered suppliers
+function displayFilteredSuppliers(suppliers) {
+    const tbody = document.getElementById('suppliersTableBody');
+    if (!tbody) return;
+
+    if (suppliers.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center" style="color: var(--text-secondary);">
+                    No suppliers found matching your search.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    let html = '';
+    suppliers.forEach(cust => {
+        html += `
+            <tr>
+                <td>${cust.companyName}</td>
+                <td>${cust.gstin}</td>
+                <td>${cust.contactPerson || '-'}</td>
+                <td>${cust.phone}</td>
+                <td>${cust.city || '-'}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="icon-btn edit" onclick="editCustomer('${cust.id}')" title="Edit">✏️</button>
+                        <button class="icon-btn delete" onclick="deleteCustomer('${cust.id}')" title="Delete">🗑️</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
     tbody.innerHTML = html;
 }
 
@@ -267,4 +327,5 @@ function displayFilteredEmployees(employees) {
 window.searchInward = searchInward;
 window.searchOutward = searchOutward;
 window.searchCustomers = searchCustomers;
+window.searchSuppliers = searchSuppliers;
 window.searchEmployees = searchEmployees;
