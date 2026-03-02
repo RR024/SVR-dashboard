@@ -1445,10 +1445,66 @@ function saveInwardInvoice() {
     }
 
     saveToStorage('inwardInvoices', invoices);
+
+    // Sync new products to the matching supplier record
+    syncInwardProductsToSupplier(invoiceData);
+
     closeInwardModal();
     loadInwardInvoices();
     loadDashboard();
     showToast('Inward invoice saved successfully!', 'success');
+}
+
+/**
+ * After saving a purchase (inward) invoice, add any new products
+ * to the matching supplier's product list (avoids duplicates).
+ */
+function syncInwardProductsToSupplier(invoiceData) {
+    if (!invoiceData || !invoiceData.customer || !invoiceData.products || invoiceData.products.length === 0) return;
+
+    const allCustomers = loadFromStorage('customers') || [];
+    const supplierIndex = allCustomers.findIndex(
+        c => (c.type === 'supplier') && c.companyName === invoiceData.customer
+    );
+
+    if (supplierIndex === -1) return; // Supplier not found — skip
+
+    const supplier = allCustomers[supplierIndex];
+    if (!supplier.products) supplier.products = [];
+
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    let changed = false;
+
+    invoiceData.products.forEach(product => {
+        if (!product.material) return;
+
+        const exists = supplier.products.find(
+            p => p.description && p.description.toLowerCase() === product.material.toLowerCase()
+        );
+
+        if (!exists) {
+            // New product — add to supplier's product list
+            supplier.products.push({
+                id: Date.now().toString() + Math.random().toString(36).slice(2, 7),
+                description: product.material,
+                hsn: '',
+                poQty: 0,
+                price: product.rate || 0,
+                lastUpdated: currentMonth
+            });
+            changed = true;
+        } else if (product.rate && exists.price !== product.rate) {
+            // Update rate if it has changed
+            exists.price = product.rate;
+            exists.lastUpdated = currentMonth;
+            changed = true;
+        }
+    });
+
+    if (changed) {
+        allCustomers[supplierIndex] = supplier;
+        saveToStorage('customers', allCustomers);
+    }
 }
 
 
