@@ -320,7 +320,7 @@ function addCustomerProduct(productData = null) {
                     style="position: absolute; top: 0.5rem; right: 0.5rem;" title="Remove Product">×</button>
             
             
-            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 0.75rem;">
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 0.75rem;">
                 <div class="form-group" style="margin: 0;">
                     <label class="form-label" style="font-size: 0.875rem;">Product Description</label>
                     <input type="text" class="form-control customer-product-description" 
@@ -328,16 +328,21 @@ function addCustomerProduct(productData = null) {
                 </div>
                 
                 <div class="form-group" style="margin: 0;">
-                    <label class="form-label" style="font-size: 0.875rem;">HSN Code</label>
-                    <input type="text" class="form-control customer-product-hsn" 
-                           placeholder="e.g., 87082900" value="${productData?.hsn || ''}">
+                    <label class="form-label" style="font-size: 0.875rem;">Height (mm)</label>
+                    <input type="number" class="form-control customer-product-height" 
+                           placeholder="e.g., 10" value="${productData?.height || ''}" step="0.01" min="0">
                 </div>
                 
                 <div class="form-group" style="margin: 0;">
-                    <label class="form-label" style="font-size: 0.875rem;">PO Qty/Month</label>
-                    <input type="number" class="form-control customer-product-po" 
-                           placeholder="e.g., 50000" value="${productData?.poQty || ''}" min="0" 
-                           title="Purchase Order quantity per month">
+                    <label class="form-label" style="font-size: 0.875rem;">Width (mm)</label>
+                    <input type="number" class="form-control customer-product-width" 
+                           placeholder="e.g., 20" value="${productData?.width || ''}" step="0.01" min="0">
+                </div>
+
+                <div class="form-group" style="margin: 0;">
+                    <label class="form-label" style="font-size: 0.875rem;">Breadth (mm)</label>
+                    <input type="number" class="form-control customer-product-breadth" 
+                           placeholder="e.g., 5" value="${productData?.breadth || ''}" step="0.01" min="0">
                 </div>
                 
                 <div class="form-group" style="margin: 0;">
@@ -403,8 +408,9 @@ function getCustomerProductsFromForm() {
     productItems.forEach(item => {
         const productId = item.getAttribute('data-product-id');
         const description = item.querySelector('.customer-product-description').value.trim();
-        const hsn = item.querySelector('.customer-product-hsn').value.trim();
-        const poQty = item.querySelector('.customer-product-po').value;
+        const height = item.querySelector('.customer-product-height').value;
+        const width = item.querySelector('.customer-product-width').value;
+        const breadth = item.querySelector('.customer-product-breadth').value;
         const price = item.querySelector('.customer-product-price').value;
 
         // Only add if description is filled
@@ -412,15 +418,20 @@ function getCustomerProductsFromForm() {
             // Check if this is an existing product
             const existingProduct = existingProducts.find(p => p.id === productId);
 
-            // Determine lastUpdated: update if price or PO changed, otherwise keep old value
+            // Determine lastUpdated: update if price or dimensions changed, otherwise keep old value
             let lastUpdated = currentMonth; // Default to current month for new products
 
             if (existingProduct) {
-                const newPoQty = poQty ? parseFloat(poQty) : 0;
+                const newHeight = height ? parseFloat(height) : 0;
+                const newWidth = width ? parseFloat(width) : 0;
+                const newBreadth = breadth ? parseFloat(breadth) : 0;
                 const newPrice = price ? parseFloat(price) : 0;
 
-                // If price or PO qty changed, update lastUpdated to current month
-                if (existingProduct.price !== newPrice || existingProduct.poQty !== newPoQty) {
+                // If price or dimensions changed, update lastUpdated to current month
+                if (existingProduct.price !== newPrice ||
+                    existingProduct.height !== newHeight ||
+                    existingProduct.width !== newWidth ||
+                    existingProduct.breadth !== newBreadth) {
                     lastUpdated = currentMonth;
                 } else {
                     // Keep existing lastUpdated if no changes
@@ -431,8 +442,9 @@ function getCustomerProductsFromForm() {
             products.push({
                 id: productId,
                 description: description,
-                hsn: hsn || '',
-                poQty: poQty ? parseFloat(poQty) : 0,
+                height: height ? parseFloat(height) : 0,
+                width: width ? parseFloat(width) : 0,
+                breadth: breadth ? parseFloat(breadth) : 0,
                 price: price ? parseFloat(price) : 0,
                 lastUpdated: lastUpdated
             });

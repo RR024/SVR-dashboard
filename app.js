@@ -1487,8 +1487,9 @@ function syncInwardProductsToSupplier(invoiceData) {
             supplier.products.push({
                 id: Date.now().toString() + Math.random().toString(36).slice(2, 7),
                 description: product.material,
-                hsn: '',
-                poQty: 0,
+                height: 0,
+                width: 0,
+                breadth: 0,
                 price: product.rate || 0,
                 lastUpdated: currentMonth
             });
@@ -2182,7 +2183,7 @@ function saveQuickProduct() {
         hsn: hsn || '',
         price: price ? parseFloat(price) : 0,
         poQty: poQty ? parseFloat(poQty) : 0,
-        lastUpdated: currentMonth  // Track when price/PO was set
+        lastUpdated: currentMonth
     };
 
     // Add product to customer's product list
