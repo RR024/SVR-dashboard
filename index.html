@@ -309,27 +309,29 @@
                     <div class="stat-card success clickable-card" onclick="showCurrentMonthSalesModal()"
                         title="Click to view Sales Details">
                         <div class="stat-label">📈 Current Month Sales</div>
-                        <div class="stat-value" id="currentMonthSalesAmount">₹0</div>
-                        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin: 0.2rem 0 0.15rem; font-size:0.78rem;">
-                            <span style="color:var(--text-secondary);">With Tax:</span>
-                            <span id="currentMonthSalesWithTax" style="font-weight:600; color:var(--text-primary);">₹0.00</span>
-                            <span style="color:var(--bg-tertiary);">|</span>
-                            <span style="color:var(--text-secondary);">Without Tax:</span>
-                            <span id="currentMonthSalesWithoutTax" style="font-weight:600; color:var(--text-secondary);">₹0.00</span>
+                        <div style="margin: 0.4rem 0 0.25rem;">
+                            <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.15rem;">With Tax</div>
+                            <div id="currentMonthSalesWithTax" class="stat-value" style="margin:0;">₹0.00</div>
                         </div>
+                        <div style="margin-bottom:0.25rem;">
+                            <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.15rem;">Without Tax</div>
+                            <div id="currentMonthSalesWithoutTax" class="stat-value" style="margin:0; font-size:1.4rem;">₹0.00</div>
+                        </div>
+                        <input type="hidden" id="currentMonthSalesAmount" value="0">
                         <div class="stat-change" id="currentMonthSalesCount">0 invoices</div>
                     </div>
                     <div class="stat-card clickable-card" style="border-top: 4px solid #ef4444;"
                         onclick="navigateToModule('inward-invoice')" title="Click to view Purchase Invoices">
                         <div class="stat-label">📉 Current Month Purchase</div>
-                        <div class="stat-value" id="currentMonthPurchaseAmount">₹0</div>
-                        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin: 0.2rem 0 0.15rem; font-size:0.78rem;">
-                            <span style="color:var(--text-secondary);">With Tax:</span>
-                            <span id="currentMonthPurchaseWithTax" style="font-weight:600; color:var(--text-primary);">₹0.00</span>
-                            <span style="color:var(--bg-tertiary);">|</span>
-                            <span style="color:var(--text-secondary);">Without Tax:</span>
-                            <span id="currentMonthPurchaseWithoutTax" style="font-weight:600; color:var(--text-secondary);">₹0.00</span>
+                        <div style="margin: 0.4rem 0 0.25rem;">
+                            <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.15rem;">With Tax</div>
+                            <div id="currentMonthPurchaseWithTax" class="stat-value" style="margin:0;">₹0.00</div>
                         </div>
+                        <div style="margin-bottom:0.25rem;">
+                            <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.15rem;">Without Tax</div>
+                            <div id="currentMonthPurchaseWithoutTax" class="stat-value" style="margin:0; font-size:1.4rem;">₹0.00</div>
+                        </div>
+                        <input type="hidden" id="currentMonthPurchaseAmount" value="0">
                         <div class="stat-change" id="currentMonthPurchaseCount">0 invoices</div>
                     </div>
                 </div>
