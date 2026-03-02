@@ -314,37 +314,51 @@ function addCustomerProduct(productData = null) {
         lastUpdatedBadge = `<div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">Last recorded: ${formatProductMonth(lastUpdated)}</div>`;
     }
 
-    const productHtml = `
-        <div class="customer-product-item" data-product-id="${productId}" style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1rem; position: relative;">
-            <button type="button" class="icon-btn delete" onclick="removeCustomerProduct('${productId}')" 
-                    style="position: absolute; top: 0.5rem; right: 0.5rem;" title="Remove Product">×</button>
-            
-            
-            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 0.75rem;">
-                <div class="form-group" style="margin: 0;">
-                    <label class="form-label" style="font-size: 0.875rem;">Product Description</label>
-                    <input type="text" class="form-control customer-product-description" 
-                           placeholder="e.g., Washer Plain, 5036" value="${productData?.description || ''}" required>
-                </div>
-                
+    const entityType = document.getElementById('customerType')?.value || 'customer';
+    const isSupplier = entityType === 'supplier';
+
+    const extraFields = isSupplier ? `
                 <div class="form-group" style="margin: 0;">
                     <label class="form-label" style="font-size: 0.875rem;">Height (mm)</label>
                     <input type="number" class="form-control customer-product-height" 
                            placeholder="e.g., 10" value="${productData?.height || ''}" step="0.01" min="0">
                 </div>
-                
                 <div class="form-group" style="margin: 0;">
                     <label class="form-label" style="font-size: 0.875rem;">Width (mm)</label>
                     <input type="number" class="form-control customer-product-width" 
                            placeholder="e.g., 20" value="${productData?.width || ''}" step="0.01" min="0">
                 </div>
-
                 <div class="form-group" style="margin: 0;">
                     <label class="form-label" style="font-size: 0.875rem;">Breadth (mm)</label>
                     <input type="number" class="form-control customer-product-breadth" 
                            placeholder="e.g., 5" value="${productData?.breadth || ''}" step="0.01" min="0">
+                </div>` : `
+                <div class="form-group" style="margin: 0;">
+                    <label class="form-label" style="font-size: 0.875rem;">HSN Code</label>
+                    <input type="text" class="form-control customer-product-hsn" 
+                           placeholder="e.g., 87082900" value="${productData?.hsn || ''}">
                 </div>
-                
+                <div class="form-group" style="margin: 0;">
+                    <label class="form-label" style="font-size: 0.875rem;">PO Qty/Month</label>
+                    <input type="number" class="form-control customer-product-po" 
+                           placeholder="e.g., 50000" value="${productData?.poQty || ''}" min="0" 
+                           title="Purchase Order quantity per month">
+                </div>`;
+
+    const gridCols = isSupplier ? '2fr 1fr 1fr 1fr 1fr' : '2fr 1fr 1fr 1fr';
+
+    const productHtml = `
+        <div class="customer-product-item" data-product-id="${productId}" style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1rem; position: relative;">
+            <button type="button" class="icon-btn delete" onclick="removeCustomerProduct('${productId}')" 
+                    style="position: absolute; top: 0.5rem; right: 0.5rem;" title="Remove Product">×</button>
+            
+            <div style="display: grid; grid-template-columns: ${gridCols}; gap: 0.75rem;">
+                <div class="form-group" style="margin: 0;">
+                    <label class="form-label" style="font-size: 0.875rem;">Product Description</label>
+                    <input type="text" class="form-control customer-product-description" 
+                           placeholder="e.g., Washer Plain, 5036" value="${productData?.description || ''}" required>
+                </div>
+                ${extraFields}
                 <div class="form-group" style="margin: 0;">
                     <label class="form-label" style="font-size: 0.875rem;">Price (₹)</label>
                     <input type="number" class="form-control customer-product-price" 
@@ -400,6 +414,7 @@ function getCustomerProductsFromForm() {
     const productItems = document.querySelectorAll('.customer-product-item');
     const products = [];
     const currentMonth = new Date().toISOString().slice(0, 7);
+    const isSupplier = (document.getElementById('customerType')?.value || 'customer') === 'supplier';
 
     // Get existing products to compare for changes
     const customerId = document.getElementById('customerId').value;
@@ -408,43 +423,50 @@ function getCustomerProductsFromForm() {
     productItems.forEach(item => {
         const productId = item.getAttribute('data-product-id');
         const description = item.querySelector('.customer-product-description').value.trim();
-        const height = item.querySelector('.customer-product-height').value;
-        const width = item.querySelector('.customer-product-width').value;
-        const breadth = item.querySelector('.customer-product-breadth').value;
         const price = item.querySelector('.customer-product-price').value;
 
-        // Only add if description is filled
-        if (description) {
-            // Check if this is an existing product
-            const existingProduct = existingProducts.find(p => p.id === productId);
+        if (!description) return;
 
-            // Determine lastUpdated: update if price or dimensions changed, otherwise keep old value
-            let lastUpdated = currentMonth; // Default to current month for new products
+        const existingProduct = existingProducts.find(p => p.id === productId);
+        let lastUpdated = currentMonth;
+
+        if (isSupplier) {
+            const height = item.querySelector('.customer-product-height')?.value || '';
+            const width  = item.querySelector('.customer-product-width')?.value  || '';
+            const breadth = item.querySelector('.customer-product-breadth')?.value || '';
 
             if (existingProduct) {
-                const newHeight = height ? parseFloat(height) : 0;
-                const newWidth = width ? parseFloat(width) : 0;
-                const newBreadth = breadth ? parseFloat(breadth) : 0;
-                const newPrice = price ? parseFloat(price) : 0;
-
-                // If price or dimensions changed, update lastUpdated to current month
-                if (existingProduct.price !== newPrice ||
-                    existingProduct.height !== newHeight ||
-                    existingProduct.width !== newWidth ||
-                    existingProduct.breadth !== newBreadth) {
-                    lastUpdated = currentMonth;
-                } else {
-                    // Keep existing lastUpdated if no changes
-                    lastUpdated = existingProduct.lastUpdated || currentMonth;
-                }
+                const noChange = existingProduct.price === (price ? parseFloat(price) : 0) &&
+                    existingProduct.height === (height ? parseFloat(height) : 0) &&
+                    existingProduct.width  === (width  ? parseFloat(width)  : 0) &&
+                    existingProduct.breadth === (breadth ? parseFloat(breadth) : 0);
+                lastUpdated = noChange ? (existingProduct.lastUpdated || currentMonth) : currentMonth;
             }
 
             products.push({
                 id: productId,
                 description: description,
-                height: height ? parseFloat(height) : 0,
-                width: width ? parseFloat(width) : 0,
+                height:  height  ? parseFloat(height)  : 0,
+                width:   width   ? parseFloat(width)   : 0,
                 breadth: breadth ? parseFloat(breadth) : 0,
+                price:   price   ? parseFloat(price)   : 0,
+                lastUpdated: lastUpdated
+            });
+        } else {
+            const hsn   = item.querySelector('.customer-product-hsn')?.value.trim()  || '';
+            const poQty = item.querySelector('.customer-product-po')?.value || '';
+
+            if (existingProduct) {
+                const noChange = existingProduct.price === (price ? parseFloat(price) : 0) &&
+                    existingProduct.poQty === (poQty ? parseFloat(poQty) : 0);
+                lastUpdated = noChange ? (existingProduct.lastUpdated || currentMonth) : currentMonth;
+            }
+
+            products.push({
+                id: productId,
+                description: description,
+                hsn:   hsn,
+                poQty: poQty ? parseFloat(poQty) : 0,
                 price: price ? parseFloat(price) : 0,
                 lastUpdated: lastUpdated
             });
