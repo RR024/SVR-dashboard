@@ -29,6 +29,29 @@ function switchSalesTab(tab) {
     }
 }
 
+// Resolve HSN from invoice product data with backward-compatible fallbacks.
+function resolveProductHSN(invoice, product) {
+    const directHSN = (
+        product?.hsn ||
+        product?.hsnCode ||
+        product?.HSN ||
+        product?.hsn_code ||
+        ''
+    ).toString().trim();
+
+    if (directHSN) return directHSN;
+
+    const customerName = (invoice?.buyerName || '').toString().trim();
+    const productName = (product?.description || '').toString().trim();
+    if (!customerName || !productName) return '';
+
+    const customer = getCustomers().find(c => (c.companyName || '').trim() === customerName);
+    if (!customer || !Array.isArray(customer.products)) return '';
+
+    const customerProduct = customer.products.find(p => (p.description || '').trim() === productName);
+    return (customerProduct?.hsn || customerProduct?.hsnCode || '').toString().trim();
+}
+
 // Calculate comprehensive product sales summary (all time, sorted by amount)
 function displayProductSalesSummary() {
     const invoices = getOutwardInvoices();
@@ -81,6 +104,7 @@ function displayProductSalesSummary() {
 
     // Display in table
     const tbody = document.getElementById('productSummaryTableBody');
+    if (!tbody) return;
 
     if (sortedProducts.length === 0) {
         tbody.innerHTML = `
@@ -145,6 +169,7 @@ function loadProductSalesDetails() {
                     date: inv.date || '',
                     customerName: inv.buyerName || '',
                     productName: desc,
+                    hsn: resolveProductHSN(inv, product),
                     quantity: parseFloat(product.quantity) || 0,
                     unitPrice: parseFloat(product.rate) || 0,
                     totalValue: parseFloat(product.value) || 0
@@ -222,6 +247,16 @@ function populateProductSalesFilters(productRows) {
             productSelect.innerHTML += `<option value="${product}">${product}</option>`;
         });
     }
+
+    // Get unique HSN codes
+    const hsnCodes = [...new Set(productRows.map(row => row.hsn).filter(h => h && h.trim()))].sort();
+    const hsnSelect = document.getElementById('product-filter-hsn-select');
+    if (hsnSelect) {
+        hsnSelect.innerHTML = '<option value="">All HSN Codes</option>';
+        hsnCodes.forEach(hsn => {
+            hsnSelect.innerHTML += `<option value="${hsn}">${hsn}</option>`;
+        });
+    }
 }
 
 // Display product rows in table
@@ -231,7 +266,7 @@ function displayProductRows(rows) {
     if (rows.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="7" class="text-center" style="color: var(--text-secondary);">
+                <td colspan="8" class="text-center" style="color: var(--text-secondary);">
                     No matching products found.
                 </td>
             </tr>
@@ -256,6 +291,7 @@ function displayProductRows(rows) {
                 <td>${formatDate(row.date)}</td>
                 <td>${row.customerName}</td>
                 <td>${row.productName}</td>
+                <td>${row.hsn || '-'}</td>
                 <td>${row.quantity.toLocaleString('en-IN')}</td>
                 <td>₹${row.unitPrice.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                 <td>₹${row.totalValue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
@@ -266,7 +302,7 @@ function displayProductRows(rows) {
     // Add total row at the end
     html += `
         <tr style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-top: 2px solid var(--primary); font-weight: 600;">
-            <td colspan="4" style="text-align: right; padding-right: 1rem; font-size: 1.05rem; color: var(--primary);">
+            <td colspan="5" style="text-align: right; padding-right: 1rem; font-size: 1.05rem; color: var(--primary);">
                 📊 Total:
             </td>
             <td style="font-size: 1.05rem; color: var(--primary);">
@@ -317,6 +353,7 @@ function applyProductSalesFilter() {
     const dateTo = document.getElementById('product-filter-date-to')?.value || '';
     const customerFilter = document.getElementById('product-filter-customer-select')?.value || '';
     const productFilter = document.getElementById('product-filter-product-select')?.value || '';
+    const hsnFilter = document.getElementById('product-filter-hsn-select')?.value || '';
     const qtyMin = parseFloat(document.getElementById('product-filter-quantity-min')?.value) || null;
     const qtyMax = parseFloat(document.getElementById('product-filter-quantity-max')?.value) || null;
     const priceMin = parseFloat(document.getElementById('product-filter-price-min')?.value) || null;
@@ -341,6 +378,7 @@ function applyProductSalesFilter() {
                     date: inv.date || '',
                     customerName: inv.buyerName || '',
                     productName: desc,
+                    hsn: resolveProductHSN(inv, product),
                     quantity: parseFloat(product.quantity) || 0,
                     unitPrice: parseFloat(product.rate) || 0,
                     totalValue: parseFloat(product.value) || 0
@@ -388,6 +426,9 @@ function applyProductSalesFilter() {
         // Product filter (use the potentially-reset value)
         const matchesProduct = productFilterFinal === '' || row.productName === productFilterFinal;
 
+        // HSN filter
+        const matchesHSN = hsnFilter === '' || row.hsn === hsnFilter;
+
         // Quantity range filter
         let matchesQuantity = true;
         if (qtyMin !== null && row.quantity < qtyMin) matchesQuantity = false;
@@ -407,7 +448,7 @@ function applyProductSalesFilter() {
         const activeNames = getActiveProductNames(customerFilter || null);
         const matchesActive = activeNames.size === 0 || activeNames.has(row.productName);
 
-        return matchesInvoice && matchesDate && matchesCustomer && matchesProduct &&
+        return matchesInvoice && matchesDate && matchesCustomer && matchesProduct && matchesHSN &&
             matchesQuantity && matchesPrice && matchesTotal && matchesActive;
     });
 

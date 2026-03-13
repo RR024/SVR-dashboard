@@ -310,12 +310,12 @@
                         title="Click to view Sales Details">
                         <div class="stat-label">📈 Current Month Sales</div>
                         <div style="margin: 0.4rem 0 0.25rem;">
-                            <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.15rem;">With Tax</div>
-                            <div id="currentMonthSalesWithTax" class="stat-value" style="margin:0;">₹0.00</div>
+                            <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.15rem;">Without Tax</div>
+                            <div id="currentMonthSalesWithoutTax" class="stat-value" style="margin:0;">₹0.00</div>
                         </div>
                         <div style="margin-bottom:0.25rem;">
-                            <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.15rem;">Without Tax</div>
-                            <div id="currentMonthSalesWithoutTax" class="stat-value" style="margin:0; font-size:1.4rem;">₹0.00</div>
+                            <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.15rem;">With Tax</div>
+                            <div id="currentMonthSalesWithTax" class="stat-value" style="margin:0; font-size:1.2rem;">₹0.00</div>
                         </div>
                         <input type="hidden" id="currentMonthSalesAmount" value="0">
                         <div class="stat-change" id="currentMonthSalesCount">0 invoices</div>
@@ -324,12 +324,12 @@
                         onclick="navigateToModule('inward-invoice')" title="Click to view Purchase Invoices">
                         <div class="stat-label">📉 Current Month Purchase</div>
                         <div style="margin: 0.4rem 0 0.25rem;">
-                            <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.15rem;">With Tax</div>
-                            <div id="currentMonthPurchaseWithTax" class="stat-value" style="margin:0;">₹0.00</div>
+                            <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.15rem;">Without Tax</div>
+                            <div id="currentMonthPurchaseWithoutTax" class="stat-value" style="margin:0;">₹0.00</div>
                         </div>
                         <div style="margin-bottom:0.25rem;">
-                            <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.15rem;">Without Tax</div>
-                            <div id="currentMonthPurchaseWithoutTax" class="stat-value" style="margin:0; font-size:1.4rem;">₹0.00</div>
+                            <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.15rem;">With Tax</div>
+                            <div id="currentMonthPurchaseWithTax" class="stat-value" style="margin:0; font-size:1.2rem;">₹0.00</div>
                         </div>
                         <input type="hidden" id="currentMonthPurchaseAmount" value="0">
                         <div class="stat-change" id="currentMonthPurchaseCount">0 invoices</div>
@@ -690,34 +690,6 @@
 
                 <!-- Product Sales Details Content -->
                 <div id="productDetailsContent" style="display: none;">
-                    <!-- Product Sales Summary Card -->
-                    <div class="card" style="margin-bottom: 2rem;">
-                        <div class="card-header">
-                            <h3 class="card-title">📊 Product Sales Summary</h3>
-                        </div>
-                        <div style="max-height: 400px; overflow-y: auto;">
-                            <table class="data-table" style="margin: 0;">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 5%;">#</th>
-                                        <th style="width: 35%;">Product Description</th>
-                                        <th style="width: 35%;">Customers</th>
-                                        <th style="width: 15%;">Total Qty</th>
-                                        <th style="width: 20%;">Total Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="productSummaryTableBody">
-                                    <tr>
-                                        <td colspan="5" class="text-center" style="color: var(--text-secondary);">
-                                            No product sales data yet.
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-
 
                     <!-- Product Sales Table -->
                     <div class="card">
@@ -780,6 +752,19 @@
                                             </div>
                                         </th>
                                         <th>
+                                            HSN Code
+                                            <button class="column-filter-btn"
+                                                onclick="toggleProductColumnFilter(event, 'hsn')">▼</button>
+                                            <div class="column-filter-dropdown" id="product-filter-hsn"
+                                                style="display: none;">
+                                                <select id="product-filter-hsn-select" class="filter-input"
+                                                    onchange="applyProductSalesFilter()"
+                                                    style="width: 100%; padding: 0.5rem; cursor: pointer;">
+                                                    <option value="">All HSN Codes</option>
+                                                </select>
+                                            </div>
+                                        </th>
+                                        <th>
                                             Quantity
                                             <button class="column-filter-btn"
                                                 onclick="toggleProductColumnFilter(event, 'quantity')">▼</button>
@@ -823,7 +808,7 @@
                                 </thead>
                                 <tbody id="productSalesTableBody">
                                     <tr>
-                                        <td colspan="7" class="text-center" style="color: var(--text-secondary);">
+                                        <td colspan="8" class="text-center" style="color: var(--text-secondary);">
                                             No product sales data yet.
                                         </td>
                                     </tr>
