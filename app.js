@@ -388,61 +388,6 @@ function loadHRModule() {
 }
 
 
-// Get employees from localStorage
-function getEmployees() {
-    return loadFromStorage('employees') || [];
-}
-
-// Set employees to localStorage
-function setEmployees(employees) {
-    saveToStorage('employees', employees);
-}
-
-// Load employees table
-function loadEmployees() {
-    const employees = getEmployees();
-    const tableBody = document.getElementById('employeeTableBody');
-
-    if (!tableBody) {
-        console.warn('Employee table body not found');
-        return;
-    }
-
-    if (employees.length === 0) {
-        tableBody.innerHTML = `
-            <tr>
-                <td colspan="7" class="text-center" style="padding: 2rem; color: var(--text-secondary);">
-                    No employees yet. Click "Add Employee" to create one.
-                </td>
-            </tr>
-        `;
-        return;
-    }
-
-    tableBody.innerHTML = employees.map(emp => `
-        <tr>
-            <td>${emp.empId || '-'}</td>
-            <td>${emp.name || '-'}</td>
-            <td>${emp.designation || '-'}</td>
-            <td>${emp.department || '-'}</td>
-            <td>${emp.phone || '-'}</td>
-            <td>
-                <span class="badge ${emp.status === 'Active' ? 'success' : 'secondary'}">
-                    ${emp.status || 'Active'}
-                </span>
-            </td>
-            <td>
-                <button class="btn btn-sm btn-secondary" onclick="editEmployee('${emp.id}')" title="Edit">
-                    ✏️
-                </button>
-                <button class="btn btn-sm btn-danger" onclick="deleteEmployee('${emp.id}')" title="Delete">
-                    🗑️
-                </button>
-            </td>
-        </tr>
-    `).join('');
-}
-
 // Update HR summary cards
 function updateHRSummary() {
 
@@ -3674,8 +3619,12 @@ function loadAttendanceHistory() {
     const statsContainer = document.getElementById('attendanceStatsContainer');
     const countBadge = document.getElementById('attRecordCount');
 
-    // Initialize employee filter dropdown if empty
-    if (filterSelect && filterSelect.options.length <= 1) {
+    // Initialize employee filter dropdown
+    if (filterSelect) {
+        // Keep the first option (typically "All Employees" or placeholder)
+        const firstOption = filterSelect.options.length > 0 ? filterSelect.options[0].outerHTML : '<option value="">All Employees</option>';
+        filterSelect.innerHTML = firstOption;
+        
         const employees = getEmployees();
         employees.forEach(emp => {
             const option = document.createElement('option');
