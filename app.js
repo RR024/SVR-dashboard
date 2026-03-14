@@ -3659,7 +3659,10 @@ function loadAttendanceHistory() {
     const selectedStatus = statusFilter   ? statusFilter.value   : '';
 
     // Apply filters
-    if (selectedEmpId)  records = records.filter(r => r.employeeId === selectedEmpId);
+    if (selectedEmpId)  {
+        // Allow matching by the internal ID or the visible EmpID
+        records = records.filter(r => r.employeeId == selectedEmpId || r.employeeEmpId == selectedEmpId);
+    }
     if (selectedMonth)  records = records.filter(r => r.date.startsWith(selectedMonth));
     if (selectedStatus) records = records.filter(r => r.status === selectedStatus);
 
@@ -3949,7 +3952,9 @@ function exportAttendanceCSV() {
     const filterEmpId    = document.getElementById('attendanceEmployeeFilter')?.value;
     const filterMonth    = document.getElementById('attendanceHistoryMonth')?.value;
     const filterStatus   = document.getElementById('attendanceStatusFilter')?.value;
-    if (filterEmpId)   records = records.filter(r => r.employeeId === filterEmpId);
+    if (filterEmpId)   {
+        records = records.filter(r => r.employeeId == filterEmpId || r.employeeEmpId == filterEmpId);
+    }
     if (filterMonth)   records = records.filter(r => r.date.startsWith(filterMonth));
     if (filterStatus)  records = records.filter(r => r.status === filterStatus);
     if (records.length === 0) { showToast('No records to export for the current filters.', 'warning'); return; }
