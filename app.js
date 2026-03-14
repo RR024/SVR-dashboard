@@ -3621,6 +3621,8 @@ function loadAttendanceHistory() {
 
     // Initialize employee filter dropdown
     if (filterSelect) {
+        const currentSelection = filterSelect.value; // Store what user just selected
+        
         // Keep the first option (typically "All Employees" or placeholder)
         const firstOption = filterSelect.options.length > 0 ? filterSelect.options[0].outerHTML : '<option value="">All Employees</option>';
         filterSelect.innerHTML = firstOption;
@@ -3632,6 +3634,8 @@ function loadAttendanceHistory() {
             option.textContent = `${emp.name} (${emp.empId})`;
             filterSelect.appendChild(option);
         });
+        
+        if (currentSelection) filterSelect.value = currentSelection; // Restore selection
     }
 
     // Initialize month if empty
