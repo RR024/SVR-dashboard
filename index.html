@@ -482,9 +482,14 @@
                             placeholder="🔍 Search by invoice no, customer, material..."
                             oninput="searchInward(this.value)" style="margin: 0;">
                     </div>
-                    <button class="btn btn-primary" onclick="openInwardModal()">
-                        <span>➕</span> New Purchase Invoice
-                    </button>
+                    <div style="display: flex; gap: 0.75rem;">
+                        <button class="btn btn-secondary" onclick="exportInwardInvoicesToJSON()" title="Export all purchase invoices as JSON">
+                            <span>📥</span> Export JSON
+                        </button>
+                        <button class="btn btn-primary" onclick="openInwardModal()">
+                            <span>➕</span> New Purchase Invoice
+                        </button>
+                    </div>
                 </div>
 
                 <div class="card">
@@ -587,9 +592,14 @@
                             placeholder="🔍 Search by invoice no, buyer, GST..." oninput="searchOutward(this.value)"
                             style="margin: 0;">
                     </div>
-                    <button class="btn btn-primary" onclick="openOutwardModal()">
-                        <span>➕</span> New Tax Invoice
-                    </button>
+                    <div style="display: flex; gap: 0.75rem;">
+                        <button class="btn btn-secondary" onclick="exportOutwardInvoicesToJSON()" title="Export all sales invoices as JSON">
+                            <span>📥</span> Export JSON
+                        </button>
+                        <button class="btn btn-primary" onclick="openOutwardModal()">
+                            <span>➕</span> New Tax Invoice
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Tab Navigation -->
@@ -4284,6 +4294,7 @@
     <script src="diary-inline.js"></script>
     <script src="material-calculation.js"></script>
     <script src="app.js"></script>
+    <script src="invoice-export.js"></script>
 </body>
 
 </html>
