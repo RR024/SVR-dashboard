@@ -388,61 +388,6 @@ function loadHRModule() {
 }
 
 
-// Get employees from localStorage
-function getEmployees() {
-    return loadFromStorage('employees') || [];
-}
-
-// Set employees to localStorage
-function setEmployees(employees) {
-    saveToStorage('employees', employees);
-}
-
-// Load employees table
-function loadEmployees() {
-    const employees = getEmployees();
-    const tableBody = document.getElementById('employeeTableBody');
-
-    if (!tableBody) {
-        console.warn('Employee table body not found');
-        return;
-    }
-
-    if (employees.length === 0) {
-        tableBody.innerHTML = `
-            <tr>
-                <td colspan="7" class="text-center" style="padding: 2rem; color: var(--text-secondary);">
-                    No employees yet. Click "Add Employee" to create one.
-                </td>
-            </tr>
-        `;
-        return;
-    }
-
-    tableBody.innerHTML = employees.map(emp => `
-        <tr>
-            <td>${emp.empId || '-'}</td>
-            <td>${emp.name || '-'}</td>
-            <td>${emp.designation || '-'}</td>
-            <td>${emp.department || '-'}</td>
-            <td>${emp.phone || '-'}</td>
-            <td>
-                <span class="badge ${emp.status === 'Active' ? 'success' : 'secondary'}">
-                    ${emp.status || 'Active'}
-                </span>
-            </td>
-            <td>
-                <button class="btn btn-sm btn-secondary" onclick="editEmployee('${emp.id}')" title="Edit">
-                    ✏️
-                </button>
-                <button class="btn btn-sm btn-danger" onclick="deleteEmployee('${emp.id}')" title="Delete">
-                    🗑️
-                </button>
-            </td>
-        </tr>
-    `).join('');
-}
-
 // Update HR summary cards
 function updateHRSummary() {
 
@@ -3674,8 +3619,14 @@ function loadAttendanceHistory() {
     const statsContainer = document.getElementById('attendanceStatsContainer');
     const countBadge = document.getElementById('attRecordCount');
 
-    // Initialize employee filter dropdown if empty
-    if (filterSelect && filterSelect.options.length <= 1) {
+    // Initialize employee filter dropdown
+    if (filterSelect) {
+        const currentSelection = filterSelect.value; // Store what user just selected
+        
+        // Keep the first option (typically "All Employees" or placeholder)
+        const firstOption = filterSelect.options.length > 0 ? filterSelect.options[0].outerHTML : '<option value="">All Employees</option>';
+        filterSelect.innerHTML = firstOption;
+        
         const employees = getEmployees();
         employees.forEach(emp => {
             const option = document.createElement('option');
@@ -3683,6 +3634,8 @@ function loadAttendanceHistory() {
             option.textContent = `${emp.name} (${emp.empId})`;
             filterSelect.appendChild(option);
         });
+        
+        if (currentSelection) filterSelect.value = currentSelection; // Restore selection
     }
 
     // Initialize month if empty
@@ -3710,7 +3663,10 @@ function loadAttendanceHistory() {
     const selectedStatus = statusFilter   ? statusFilter.value   : '';
 
     // Apply filters
-    if (selectedEmpId)  records = records.filter(r => r.employeeId === selectedEmpId);
+    if (selectedEmpId)  {
+        // Allow matching by the internal ID or the visible EmpID
+        records = records.filter(r => r.employeeId == selectedEmpId || r.employeeEmpId == selectedEmpId);
+    }
     if (selectedMonth)  records = records.filter(r => r.date.startsWith(selectedMonth));
     if (selectedStatus) records = records.filter(r => r.status === selectedStatus);
 
@@ -4000,7 +3956,9 @@ function exportAttendanceCSV() {
     const filterEmpId    = document.getElementById('attendanceEmployeeFilter')?.value;
     const filterMonth    = document.getElementById('attendanceHistoryMonth')?.value;
     const filterStatus   = document.getElementById('attendanceStatusFilter')?.value;
-    if (filterEmpId)   records = records.filter(r => r.employeeId === filterEmpId);
+    if (filterEmpId)   {
+        records = records.filter(r => r.employeeId == filterEmpId || r.employeeEmpId == filterEmpId);
+    }
     if (filterMonth)   records = records.filter(r => r.date.startsWith(filterMonth));
     if (filterStatus)  records = records.filter(r => r.status === filterStatus);
     if (records.length === 0) { showToast('No records to export for the current filters.', 'warning'); return; }
