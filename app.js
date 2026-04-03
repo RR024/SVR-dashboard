@@ -304,6 +304,11 @@ function loadModuleData(moduleId) {
             loadOutwardInvoices();
             populateCustomerFilterDropdowns();
             break;
+        case 'dc-invoice':
+            if (typeof loadDCInvoiceModule === 'function') {
+                loadDCInvoiceModule();
+            }
+            break;
         case 'customers':
             loadCustomers();
             break;
