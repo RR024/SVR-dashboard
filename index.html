@@ -591,6 +591,19 @@
                     <p>Create and print delivery challans with customer auto-fill</p>
                 </div>
 
+                <div style="display: flex; gap: 1rem; border-bottom: 2px solid var(--bg-tertiary); margin-bottom: 1rem;">
+                    <button id="dcInputTab" class="sales-tab active" onclick="switchDCTab('input')"
+                        style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--text-secondary); border-bottom: 3px solid transparent; transition: all 0.3s;">
+                        📝 Invoice Input Module
+                    </button>
+                    <button id="dcAllTab" class="sales-tab" onclick="switchDCTab('all')"
+                        style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--text-secondary); border-bottom: 3px solid transparent; transition: all 0.3s;">
+                        📋 All DC's
+                    </button>
+                </div>
+
+                <div id="dcInputTabContent">
+
                 <div class="card" style="padding: 1rem; margin-bottom: 1rem;">
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
                         <div class="form-group" style="margin: 0; grid-column: 1 / -1;">
@@ -613,7 +626,7 @@
                         </div>
                         <div class="form-group" style="margin: 0;">
                             <label class="form-label">DC No</label>
-                            <input type="text" id="dcNo" class="form-control" placeholder="e.g., DC/0001">
+                            <input type="text" id="dcNo" class="form-control" placeholder="e.g., DC001">
                         </div>
                         <div class="form-group" style="margin: 0;">
                             <label class="form-label">Your DC No</label>
@@ -645,6 +658,7 @@
                         <h3 style="margin: 0;">Items</h3>
                         <div style="display: flex; gap: 0.5rem;">
                             <button class="btn btn-secondary btn-sm" type="button" onclick="addDCItemRow()">+ Add Item</button>
+                            <button class="btn btn-primary" type="button" onclick="saveCurrentDCInvoice()">💾 Save Challan</button>
                             <button class="btn btn-success" type="button" onclick="printDCInvoice()">🖨️ Print Challan (A4)</button>
                         </div>
                     </div>
@@ -663,6 +677,32 @@
                             <tbody id="dcItemsBody"></tbody>
                         </table>
                     </div>
+                </div>
+
+                </div>
+
+                <div id="dcAllTabContent" style="display: none;">
+                <div class="card" style="padding: 1rem;">
+                    <h3 style="margin: 0 0 0.75rem 0;">Saved DC Challans</h3>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 140px;">DC No</th>
+                                    <th>Customer</th>
+                                    <th style="width: 140px;">Date</th>
+                                    <th style="width: 120px;">Items</th>
+                                    <th style="width: 220px;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dcSavedTableBody">
+                                <tr>
+                                    <td colspan="5" class="text-center" style="color: var(--text-secondary);">No saved DC challans yet.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
                 </div>
             </section>
 

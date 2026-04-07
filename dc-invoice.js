@@ -2,15 +2,269 @@
 // DC INVOICE (DELIVERY CHALLAN) MODULE
 // =========================================
 
+const DC_NO_SEQUENCE_KEY = 'dcInvoiceNextNumber';
+const DC_INVOICES_STORAGE_KEY = 'dcInvoices';
+let activeDCInvoiceId = '';
+
+function formatDCNumber(number) {
+		return `DC${String(Math.max(1, number)).padStart(3, '0')}`;
+}
+
+function parseDCNumber(value) {
+		const match = String(value || '').trim().match(/^DC\/?(\d+)$/i);
+		if (!match) return null;
+
+		const parsed = parseInt(match[1], 10);
+		return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function getNextDCNumber() {
+		const stored = parseInt(localStorage.getItem(DC_NO_SEQUENCE_KEY) || '1', 10);
+		const nextNumber = Number.isFinite(stored) && stored > 0 ? stored : 1;
+		return formatDCNumber(nextNumber);
+}
+
+function reserveNextDCNumber(currentDCNo) {
+		const parsedCurrent = parseDCNumber(currentDCNo) || 0;
+		const stored = parseInt(localStorage.getItem(DC_NO_SEQUENCE_KEY) || '1', 10);
+		const storedValue = Number.isFinite(stored) && stored > 0 ? stored : 1;
+		const nextValue = Math.max(storedValue, parsedCurrent + 1);
+
+		localStorage.setItem(DC_NO_SEQUENCE_KEY, String(nextValue));
+		return formatDCNumber(nextValue);
+}
+
+function setDefaultDCNumber() {
+		const dcNoInput = document.getElementById('dcNo');
+		if (!dcNoInput || dcNoInput.value.trim()) return;
+
+		dcNoInput.value = getNextDCNumber();
+	}
+
+function switchDCTab(tabName) {
+		const inputTab = document.getElementById('dcInputTab');
+		const allTab = document.getElementById('dcAllTab');
+		const inputContent = document.getElementById('dcInputTabContent');
+		const allContent = document.getElementById('dcAllTabContent');
+
+		const showInput = tabName !== 'all';
+
+		if (inputTab) inputTab.classList.toggle('active', showInput);
+		if (allTab) allTab.classList.toggle('active', !showInput);
+		if (inputContent) inputContent.style.display = showInput ? '' : 'none';
+		if (allContent) allContent.style.display = showInput ? 'none' : '';
+}
+
 function loadDCInvoiceModule() {
 		loadDCCustomerDropdown();
 		updateDCVehicleDropdown('');
 		ensureDCDefaultRows();
+		setDefaultDCNumber();
+		loadSavedDCInvoices();
+		switchDCTab('input');
 
 		const dcDate = document.getElementById('dcDate');
 		if (dcDate && !dcDate.value) {
 				dcDate.value = new Date().toISOString().slice(0, 10);
 		}
+}
+
+function getStoredDCInvoices() {
+		if (typeof loadFromStorage === 'function') {
+				return loadFromStorage(DC_INVOICES_STORAGE_KEY) || [];
+		}
+
+		return JSON.parse(localStorage.getItem(DC_INVOICES_STORAGE_KEY) || '[]');
+}
+
+function saveDCInvoices(invoices) {
+		if (typeof saveToStorage === 'function') {
+				saveToStorage(DC_INVOICES_STORAGE_KEY, invoices);
+				return;
+		}
+
+		localStorage.setItem(DC_INVOICES_STORAGE_KEY, JSON.stringify(invoices));
+}
+
+function collectCurrentDCInvoice() {
+		const customerId = document.getElementById('dcCustomerDropdown')?.value || '';
+		const customerName = document.getElementById('dcCustomerName')?.value?.trim() || '';
+		const customerAddress = document.getElementById('dcCustomerAddress')?.value?.trim() || '';
+		const customerGSTIN = document.getElementById('dcCustomerGSTIN')?.value?.trim() || '';
+		const dcNo = document.getElementById('dcNo')?.value?.trim() || '';
+		const yourDcNo = document.getElementById('dcYourNo')?.value?.trim() || '';
+		const vehicleNo = document.getElementById('dcVehicleNo')?.value?.trim() || '';
+		const vendorCode = document.getElementById('dcVendorCode')?.value?.trim() || '';
+		const date = document.getElementById('dcDate')?.value || '';
+		const refDate = document.getElementById('dcRefDate')?.value || '';
+		const items = getDCItems();
+
+		return {
+				customerId,
+				customerName,
+				customerAddress,
+				customerGSTIN,
+				dcNo,
+				yourDcNo,
+				vehicleNo,
+				vendorCode,
+				date,
+				refDate,
+				items
+		};
+}
+
+function saveCurrentDCInvoice() {
+		setDefaultDCNumber();
+		const payload = collectCurrentDCInvoice();
+
+		if (!payload.dcNo) {
+				if (typeof showToast === 'function') showToast('DC No is required', 'error');
+				return;
+		}
+
+		if (!payload.customerName) {
+				if (typeof showToast === 'function') showToast('Please select or enter customer details', 'error');
+				return;
+		}
+
+		if (!payload.items.length) {
+				if (typeof showToast === 'function') showToast('Please add at least one item before saving', 'error');
+				return;
+		}
+
+		const invoices = getStoredDCInvoices();
+		const now = Date.now();
+		const activeInvoice = activeDCInvoiceId ? invoices.find(inv => inv.id === activeDCInvoiceId) : null;
+		const isEditingCurrentInvoice = !!(activeInvoice && activeInvoice.dcNo === payload.dcNo);
+		const idToSave = isEditingCurrentInvoice ? activeDCInvoiceId : `dc_${now}`;
+		const invoice = {
+				id: idToSave,
+				...payload,
+				updatedAt: now,
+				createdAt: now
+		};
+
+		const existingIndex = invoices.findIndex(inv => inv.id === idToSave || inv.dcNo === payload.dcNo);
+		if (existingIndex >= 0) {
+				invoice.createdAt = invoices[existingIndex].createdAt || now;
+				invoices[existingIndex] = invoice;
+		} else {
+				invoices.push(invoice);
+		}
+
+		invoices.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+		saveDCInvoices(invoices);
+		activeDCInvoiceId = invoice.id;
+		reserveNextDCNumber(payload.dcNo);
+		loadSavedDCInvoices();
+
+		if (typeof showToast === 'function') {
+				showToast('DC challan saved successfully', 'success');
+		}
+}
+
+function loadSavedDCInvoices() {
+		const tbody = document.getElementById('dcSavedTableBody');
+		if (!tbody) return;
+
+		const invoices = getStoredDCInvoices();
+		if (!invoices.length) {
+				tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="color: var(--text-secondary);">No saved DC challans yet.</td></tr>';
+				return;
+		}
+
+		tbody.innerHTML = invoices.map(invoice => {
+				const itemCount = Array.isArray(invoice.items) ? invoice.items.length : 0;
+				return `
+						<tr>
+								<td>${escapeHTML(invoice.dcNo || '')}</td>
+								<td>${escapeHTML(invoice.customerName || '')}</td>
+								<td>${escapeHTML(formatDisplayDate(invoice.date || ''))}</td>
+								<td>${itemCount}</td>
+								<td>
+										<button class="btn btn-secondary btn-sm" type="button" onclick="loadSavedDCInvoice('${escapeAttr(invoice.id || '')}')">View</button>
+										<button class="btn btn-danger btn-sm" type="button" onclick="deleteSavedDCInvoice('${escapeAttr(invoice.id || '')}')">Delete</button>
+								</td>
+						</tr>
+				`;
+		}).join('');
+}
+
+function loadSavedDCInvoice(invoiceId) {
+		const invoice = getStoredDCInvoices().find(inv => inv.id === invoiceId);
+		if (!invoice) {
+				if (typeof showToast === 'function') showToast('Saved DC challan not found', 'error');
+				return;
+		}
+
+		const customerDropdown = document.getElementById('dcCustomerDropdown');
+		if (customerDropdown) {
+				customerDropdown.value = invoice.customerId || '';
+				fillDCCustomerDetails();
+		}
+
+		const customerName = document.getElementById('dcCustomerName');
+		const customerAddress = document.getElementById('dcCustomerAddress');
+		const customerGSTIN = document.getElementById('dcCustomerGSTIN');
+		const dcNo = document.getElementById('dcNo');
+		const dcYourNo = document.getElementById('dcYourNo');
+		const dcVehicleNo = document.getElementById('dcVehicleNo');
+		const dcVendorCode = document.getElementById('dcVendorCode');
+		const dcDate = document.getElementById('dcDate');
+		const dcRefDate = document.getElementById('dcRefDate');
+
+		if (customerName) customerName.value = invoice.customerName || '';
+		if (customerAddress) customerAddress.value = invoice.customerAddress || '';
+		if (customerGSTIN) customerGSTIN.value = invoice.customerGSTIN || '';
+		if (dcNo) dcNo.value = invoice.dcNo || '';
+		if (dcYourNo) dcYourNo.value = invoice.yourDcNo || '';
+		if (dcVendorCode) dcVendorCode.value = invoice.vendorCode || '';
+		if (dcDate) dcDate.value = invoice.date || '';
+		if (dcRefDate) dcRefDate.value = invoice.refDate || '';
+
+		if (dcVehicleNo) {
+				const vehicleValue = invoice.vehicleNo || '';
+				if (vehicleValue && !Array.from(dcVehicleNo.options).some(option => option.value === vehicleValue)) {
+						const option = document.createElement('option');
+						option.value = vehicleValue;
+						option.textContent = vehicleValue;
+						dcVehicleNo.appendChild(option);
+				}
+				dcVehicleNo.value = vehicleValue;
+		}
+
+		const tbody = document.getElementById('dcItemsBody');
+		if (tbody) {
+				tbody.innerHTML = '';
+				(invoice.items || []).forEach(item => addDCItemRow(item));
+				if (!(invoice.items || []).length) ensureDCDefaultRows();
+		}
+
+		activeDCInvoiceId = invoice.id;
+		switchDCTab('input');
+		if (typeof showToast === 'function') showToast(`Loaded ${invoice.dcNo || 'saved DC challan'}`, 'success');
+}
+
+function deleteSavedDCInvoice(invoiceId) {
+		const invoices = getStoredDCInvoices();
+		const invoice = invoices.find(inv => inv.id === invoiceId);
+		if (!invoice) {
+				if (typeof showToast === 'function') showToast('Saved DC challan not found', 'error');
+				return;
+		}
+
+		const confirmed = typeof confirm === 'function' ? confirm(`Delete ${invoice.dcNo || 'this DC challan'}?`) : true;
+		if (!confirmed) return;
+
+		const updated = invoices.filter(inv => inv.id !== invoiceId);
+		saveDCInvoices(updated);
+		if (activeDCInvoiceId === invoiceId) {
+				activeDCInvoiceId = '';
+		}
+		loadSavedDCInvoices();
+
+		if (typeof showToast === 'function') showToast('Saved DC challan deleted', 'success');
 }
 
 function loadDCCustomerDropdown() {
@@ -349,6 +603,10 @@ function printDCInvoice() {
 				}
 				return;
 		}
+
+		const nextDcNo = reserveNextDCNumber(dcNo);
+		const dcNoInput = document.getElementById('dcNo');
+		if (dcNoInput) dcNoInput.value = nextDcNo;
 
 		printWindow.document.write(challanTemplate);
 		printWindow.document.close();
