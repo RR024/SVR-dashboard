@@ -1,4 +1,4 @@
-// =========================================
+﻿// =========================================
 // DC INVOICE (DELIVERY CHALLAN) MODULE
 // =========================================
 
@@ -329,7 +329,7 @@ function updateDCVehicleDropdown(customerId) {
 		vehicles.forEach(vehicle => {
 				html += `<option value="${escapeAttr(vehicle.number || '')}">${escapeHTML(vehicle.number || '')}</option>`;
 		});
-		html += '<option value="__ADD_NEW__">➕ Add New Vehicle</option>';
+		html += '<option value="__ADD_NEW__">âž• Add New Vehicle</option>';
 
 		dropdown.innerHTML = html;
 }
@@ -398,7 +398,7 @@ function addDCItemRow(data = {}) {
 				const selected = data.description && (data.description === product.description || data.description === product.id) ? 'selected' : '';
 				options += `<option value="${escapeAttr(product.id || '')}" ${selected}>${escapeHTML(product.description || '')}</option>`;
 		});
-		options += '<option value="__CUSTOM__">✏️ Custom Description</option>';
+		options += '<option value="__CUSTOM__">âœï¸ Custom Description</option>';
 
 		const hasCustom = data.description && !products.some(p => data.description === p.description || data.description === p.id);
 
@@ -415,7 +415,7 @@ function addDCItemRow(data = {}) {
 				<td><input type="number" class="form-control dc-qty" value="${escapeAttr(data.qty || '')}" min="0" step="0.01" placeholder="Qty"></td>
 				<td><input type="text" class="form-control dc-uom" value="${escapeAttr(data.uom || '')}" placeholder="UOM"></td>
 				<td><input type="text" class="form-control dc-remarks" value="${escapeAttr(data.remarks || '')}" placeholder="Remarks"></td>
-				<td style="text-align:center;"><button type="button" class="icon-btn delete" onclick="removeDCItemRow(this)">🗑️</button></td>
+				<td style="text-align:center;"><button type="button" class="icon-btn delete" onclick="removeDCItemRow(this)">ðŸ—‘ï¸</button></td>
 		`;
 
 		tbody.appendChild(tr);
@@ -458,7 +458,7 @@ function updateDCDescriptionDropdowns(customerId) {
 				products.forEach(product => {
 						options += `<option value="${escapeAttr(product.id || '')}">${escapeHTML(product.description || '')}</option>`;
 				});
-				options += '<option value="__CUSTOM__">✏️ Custom Description</option>';
+				options += '<option value="__CUSTOM__">âœï¸ Custom Description</option>';
 				select.innerHTML = options;
 
 				if (previousValue === '__CUSTOM__') {
@@ -516,7 +516,7 @@ function getDCItems() {
 								description = descCustom?.value?.trim() || '';
 						} else {
 								description = descSelect.options[descSelect.selectedIndex]?.text?.trim() || '';
-								if (description === '-- Select Product --' || description === '✏️ Custom Description') {
+								if (description === '-- Select Product --' || description === 'âœï¸ Custom Description') {
 										description = '';
 								}
 
@@ -547,290 +547,171 @@ function getDCItems() {
 }
 
 function printDCInvoice() {
-		const customerName = document.getElementById('dcCustomerName')?.value?.trim() || '';
-		const customerAddress = document.getElementById('dcCustomerAddress')?.value?.trim() || '';
-		const customerGstin = document.getElementById('dcCustomerGSTIN')?.value?.trim() || '';
-		const dcNo = document.getElementById('dcNo')?.value?.trim() || '';
-		const yourDcNo = document.getElementById('dcYourNo')?.value?.trim() || '';
-		const vehicleNo = document.getElementById('dcVehicleNo')?.value?.trim() || '';
-		const vendorCode = document.getElementById('dcVendorCode')?.value?.trim() || '';
-		const date = document.getElementById('dcDate')?.value || '';
-		const refDate = document.getElementById('dcRefDate')?.value || '';
+const customerName = document.getElementById('dcCustomerName')?.value?.trim() || '';
+const customerAddress = document.getElementById('dcCustomerAddress')?.value?.trim() || '';
+const customerGstin = document.getElementById('dcCustomerGSTIN')?.value?.trim() || '';
+const dcNo = document.getElementById('dcNo')?.value?.trim() || '';
+const yourDcNo = document.getElementById('dcYourNo')?.value?.trim() || '';
+const vehicleNo = document.getElementById('dcVehicleNo')?.value?.trim() || '';
+const vendorCode = document.getElementById('dcVendorCode')?.value?.trim() || '';
+const date = document.getElementById('dcDate')?.value || '';
+const refDate = document.getElementById('dcRefDate')?.value || '';
 
-		if (!customerName) {
-				if (typeof showToast === 'function') {
-						showToast('Please select or enter customer details', 'error');
-				}
-				return;
-		}
-
-		const items = getDCItems();
-		const rows = [];
-		const totalRows = Math.max(5, items.length);
-
-		for (let i = 0; i < totalRows; i++) {
-				const item = items[i] || { sno: '', description: '', qty: '', uom: '', remarks: '' };
-				rows.push(`
-						<tr>
-							<td>${escapeHTML(item.sno)}</td>
-							<td>${escapeHTML(item.description)}</td>
-							<td>${escapeHTML(item.qty)}</td>
-							<td>${escapeHTML(item.uom)}</td>
-							<td>${escapeHTML(item.remarks)}</td>
-						</tr>
-				`);
-		}
-
-		const rowMarkup = rows.join('');
-
-		const addressLines = formatAddressLines(customerAddress);
-		const infoLeft = `M/s.${escapeHTML(customerName)}<br>${addressLines}<br>GSTIN:` + (customerGstin ? ` ${escapeHTML(customerGstin)}` : '');
-		const infoRight = `DC No.: ${escapeHTML(dcNo)}<br>Your DC No.: ${escapeHTML(yourDcNo)}<br>Vechical No.: ${escapeHTML(vehicleNo)}<br>Vendor Code: ${escapeHTML(vendorCode)}<br>Date: ${escapeHTML(formatDisplayDate(date))}<br>Date:` + (refDate ? ` ${escapeHTML(formatDisplayDate(refDate))}` : '');
-
-		let logoSrc = 'logo.png';
-		try {
-				logoSrc = new URL('logo.png', window.location.href).href;
-		} catch (_error) {
-				logoSrc = 'logo.png';
-		}
-
-		const challanTemplate = buildChallanTemplate(infoLeft, infoRight, rowMarkup, logoSrc);
-
-		const printWindow = window.open('', '_blank');
-		if (!printWindow) {
-				if (typeof showToast === 'function') {
-						showToast('Pop-up blocked. Please allow pop-ups to print challan.', 'error');
-				}
-				return;
-		}
-
-		const nextDcNo = reserveNextDCNumber(dcNo);
-		const dcNoInput = document.getElementById('dcNo');
-		if (dcNoInput) dcNoInput.value = nextDcNo;
-
-		printWindow.document.write(challanTemplate);
-		printWindow.document.close();
-		printWindow.focus();
-		setTimeout(() => {
-				printWindow.print();
-		}, 300);
+if (!customerName) {
+if (typeof showToast === 'function') {
+showToast('Please select or enter customer details', 'error');
+}
+return;
 }
 
-function formatAddressLines(value) {
-		const address = String(value || '').trim();
-		if (!address) return '';
+const items = getDCItems();
+const rows = [];
+const totalRows = Math.max(items.length, 1) + 4;
 
-		const lines = address
-				.split(/\n|,/)
-				.map(part => part.trim())
-				.filter(Boolean);
+for (let i = 0; i < totalRows; i++) {
+const item = items[i] || { sno: '', description: '', qty: '', uom: '', remarks: '' };
+const emptyClass = item.sno ? '' : ' class="empty-row"';
+rows.push(`
+<tr${emptyClass}>
+<td class="center">${escapeHTML(item.sno)}</td>
+<td class="desc">${escapeHTML(item.description)}</td>
+<td class="center">${escapeHTML(item.qty)}</td>
+<td class="center">${escapeHTML(item.uom)}</td>
+<td class="center">${escapeHTML(item.remarks)}</td>
+</tr>
+`);
+}
 
-		return lines.slice(0, 3).map(line => escapeHTML(line)).join('<br>');
+const rowMarkup = rows.join('');
+const addressParts = String(customerAddress || '')
+.split(/\n|,/)
+.map(part => part.trim())
+.filter(Boolean)
+.slice(0, 3);
+
+const infoLeft = [
+`<div><strong>M/s.${escapeHTML(customerName)}</strong></div>`,
+...addressParts.map(line => `<div>${escapeHTML(line)}</div>`),
+`<div>GSTIN : ${customerGstin ? escapeHTML(customerGstin) : '&nbsp;'}</div>`
+].join('');
+
+const infoRight = `
+<div class="dc-row">
+<span class="dc-label">DC No. :</span>
+<span class="dc-value">${escapeHTML(dcNo)}</span>
+<span class="dc-date">Date : ${escapeHTML(formatDisplayDate(date))}</span>
+</div>
+<div class="dc-row">
+<span class="dc-label">Your DC No :</span>
+<span class="dc-value">${escapeHTML(yourDcNo)}</span>
+<span class="dc-date">Date : ${refDate ? escapeHTML(formatDisplayDate(refDate)) : ''}</span>
+</div>
+<div class="dc-row">
+<span class="dc-label">Vechical No :</span>
+<span class="dc-value">${escapeHTML(vehicleNo)}</span>
+</div>
+<div class="dc-row">
+<span class="dc-label">Vendor Code :</span>
+<span class="dc-value">${escapeHTML(vendorCode)}</span>
+</div>
+`;
+
+let logoSrc = 'logo.png';
+try {
+logoSrc = new URL('logo.png', window.location.href).href;
+} catch (_error) {
+logoSrc = 'logo.png';
+}
+
+const challanTemplate = buildChallanTemplate(infoLeft, infoRight, rowMarkup, logoSrc);
+
+const printWindow = window.open('', '_blank');
+if (!printWindow) {
+if (typeof showToast === 'function') {
+showToast('Pop-up blocked. Please allow pop-ups to print challan.', 'error');
+}
+return;
+}
+
+const nextDcNo = reserveNextDCNumber(dcNo);
+const dcNoInput = document.getElementById('dcNo');
+if (dcNoInput) dcNoInput.value = nextDcNo;
+
+printWindow.document.write(challanTemplate);
+printWindow.document.close();
+printWindow.focus();
+setTimeout(() => {
+printWindow.print();
+}, 300);
 }
 
 function formatDisplayDate(value) {
-		if (!value) return '';
-		const date = new Date(value);
-		if (Number.isNaN(date.getTime())) return value;
-		return date.toLocaleDateString('en-GB');
+if (!value) return '';
+const date = new Date(value);
+if (Number.isNaN(date.getTime())) return value;
+return date.toLocaleDateString('en-GB');
 }
 
 function buildChallanTemplate(infoLeft, infoRight, rowMarkup, logoSrc) {
-		return `<!DOCTYPE html>
+return `<!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<base href="${escapeAttr(document.baseURI)}">
-	<title>Delivery Challan</title>
-	<style>
-		* { margin: 0; padding: 0; box-sizing: border-box; }
-
-		body {
-			font-family: Arial, sans-serif;
-			font-size: 9px;
-			background: #fff;
-			padding: 2mm;
-		}
-
-		.page {
-			width: 206mm;
-			height: 293mm;
-			margin: 0 auto;
-			background: #fff;
-			display: flex;
-			flex-direction: column;
-			padding: 0;
-			gap: 1.5mm;
-		}
-
-		.challan {
-			width: 100%;
-			flex: 1;
-			height: 145.75mm;
-			border: 0.7px solid #111;
-			display: flex;
-			flex-direction: column;
-			overflow: hidden;
-			min-height: 0;
-		}
-
-		.top-bar {
-			display: grid;
-			grid-template-columns: 1fr auto 1fr;
-			align-items: center;
-			padding: 1px 4px;
-		}
-		.top-bar .gstin { font-size: 8.5px; font-weight: 700; }
-		.top-bar .title { font-weight: 700; font-size: 11px; text-align: center; text-decoration: underline; }
-		.top-bar .contact { text-align: right; font-size: 8.5px; font-weight: 700; }
-
-		.company-name {
-			display: grid;
-			grid-template-columns: 112px 1fr 112px;
-			align-items: center;
-			font-weight: bold;
-			font-size: 15px;
-			line-height: 1;
-			padding: 2px 8px;
-		}
-		.company-logo-wrap {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-		}
-		.company-logo {
-			height: 60px;
-			width: auto;
-			display: block;
-			filter: grayscale(100%);
-		}
-		.company-title {
-			text-align: center;
-			font-size: 22px;
-			font-weight: 700;
-			line-height: 1;
-		}
-
-		.company-address {
-			border-bottom: 0.7px solid #111;
-			text-align: center;
-			font-size: 12px;
-			font-weight: 700;
-			padding: 2px 6px 3px;
-		}
-
-		.info-section {
-			display: grid;
-			grid-template-columns: 1fr 1fr;
-			border-bottom: 0.7px solid #111;
-		}
-		.info-left {
-			padding: 2px 4px;
-			border-right: 0.7px solid #111;
-			font-size: 9px;
-			line-height: 1.35;
-			min-height: 68px;
-			white-space: normal;
-		}
-		.info-right {
-			padding: 2px 4px;
-			font-size: 9px;
-			line-height: 1.35;
-			min-height: 68px;
-		}
-
-		.items-table {
-			width: 100%;
-			border-collapse: collapse;
-			flex: 1;
-		}
-		.items-table th {
-			border: 0.7px solid #111;
-			padding: 2px 4px;
-			background: #fff;
-			font-weight: 700;
-			font-size: 10px;
-			text-align: center;
-		}
-		.items-table th:nth-child(2) {
-			font-size: 11px;
-		}
-		.items-table td {
-			border: 0.7px solid #111;
-			height: 17px;
-			padding: 1px 3px;
-			font-size: 9px;
-			vertical-align: top;
-		}
-		.items-table col.sno  { width: 32px; }
-		.items-table col.qty  { width: 50px; }
-		.items-table col.uom  { width: 46px; }
-		.items-table col.rem  { width: 130px; }
-		.items-table th:nth-child(1),
-		.items-table td:nth-child(1) { text-align: center; }
-		.items-table th:nth-child(3),
-		.items-table td:nth-child(3) { text-align: center; }
-		.items-table th:nth-child(4),
-		.items-table td:nth-child(4) { text-align: center; }
-
-		.certification {
-			border-top: 0.7px solid #111;
-			border-bottom: 0.7px solid #111;
-			padding: 2px 4px;
-			font-size: 9px;
-			font-style: normal;
-			font-weight: 600;
-		}
-
-		.signature-section {
-			display: grid;
-			grid-template-columns: 1fr 1fr 1fr;
-			height: 50px;
-		}
-		.sig-box {
-			padding: 2px 4px;
-			font-size: 8px;
-			display: flex;
-			flex-direction: column;
-			justify-content: space-between;
-			align-items: center;
-			text-align: center;
-		}
-		.sig-box:not(:last-child) { border-right: 0.7px solid #111; }
-		.sig-box .sig-title { font-weight: 600; line-height: 1.25; }
-		.sig-box .sig-line {
-			width: 100%;
-			border-top: 0.7px solid #111;
-			padding-top: 1px;
-			font-size: 8px;
-			color: #000;
-		}
-		.sig-box:last-child { text-align: center; }
-
-		@media print {
-			html, body { width: 100%; height: 100%; }
-			body { background: white; padding: 0; margin: 0; }
-			.page {
-				width: 206mm;
-				height: 293mm;
-				padding: 0;
-				margin: 0;
-				gap: 1.5mm;
-			}
-			.challan {
-				height: 145.75mm;
-				flex: 0 0 145.75mm;
-			}
-			.no-print { display: none !important; }
-			@page { size: A4; margin: 2mm; }
-		}
-	</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<base href="${escapeAttr(document.baseURI)}">
+<title>Delivery Challan - Sri Veera Raghava Sheet Metal Component</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #f0f0f0; font-family: Arial, sans-serif; }
+.no-print { text-align: center; padding: 10px; background: #fff; border-bottom: 1px solid #ccc; margin-bottom: 12px; }
+.no-print button { padding: 8px 24px; font-size: 14px; cursor: pointer; border: 1px solid #333; background: #fff; border-radius: 4px; }
+.page { width: 210mm; margin: 0 auto; padding: 6mm; background: #fff; }
+.challan { border: 1px solid #000; padding: 4mm; margin-bottom: 6mm; font-size: 11px; }
+.header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2mm; font-size: 10px; }
+.company-block { text-align: center; margin-bottom: 2mm; }
+.company-row { display: flex; align-items: center; justify-content: center; gap: 7mm; transform: translateX(-10mm); }
+.company-name { font-size: 18px; font-weight: bold; margin: 1mm 0; }
+.company-sub { font-size: 10px; }
+.dc-title { font-size: 13px; font-weight: bold; text-decoration: underline; }
+.address-dc-row { display: flex; gap: 0; margin-bottom: 2mm; border: 1px solid #000; }
+.address-block { flex: 1; padding: 2mm; border-right: 1px solid #000; font-size: 10px; line-height: 1.6; }
+.dc-fields { flex: 1.1; padding: 2mm; font-size: 10px; }
+.dc-row { display: flex; margin-bottom: 2mm; align-items: center; }
+.dc-label { width: 90px; font-weight: normal; color: #000; white-space: nowrap; }
+.dc-value { flex: 1; font-weight: normal; border-bottom: 1px solid #000; padding-bottom: 1px; min-width: 80px; }
+.dc-date { margin-left: 6mm; font-size: 10px; white-space: nowrap; }
+table.goods { width: 100%; border-collapse: collapse; margin-top: 2mm; }
+table.goods th, table.goods td { border: 1px solid #000; padding: 2mm 3mm; font-size: 10px; }
+table.goods th { background: #f5f5f5; font-weight: bold; text-align: center; }
+table.goods td.desc { text-align: left; }
+table.goods td.center { text-align: center; }
+.empty-row td { height: 8mm; }
+.certify { font-size: 9px; margin-top: 2mm; margin-bottom: 1mm; }
+.sign-row { display: flex; border: 1px solid #000; }
+.sign-cell { flex: 1; border-right: 1px solid #000; padding: 2mm; min-height: 14mm; font-size: 9px; text-align: center; }
+.sign-cell:last-child { border-right: none; }
+.logo-wrap { width: 68px; height: 54px; display: flex; align-items: center; justify-content: flex-start; }
+.logo-wrap img { width: 68px; height: 54px; object-fit: contain; object-position: left center; }
+.cut-line { border-top: 1px dashed #888; margin: 3mm 0; text-align: center; font-size: 9px; color: #888; letter-spacing: 1px; }
+@media print {
+body { margin: 0; background: #fff; }
+.page { padding: 4mm; width: 100%; }
+.no-print { display: none !important; }
+.cut-line { border-color: #bbb; }
+@page { size: A4; margin: 4mm; }
+}
+</style>
 </head>
 <body>
 
+<div class="no-print">
+<button onclick="window.print()">Print / Save as PDF</button>
+</div>
+
 <div class="page">
-	${buildSingleCopy(infoLeft, infoRight, rowMarkup, logoSrc)}
-	${buildSingleCopy(infoLeft, infoRight, rowMarkup, logoSrc)}
+${buildSingleCopy(infoLeft, infoRight, rowMarkup, logoSrc)}
+<div class="cut-line">DUPLICATE COPY</div>
+${buildSingleCopy(infoLeft, infoRight, rowMarkup, logoSrc)}
 </div>
 
 </body>
@@ -838,63 +719,53 @@ function buildChallanTemplate(infoLeft, infoRight, rowMarkup, logoSrc) {
 }
 
 function buildSingleCopy(infoLeft, infoRight, rowMarkup, logoSrc) {
-		return `<div class="challan">
-		<div class="top-bar">
-			<span class="gstin">GSTIN : 33AHFPV5633G1Z9</span>
-			<span class="title">Delivery Challan</span>
-			<span class="contact">Contact : 9841616576</span>
-		</div>
-		<div class="company-name">
-			<div class="company-logo-wrap">
-				<img class="company-logo" src="${escapeAttr(logoSrc)}" alt="SVR Logo">
-			</div>
-			<div class="company-title">Sri Veera Raghava Sheet Metal Component</div>
-			<div></div>
-		</div>
-		<div class="company-address">
-			S 115, Kakkalur SIDCO Industrial Estate, Kakkalur, Thiruvallur - 602003
-		</div>
-		<div class="info-section">
-			<div class="info-left">${infoLeft}</div>
-			<div class="info-right">${infoRight}</div>
-		</div>
-		<table class="items-table">
-			<colgroup>
-				<col class="sno"><col><col class="qty"><col class="uom"><col class="rem">
-			</colgroup>
-			<thead>
-				<tr>
-					<th>S.No</th>
-					<th>Description of Goods</th>
-					<th>Qty</th>
-					<th>UOM</th>
-					<th>Remarks</th>
-				</tr>
-			</thead>
-			<tbody>
-				${rowMarkup}
-			</tbody>
-		</table>
-		<div class="certification">
-			I / We Certify that to the best of my/our Knowledge the particulars given are true correct and complete
-		</div>
-		<div class="signature-section">
-			<div class="sig-box">
-				<div class="sig-title">Name &amp; Signature of the person to whom goods<br>are delivered for transportation</div>
-				<div class="sig-line">&nbsp;</div>
-			</div>
-			<div class="sig-box">
-				<div class="sig-title">Received the goods in good Condition</div>
-				<div class="sig-line">Receiver's Signature with Seal</div>
-			</div>
-			<div class="sig-box">
-				<div class="sig-title">For Sri Veera Raghava Sheet Metal Component</div>
-				<div class="sig-line">Authorised Signatory</div>
-			</div>
-		</div>
-	</div>`;
-}
+return `<div class="challan">
+<div class="header-top">
+<span>GSTIN : 33AHFPV5633G1Z9</span>
+<div class="dc-title">Delivery Challan</div>
+<span>Contact : 9841616576</span>
+</div>
 
+<div class="company-block">
+<div class="company-row">
+<div class="logo-wrap">
+<img src="${escapeAttr(logoSrc)}" alt="SVR Logo">
+</div>
+<div>
+<div class="company-name">Sri Veera Raghava Sheet Metal Component</div>
+<div class="company-sub">S 115, Kakkalur SIDCO Industrial Estate, Kakkalur, Thiruvallur - 602003</div>
+</div>
+</div>
+</div>
+
+<div class="address-dc-row">
+<div class="address-block">${infoLeft}</div>
+<div class="dc-fields">${infoRight}</div>
+</div>
+
+<table class="goods">
+<thead>
+<tr>
+<th style="width:8%;">S.No</th>
+<th style="width:64%;">Description of Goods</th>
+<th style="width:10%;">Qty</th>
+<th style="width:10%;">UOM</th>
+<th style="width:8%;">Remarks</th>
+</tr>
+</thead>
+<tbody>
+${rowMarkup}
+</tbody>
+</table>
+
+<p class="certify">I / We Certify that to the best of my/our Knowledge the particulars given are true correct and complete</p>
+<div class="sign-row">
+<div class="sign-cell" style="text-align:left; font-size:9px;">Name &amp; Signature of the person to whom goods are<br>delivered for transportation</div>
+<div class="sign-cell">Received the goods in good Condition<br><br><br>Receiver's Signature with Seal</div>
+<div class="sign-cell">For Sri Veera Raghava Sheet Metal Component<br><br><br>Authorised Signatory</div>
+</div>
+</div>`;
+}
 function escapeHTML(value) {
 		return String(value || '')
 				.replace(/&/g, '&amp;')
