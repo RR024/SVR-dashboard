@@ -902,7 +902,8 @@ function loadDashboard() {
     const currentMonthTotalAmountEl = document.getElementById('currentMonthTotalAmount');
     if (currentMonthTotalAmountEl) {
         const netTotal = currentMonthSalesTotal - currentMonthPurchaseTotal;
-        currentMonthTotalAmountEl.textContent = _fmtINR(Math.abs(netTotal));
+        const prefix = netTotal >= 0 ? '₹' : '-₹';
+        currentMonthTotalAmountEl.textContent = `${prefix}${Math.abs(netTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
         currentMonthTotalAmountEl.style.color = netTotal >= 0 ? '#10b981' : '#ef4444';
     }
     const currentMonthTotalCountEl = document.getElementById('currentMonthTotalCount');
@@ -931,7 +932,8 @@ function loadDashboard() {
     const fyTotalAmountEl = document.getElementById('currentFYTotalAmount');
     if (fyTotalAmountEl) {
         const netTotal = fySalesTotal - fyPurchaseTotal;
-        fyTotalAmountEl.textContent = _fmtINR(Math.abs(netTotal));
+        const prefix = netTotal >= 0 ? '₹' : '-₹';
+        fyTotalAmountEl.textContent = `${prefix}${Math.abs(netTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
         fyTotalAmountEl.style.color = netTotal >= 0 ? '#10b981' : '#ef4444';
     }
     const fyTotalCountEl = document.getElementById('currentFYTotalCount');
