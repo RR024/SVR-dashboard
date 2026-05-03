@@ -57,6 +57,18 @@ function initializeApp() {
     }, 2000);
 }
 
+// Dashboard toggle: show/hide the outstanding stats row
+function toggleFirstRow() {
+    const toggle = document.getElementById('toggleFirstRowSwitch');
+    const outstandingRow = document.getElementById('outstandingStatsRow');
+
+    if (!toggle || !outstandingRow) {
+        return;
+    }
+
+    outstandingRow.style.display = toggle.checked ? 'grid' : 'none';
+}
+
 // ===================================
 // SEED DEFAULT MONTHLY INVOICES
 // ===================================
@@ -450,11 +462,153 @@ function switchHRTab(tabName) {
 
 function saveToStorage(key, data) {
     localStorage.setItem(key, JSON.stringify(data));
+    updateInvoiceCsvCacheForKey(key, data);
 }
 
 function loadFromStorage(key) {
     const data = localStorage.getItem(key);
     return data ? JSON.parse(data) : null;
+}
+
+function updateInvoiceCsvCacheForKey(key, data) {
+    if (key === 'outwardInvoices') {
+        updateInvoiceCsvCache('outward', Array.isArray(data) ? data : []);
+    }
+    if (key === 'inwardInvoices') {
+        updateInvoiceCsvCache('inward', Array.isArray(data) ? data : []);
+    }
+}
+
+function updateInvoiceCsvCache(type, invoices) {
+    const csv = buildInvoicesCsv(invoices, type);
+    const storageKey = type === 'outward' ? 'outwardInvoicesCsv' : 'inwardInvoicesCsv';
+    localStorage.setItem(storageKey, csv);
+}
+
+function buildInvoicesCsv(invoices, type) {
+    if (!Array.isArray(invoices) || invoices.length === 0) {
+        return 'No data available';
+    }
+
+    const headers = [
+        'S. No',
+        'Date',
+        'Invoice No.',
+        'GST No',
+        'Customer Name',
+        'HSN Code',
+        'Taxable Value',
+        'SGST',
+        'CGST',
+        'Total GST',
+        'Invoice Value',
+        'Paid Status'
+    ];
+
+    const lines = [];
+    lines.push(headers.join(','));
+
+    invoices.forEach((inv, index) => {
+        const row = buildInvoiceCsvRow(inv || {}, index + 1, type);
+        lines.push(row.map(formatCsvValue).join(','));
+    });
+
+    return lines.join('\r\n');
+}
+
+function buildInvoiceCsvRow(inv, serial, type) {
+    const isOutward = type === 'outward';
+    const invoiceValue = isOutward
+        ? parseFloat(inv.total || inv.totalAmount || inv.grandTotal || inv.amount || 0)
+        : parseFloat(inv.amount || inv.total || inv.totalAmount || inv.grandTotal || 0);
+    const taxableValue = parseFloat(inv.taxableValue || 0);
+    const cgst = parseFloat(inv.cgst || 0);
+    const sgst = parseFloat(inv.sgst || 0);
+    const totalGst = cgst + sgst;
+    const products = Array.isArray(inv.products) ? inv.products : [];
+    const hsnCode = products.find(p => p && p.hsn)?.hsn || '';
+
+    return [
+        serial,
+        formatDateForCsv(inv.date),
+        inv.invoiceNo || '',
+        formatTextField(isOutward ? (inv.gstin || '') : (inv.gstNo || '')),
+        isOutward ? (inv.buyerName || '') : (inv.customer || ''),
+        hsnCode,
+        formatNumber(taxableValue),
+        formatNumber(sgst),
+        formatNumber(cgst),
+        formatNumber(totalGst),
+        formatNumber(invoiceValue),
+        inv.paymentStatus || ''
+    ];
+}
+
+function formatNumber(value) {
+    const num = Number(value) || 0;
+    return num.toFixed(2);
+}
+
+function formatTextField(value) {
+    if (!value) return '';
+    const text = String(value);
+    if (/^\d{10,}$/.test(text)) {
+        return `="${text}"`;
+    }
+    return text;
+}
+
+function formatDateForCsv(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    if (Number.isNaN(date.getTime())) {
+        return String(dateStr);
+    }
+    return date.toISOString().slice(0, 10);
+}
+
+function formatCsvValue(value) {
+    if (value === null || value === undefined) {
+        return '';
+    }
+
+    let text = value;
+    if (typeof value === 'object') {
+        text = JSON.stringify(value);
+    }
+
+    text = String(text);
+    const escaped = text.replace(/"/g, '""');
+    return /[",\n]/.test(escaped) ? `"${escaped}"` : escaped;
+}
+
+function downloadInvoiceCsv(type) {
+    const invoices = type === 'outward' ? getOutwardInvoices() : getInwardInvoices();
+    const csv = buildInvoicesCsv(invoices, type);
+    updateInvoiceCsvCache(type, invoices);
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const filename = type === 'outward'
+        ? `sales_invoices_${dateStr}.csv`
+        : `purchase_invoices_${dateStr}.csv`;
+
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+}
+
+function downloadOutwardInvoicesCSV() {
+    downloadInvoiceCsv('outward');
+}
+
+function downloadInwardInvoicesCSV() {
+    downloadInvoiceCsv('inward');
 }
 
 // Migrate old invoice format (SVR/XXXX/YY-YY) to new format (SVRXXXX/YY-YY)
@@ -688,6 +842,35 @@ function loadDashboard() {
 
     const _fmtINR = (n) => `₹${n.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
 
+    // Calculate current financial year totals (Apr-Mar)
+    const fyStartYear = currentMonth >= 3 ? currentYear : currentYear - 1;
+    const fyEndYear = fyStartYear + 1;
+    const fyStartDate = new Date(fyStartYear, 3, 1);
+    const fyEndDate = new Date(fyEndYear, 3, 1); // exclusive
+    const fyLabel = `FY ${String(fyStartYear).slice(-2)}-${String(fyEndYear).slice(-2)}`;
+
+    const fyOutward = outwardInvoices.filter(inv => {
+        if (!inv.date) return false;
+        const invDate = new Date(inv.date);
+        const invTime = invDate.getTime();
+        return !Number.isNaN(invTime) && invDate >= fyStartDate && invDate < fyEndDate;
+    });
+    const fyInward = inwardInvoices.filter(inv => {
+        if (!inv.date) return false;
+        const invDate = new Date(inv.date);
+        const invTime = invDate.getTime();
+        return !Number.isNaN(invTime) && invDate >= fyStartDate && invDate < fyEndDate;
+    });
+
+    const fySalesTotal = fyOutward.reduce((sum, inv) => {
+        const amount = parseFloat(inv.total) || parseFloat(inv.totalAmount) || parseFloat(inv.grandTotal) || parseFloat(inv.amount) || 0;
+        return sum + amount;
+    }, 0);
+    const fyPurchaseTotal = fyInward.reduce((sum, inv) => {
+        const amount = parseFloat(inv.amount) || parseFloat(inv.total) || parseFloat(inv.totalAmount) || parseFloat(inv.grandTotal) || 0;
+        return sum + amount;
+    }, 0);
+
     // Update current month sales card
     const currentMonthSalesAmountEl = document.getElementById('currentMonthSalesAmount');
     if (currentMonthSalesAmountEl) {
@@ -714,6 +897,43 @@ function loadDashboard() {
     const currentMonthPurchaseCountEl = document.getElementById('currentMonthPurchaseCount');
     if (currentMonthPurchaseCountEl) {
         currentMonthPurchaseCountEl.textContent = `${currentMonthInward.length} invoice${currentMonthInward.length !== 1 ? 's' : ''} this month`;
+    }
+
+    const currentMonthTotalAmountEl = document.getElementById('currentMonthTotalAmount');
+    if (currentMonthTotalAmountEl) {
+        currentMonthTotalAmountEl.textContent = _fmtINR(currentMonthSalesTotal + currentMonthPurchaseTotal);
+    }
+    const currentMonthTotalCountEl = document.getElementById('currentMonthTotalCount');
+    if (currentMonthTotalCountEl) {
+        const totalCount = currentMonthOutward.length + currentMonthInward.length;
+        currentMonthTotalCountEl.textContent = `${totalCount} invoice${totalCount !== 1 ? 's' : ''}`;
+    }
+
+    // Update current financial year cards
+    document.querySelectorAll('.fy-range').forEach((el) => {
+        el.textContent = `(${fyLabel})`;
+    });
+    const fySalesAmountEl = document.getElementById('currentFYSalesAmount');
+    if (fySalesAmountEl) fySalesAmountEl.textContent = _fmtINR(fySalesTotal);
+    const fySalesCountEl = document.getElementById('currentFYSalesCount');
+    if (fySalesCountEl) {
+        fySalesCountEl.textContent = `${fyOutward.length} invoice${fyOutward.length !== 1 ? 's' : ''}`;
+    }
+    const fyPurchaseAmountEl = document.getElementById('currentFYPurchaseAmount');
+    if (fyPurchaseAmountEl) fyPurchaseAmountEl.textContent = _fmtINR(fyPurchaseTotal);
+    const fyPurchaseCountEl = document.getElementById('currentFYPurchaseCount');
+    if (fyPurchaseCountEl) {
+        fyPurchaseCountEl.textContent = `${fyInward.length} invoice${fyInward.length !== 1 ? 's' : ''}`;
+    }
+
+    const fyTotalAmountEl = document.getElementById('currentFYTotalAmount');
+    if (fyTotalAmountEl) {
+        fyTotalAmountEl.textContent = _fmtINR(fySalesTotal + fyPurchaseTotal);
+    }
+    const fyTotalCountEl = document.getElementById('currentFYTotalCount');
+    if (fyTotalCountEl) {
+        const totalCount = fyOutward.length + fyInward.length;
+        fyTotalCountEl.textContent = `${totalCount} invoice${totalCount !== 1 ? 's' : ''}`;
     }
 
     // Update today's summary cards (expenses, production, attendance)

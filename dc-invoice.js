@@ -566,7 +566,7 @@ return;
 
 const items = getDCItems();
 const rows = [];
-const totalRows = Math.max(items.length, 1) + 4;
+const totalRows = Math.max(items.length, 1) + 3;
 
 for (let i = 0; i < totalRows; i++) {
 const item = items[i] || { sno: '', description: '', qty: '', uom: '', remarks: '' };
@@ -688,7 +688,7 @@ table.goods td.center { text-align: center; }
 .empty-row td { height: 8mm; }
 .certify { font-size: 9px; margin-top: 2mm; margin-bottom: 1mm; }
 .sign-row { display: flex; border: 1px solid #000; }
-.sign-cell { flex: 1; border-right: 1px solid #000; padding: 2mm; min-height: 14mm; font-size: 9px; text-align: center; }
+.sign-cell { flex: 1; border-right: 1px solid #000; padding: 2.2mm; min-height: 17mm; font-size: 9px; text-align: center; }
 .sign-cell:last-child { border-right: none; }
 .logo-wrap { width: 68px; height: 54px; display: flex; align-items: center; justify-content: flex-start; }
 .logo-wrap img { width: 68px; height: 54px; object-fit: contain; object-position: left center; }
