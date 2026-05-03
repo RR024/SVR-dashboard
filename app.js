@@ -906,11 +906,6 @@ function loadDashboard() {
         currentMonthTotalAmountEl.textContent = `${prefix}${Math.abs(netTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
         currentMonthTotalAmountEl.style.color = netTotal >= 0 ? '#10b981' : '#ef4444';
     }
-    const currentMonthTotalCountEl = document.getElementById('currentMonthTotalCount');
-    if (currentMonthTotalCountEl) {
-        const totalCount = currentMonthOutward.length + currentMonthInward.length;
-        currentMonthTotalCountEl.textContent = `${totalCount} invoice${totalCount !== 1 ? 's' : ''}`;
-    }
 
     // Update current financial year cards
     document.querySelectorAll('.fy-range').forEach((el) => {
@@ -935,11 +930,6 @@ function loadDashboard() {
         const prefix = netTotal >= 0 ? '₹' : '-₹';
         fyTotalAmountEl.textContent = `${prefix}${Math.abs(netTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
         fyTotalAmountEl.style.color = netTotal >= 0 ? '#10b981' : '#ef4444';
-    }
-    const fyTotalCountEl = document.getElementById('currentFYTotalCount');
-    if (fyTotalCountEl) {
-        const totalCount = fyOutward.length + fyInward.length;
-        fyTotalCountEl.textContent = `${totalCount} invoice${totalCount !== 1 ? 's' : ''}`;
     }
 
     // Update today's summary cards (expenses, production, attendance)
